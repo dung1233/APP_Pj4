@@ -1,12 +1,9 @@
+import 'package:app/data/DatabaseHelper.dart';
 import 'package:app/models/work_out.dart';
 import 'package:app/screens/trainhome.dart';
-<<<<<<< HEAD
 
-=======
-import 'package:flutter/foundation.dart';
->>>>>>> 183d0011fe4e1a857f05800298f57c19850082a2
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
+
 import 'package:lottie/lottie.dart';
 
 class Localloading extends StatefulWidget {
@@ -17,32 +14,31 @@ class Localloading extends StatefulWidget {
 }
 
 class _LocalloadingState extends State<Localloading> {
+  bool _isLoading = true; // ✅ Biến để hiển thị loading
   @override
   void initState() {
     super.initState();
-    _loadDataFromHive();
+    _loadDataFromSQLite();
   }
 
-  /// ✅ Lấy dữ liệu từ Hive
-  Future<void> _loadDataFromHive() async {
-    // 📦 Kiểm tra box đã mở chưa, nếu chưa thì mở
-    if (!Hive.isBoxOpen('workouts')) {
-      await Hive.openBox<Workout>('workouts');
+  Future<void> _loadDataFromSQLite() async {
+    final dbHelper = DatabaseHelper(); // 🛠 Sử dụng DatabaseHelper
+    final List<Workout> allWorkouts =
+        await dbHelper.getWorkouts(); // 📦 Lấy dữ liệu từ SQLite
+
+    if (allWorkouts.isEmpty) {
+      print("⚠️ Không có dữ liệu trong SQLite.");
+      setState(() => _isLoading = false); // ✅ Tắt loading nếu không có dữ liệu
+      return;
     }
 
-    final workoutBox = Hive.box<Workout>('workouts');
+    print("✅ Đã tải ${allWorkouts.length} bài tập từ SQLite!");
 
-    if (workoutBox.isNotEmpty) {
-      print('✅ Đã tải ${workoutBox.length} bài tập từ Hive!');
-
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => Trainhome()),
-        );
-      }
-    } else {
-      print('⚠️ Không có dữ liệu trong Hive!');
+    if (mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => Trainhome()),
+      );
     }
   }
 
@@ -56,7 +52,7 @@ class _LocalloadingState extends State<Localloading> {
             Center(
               child: Lottie.asset("assets/img/Animation_1740914934240.json"),
             ),
-            const Text('Đang tải dữ liệu từ Hive...'),
+            const Text('Đang tải dữ liệu từ Hive dang nhap ...'),
           ],
         ),
       ),

@@ -14,4 +14,7 @@ abstract class ApiService {
 
   @POST("/workout/generate")
   Future<List<Workout>> generateWorkout(@Body() UserData userData);
+
+  @GET("/workout")
+  Future<List<Workout>> getWorkouts(@Header("Authorization") String token);
 }

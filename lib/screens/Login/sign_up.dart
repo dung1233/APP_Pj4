@@ -56,8 +56,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       // ⏳ Chuyển về màn hình đăng nhập sau 2 giây
       Future.delayed(const Duration(seconds: 2), () {
-        Navigator.pushReplacement(context,
-            MaterialPageRoute(builder: (context) => const LoginScreen()));
+        Navigator.pushReplacement(
+            context, MaterialPageRoute(builder: (context) => LoginScreen()));
       });
     } catch (e) {
       print("❌ Lỗi khi đăng ký: $e");

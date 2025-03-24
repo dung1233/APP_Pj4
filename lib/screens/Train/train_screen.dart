@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:showcaseview/showcaseview.dart';
 import 'package:app/screens/Train/beginer_screnn.dart';
-import 'package:app/screens/Train/icons_user.dart';
+
 import 'package:app/screens/Train/wellcome.dart';
 
 class TrainScreen extends StatefulWidget {
@@ -67,16 +67,9 @@ class _TrainScreenState extends State<TrainScreen> {
     return Builder(
       builder: (context) => SingleChildScrollView(
         child: Container(
-<<<<<<< HEAD
           color: const Color.fromARGB(255, 255, 255, 255),
           child: Column(
             children: [
-=======
-          color: Colors.white,
-          child: Column(
-            children: [
-              IconsUser(),
->>>>>>> 183d0011fe4e1a857f05800298f57c19850082a2
               Showcase(
                 key: _showcasetaskKey,
                 description: "Task.",
@@ -94,46 +87,6 @@ class _TrainScreenState extends State<TrainScreen> {
                         BeginnerScreen(), // 🔥 Truyền userData vào BeginnerScreen
                   ),
 
-<<<<<<< HEAD
-=======
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      ElevatedButton(
-                        style: buttonStyle,
-                        onPressed: () {},
-                        child: Text("Beginner",
-                            style: TextStyle(
-                                color: Colors.black,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 15)),
-                      ),
-                      // ElevatedButton(
-                      //   style: buttonStyle,
-                      //   onPressed: () {},
-                      //   child: Text(
-                      //     "Medium",
-                      //     style: TextStyle(
-                      //         color: Colors.black,
-                      //         fontWeight: FontWeight.bold,
-                      //         fontSize: 15),
-                      //   ),
-                      // ),
-                      // ElevatedButton(
-                      //   style: buttonStyle,
-                      //   onPressed: () {},
-                      //   child: Text(
-                      //     "Hard",
-                      //     style: TextStyle(
-                      //         color: Colors.black,
-                      //         fontWeight: FontWeight.bold,
-                      //         fontSize: 15),
-                      //   ),
-                      // ),
-                    ],
-                  ),
-
->>>>>>> 183d0011fe4e1a857f05800298f57c19850082a2
                   _buildSection("Beginer Section", BeginnerDataWidget()),
 
                   // _buildSection("Medium Section", MediumDataWidget())

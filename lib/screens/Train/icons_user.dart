@@ -32,11 +32,7 @@ class _IconsUserState extends State<IconsUser> {
                       color: Colors.black),
                 ),
                 Text(
-<<<<<<< HEAD
                   'name',
-=======
-                  'name' ?? 'Chưa có dữ liệu',
->>>>>>> 183d0011fe4e1a857f05800298f57c19850082a2
                   style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,

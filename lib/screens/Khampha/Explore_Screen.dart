@@ -176,11 +176,7 @@ class ExploreScreen extends StatelessWidget {
                   fontWeight: FontWeight.bold), // title style
               const TextStyle(
                   color: Colors.white, fontSize: 14), // subtitle style
-<<<<<<< HEAD
               () => const Ol(),
-=======
-              () => const Ola(),
->>>>>>> 183d0011fe4e1a857f05800298f57c19850082a2
             )
           ],
         ),

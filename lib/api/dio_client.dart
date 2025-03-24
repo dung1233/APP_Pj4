@@ -15,18 +15,30 @@ class DioClient {
   )..interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          // 🟢 Lấy token từ LocalStorage
           String? token = await LocalStorage.getToken();
-          if (kDebugMode) {
-            print("📡 Token gửi đi: $token");
-          }
-
-          // Nếu có token, thêm vào headers
-          if (token != null && token.isNotEmpty) {
+          if (token?.isNotEmpty ?? false) {
             options.headers["Authorization"] = "Bearer $token";
           }
-
-          handler.next(options); // Gửi request đi
+          handler.next(options);
+        },
+        onResponse: (response, handler) {
+          if (kDebugMode) {
+            print("📩 API Response: ${response.data}");
+          }
+          handler.next(response);
+        },
+        onError: (DioException e, handler) {
+          if (e.response?.statusCode == 401) {
+            if (kDebugMode) {
+              print("🔴 Token hết hạn, đăng xuất!");
+            }
+            // TODO: Xử lý đăng xuất
+          } else {
+            if (kDebugMode) {
+              print("⚠️ Lỗi API: ${e.message}");
+            }
+          }
+          handler.next(e);
         },
       ),
     );

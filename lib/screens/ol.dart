@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -302,23 +301,6 @@ class AwardCard extends StatelessWidget {
               style: TextStyle(color: Colors.grey, fontSize: 12)),
         ],
       ),
-=======
-import 'package:flutter/material.dart';
-
-class Ola extends StatefulWidget {
-  const Ola({super.key});
-
-  @override
-  State<Ola> createState() => _MyWidgetState();
-}
-
-class _MyWidgetState extends State<Ola> {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(),
-      body: const Text('data Ola'),
->>>>>>> 183d0011fe4e1a857f05800298f57c19850082a2
     );
   }
 }

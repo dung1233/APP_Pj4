@@ -1,12 +1,17 @@
 import 'package:app/APi/auth_service.dart';
+import 'package:app/api/api_service.dart';
+import 'package:app/data/DatabaseHelper.dart';
 import 'package:app/data/local_storage.dart';
 import 'package:app/models/login_request.dart';
+import 'package:app/models/work_out.dart';
 import 'package:app/screens/Login/sign_up.dart';
 import 'package:app/screens/Information/data.dart';
+import 'package:app/screens/trainhome.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -25,6 +30,7 @@ class _LoginScreenState extends State<LoginScreen> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+
     super.dispose();
   }
 
@@ -43,20 +49,24 @@ class _LoginScreenState extends State<LoginScreen> {
       final response = await authService.login(request);
       if (kDebugMode) {
         print("📩 Phản hồi từ API: ${response.toJson()}");
-      } // Kiểm tra dữ liệu trả về
+      }
 
       if (response.token != null && response.token!.isNotEmpty) {
-        // ✅ Lưu token vào SharedPreferences
-        await LocalStorage.saveToken(response.token!);
+        // ✅ Lưu token vào Hive
+        var box = await Hive.openBox('userBox');
+        await box.put('token', response.token!);
         if (kDebugMode) {
-          print("🔑 Token đã lưu: ${response.token}");
+          print("🔑 Token đã lưu vào Hive: ${response.token}");
         }
 
-        // 👉 Chuyển hướng sau khi đăng nhập thành công
+        // ✅ Gọi API lấy danh sách bài tập và lưu vào SQLite
+        await _fetchAndSaveWorkouts();
+
+        // 👉 Chuyển hướng đến màn hình chính
         Navigator.pushReplacement(
           // ignore: use_build_context_synchronously
           context,
-          MaterialPageRoute(builder: (context) => Datascreen()),
+          MaterialPageRoute(builder: (context) => Trainhome()),
         );
       } else {
         if (kDebugMode) {
@@ -70,6 +80,40 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     setState(() => _isLoading = false); // Tắt loading
+  }
+
+  Future<void> _fetchAndSaveWorkouts() async {
+    try {
+      var box = await Hive.openBox('userBox');
+      String? token = box.get('token'); // ✅ Lấy token từ Hive
+
+      if (token == null || token.isEmpty) {
+        print("❌ Không tìm thấy token, không thể lấy bài tập.");
+        return;
+      }
+
+      print("📡 Gọi API `/workout` với token: Bearer $token");
+
+      final List<Workout> workouts =
+          await ApiService(Dio()).getWorkouts("Bearer $token");
+      print("✅ API trả về ${workouts.length} bài tập!");
+
+      // ✅ Lưu dữ liệu vào SQLite
+      final dbHelper = DatabaseHelper();
+      await dbHelper.clearWorkouts(); // Xóa bài tập cũ (nếu có)
+      for (var workout in workouts) {
+        await dbHelper.insertWorkout(workout);
+      }
+      print("🎉 Đã lưu bài tập vào SQLite!");
+    } catch (e) {
+      print("❌ Lỗi khi lấy bài tập từ API: $e");
+    }
+  }
+
+  Future<void> _checkSQLiteData() async {
+    final dbHelper = DatabaseHelper();
+    final List<Workout> workouts = await dbHelper.getWorkouts();
+    print("📌 Debug: SQLite có ${workouts.length} bài tập");
   }
 
   @override

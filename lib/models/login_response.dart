@@ -5,9 +5,11 @@ class LoginResponse {
   LoginResponse({this.token, required this.success});
 
   factory LoginResponse.fromJson(Map<String, dynamic> json) {
+    final result = json['result'];
+
     return LoginResponse(
-      token: json['result']?['token'], // ✅ Lấy token từ 'result'
-      success: json['result']?['success'] ?? false,
+      token: result?['token'] ?? '', // Tránh null error
+      success: result?['success'] ?? false,
     );
   }
 

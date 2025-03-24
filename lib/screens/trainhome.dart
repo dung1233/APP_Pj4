@@ -71,7 +71,6 @@ class _TrainhomeState extends State<Trainhome> {
             setState(() {
               selectedIndex = index;
             });
-            _pageController.jumpToPage(index);
           },
           destinations: [
             NavigationDestination(
@@ -107,14 +106,8 @@ class _TrainhomeState extends State<Trainhome> {
         toolbarHeight: 5,
         backgroundColor: Colors.white,
       ),
-      body: PageView(
-        controller: _pageController,
-        physics: const NeverScrollableScrollPhysics(), // Ngăn swipe tay
-        onPageChanged: (index) {
-          setState(() {
-            selectedIndex = index;
-          });
-        },
+      body: IndexedStack(
+        index: selectedIndex, // Giữ nguyên trạng thái khi chuyển tab
         children: _screens,
       ),
     );

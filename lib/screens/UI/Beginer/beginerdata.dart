@@ -1,3 +1,4 @@
+import 'package:app/data/DatabaseHelper.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:app/models/work_out.dart';
@@ -16,16 +17,18 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
   @override
   void initState() {
     super.initState();
-    _loadWorkoutsFromHive(); // ✅ Tải dữ liệu từ Hive khi widget khởi tạo
+    _loadWorkoutsFromSQLite(); // ✅ Tải dữ liệu từ Hive khi widget khởi tạo
   }
 
   /// ✅ Hàm này lấy dữ liệu từ Hive và nhóm theo tuần
-  Future<void> _loadWorkoutsFromHive() async {
-    final box = Hive.box<Workout>('workouts'); // 📦 Lấy dữ liệu từ Hive
-    final List<Workout> allWorkouts = box.values.toList();
+  Future<void> _loadWorkoutsFromSQLite() async {
+    final dbHelper =
+        DatabaseHelper(); // 🛠 Sử dụng DatabaseHelper để truy cập SQLite
+    final List<Workout> allWorkouts =
+        await dbHelper.getWorkouts(); // 📦 Lấy dữ liệu từ SQLite
 
     if (allWorkouts.isEmpty) {
-      print("⚠️ Không có dữ liệu trong Hive.");
+      print("⚠️ Không có dữ liệu trong SQLite.");
       setState(() => isLoading = false);
       return;
     }
@@ -38,7 +41,7 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
     }
 
     setState(() {
-      weeks = groupedWeeks; // 🛠 Cập nhật UI với dữ liệu từ Hive
+      weeks = groupedWeeks; // 🛠 Cập nhật UI với dữ liệu từ SQLite
       isLoading = false;
     });
   }

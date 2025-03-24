@@ -1,19 +1,13 @@
+import 'package:app/data/local_storage.dart';
+import 'package:app/models/work_out.dart';
 import 'package:app/screens/Home/app_bar.dart';
 import 'package:app/screens/Home/slide_Item.dart';
 import 'package:app/screens/Information/Localloading.dart';
-<<<<<<< HEAD
 
-=======
-import 'package:app/screens/Information/themloading.dart';
->>>>>>> 183d0011fe4e1a857f05800298f57c19850082a2
 import 'package:app/screens/Login/login.dart';
 
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-<<<<<<< HEAD
-=======
-import 'package:shared_preferences/shared_preferences.dart';
->>>>>>> 183d0011fe4e1a857f05800298f57c19850082a2
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -49,8 +43,7 @@ class _HomePageState extends State<HomePage> {
   int _currentPage = 0;
 
   void _nextPage() async {
-    var box = await Hive.openBox('userBox'); // ✅ Mở Hive box
-    String? token = box.get('token'); // ✅ Lấy token từ Hive
+    String? token = await LocalStorage.getToken(); // ✅ Lấy token từ Hive
 
     if (_currentPage < slides.length - 1) {
       _pageController.animateToPage(

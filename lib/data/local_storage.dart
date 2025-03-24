@@ -38,7 +38,7 @@ class LocalStorage {
   static Future<Map<String, dynamic>> loadUserData() async {
     final box = await Hive.openBox('userBox');
     final data = box.get('userData');
-    print("📌 Dữ liệu lấy từ Hive: $data");
+    print("📌 Dữ liệu lấy từ Hive alo : $data");
 
     if (data != null) {
       final Map<String, dynamic> userData = Map<String, dynamic>.from(data);
@@ -58,6 +58,12 @@ class LocalStorage {
       return userData;
     }
     return {}; // Trả về map rỗng nếu chưa có dữ liệu
+  }
+
+  static Future<void> checkHiveData() async {
+    final box = await Hive.openBox('userBox');
+    final keys = box.keys.toList();
+    print("📦 Các key trong Hive: $keys");
   }
 
   static Future<void> saveToken(String token) async {
