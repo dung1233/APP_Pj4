@@ -52,7 +52,7 @@ class _LocalloadingState extends State<Localloading> {
             Center(
               child: Lottie.asset("assets/img/Animation_1740914934240.json"),
             ),
-            const Text('Đang tải dữ liệu từ Hive dang nhap ...'),
+            const Text('Đang tải dữ liệu ....'),
           ],
         ),
       ),

@@ -91,52 +91,52 @@ class _MyWidgetState extends State<AIMyWidget> {
                   ),
                 ),
               ),
-              // Center(
-              //   child: SizedBox(
-              //     width: 350,
-              //     height: 300,
-              //     child: Container(
-              //       decoration: BoxDecoration(
-              //         color: Colors.white,
-              //         borderRadius: BorderRadius.circular(16),
-              //       ),
-              //       child: PageView(
-              //         children: [
-              //           SlideItem(
-              //             title: "BEGINER\n Run",
-              //             description:
-              //                 "Enhance strength and \nbuild endurance!",
-              //             imagePath: "assets/img/run.jpg",
-              //             onPressd: () {},
-              //           ),
-              //         ],
-              //       ),
-              //     ),
-              //   ),
-              // ),
-              // Center(
-              //   child: SizedBox(
-              //     width: 350,
-              //     height: 300,
-              //     child: Container(
-              //       decoration: BoxDecoration(
-              //         color: Colors.white,
-              //         borderRadius: BorderRadius.circular(16),
-              //       ),
-              //       child: PageView(
-              //         children: [
-              //           SlideItem(
-              //             title: "BEGINER\n Sit-Up",
-              //             description:
-              //                 "Enhance strength and \nbuild endurance!",
-              //             imagePath: "assets/img/gapbung.jpg",
-              //             onPressd: () {},
-              //           ),
-              //         ],
-              //       ),
-              //     ),
-              //   ),
-              // ),
+              Center(
+                child: SizedBox(
+                  width: 350,
+                  height: 300,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: PageView(
+                      children: [
+                        SlideItem(
+                          title: "BEGINER\n Run",
+                          description:
+                              "Enhance strength and \nbuild endurance!",
+                          imagePath: "assets/img/run.jpg",
+                          onPressd: () {},
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              Center(
+                child: SizedBox(
+                  width: 350,
+                  height: 300,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: PageView(
+                      children: [
+                        SlideItem(
+                          title: "BEGINER\n Sit-Up",
+                          description:
+                              "Enhance strength and \nbuild endurance!",
+                          imagePath: "assets/img/gapbung.jpg",
+                          onPressd: () {},
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         ],

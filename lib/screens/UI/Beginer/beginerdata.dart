@@ -103,7 +103,6 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
                         itemCount: weekData.length,
                         itemBuilder: (context, index) {
                           final workout = weekData[index];
-
                           return Padding(
                             padding: const EdgeInsets.symmetric(vertical: 8.0),
                             child: Container(

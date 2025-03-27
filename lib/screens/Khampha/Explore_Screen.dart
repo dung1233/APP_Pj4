@@ -34,6 +34,9 @@ class ExploreScreen extends StatelessWidget {
             ),
           ),
           _hotnew(context),
+          SizedBox(
+            height: 15,
+          ),
           const Padding(
             padding: EdgeInsets.all(15.0),
             child: Text(
@@ -340,13 +343,13 @@ Widget _blogCart(
               child: Image.asset(
                 imagePath,
                 fit: BoxFit.cover,
-                height: 130,
+                height: 115,
               ),
             ),
           ),
           Container(
             width: 220, // Dùng width trực tiếp trong Container
-            height: 70,
+
             padding: const EdgeInsets.all(5.0),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(5),

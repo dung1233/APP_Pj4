@@ -1,3 +1,4 @@
+import 'package:app/screens/Test.dart';
 import 'package:app/screens/UI/Beginer/trainbeginer.dart';
 import 'package:flutter/material.dart';
 
@@ -6,22 +7,8 @@ class BeginnerScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // final int currentDay =
-    //     userData["currentDay"] ?? 2; // 🔥 Lấy ngày hiện tại từ userData
-
-    // // Lấy bài tập hôm nay từ danh sách beginnerWorkouts
-    // final workout = beginnerWorkouts.firstWhere(
-    //   (w) => w["day"] == currentDay,
-    //   orElse: () => {
-    //     "day": 0,
-    //     "img": "assets/img/default.jpg", // 🔥 Ảnh mặc định nếu không có
-    //     "title": "Không có bài tập",
-    //     "description": ""
-    //   },
-    // );
-
     return Container(
-      width: 320,
+      width: 380,
       height: 250,
       padding: const EdgeInsets.only(left: 25, top: 30),
       decoration: BoxDecoration(

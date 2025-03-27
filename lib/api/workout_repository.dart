@@ -12,9 +12,8 @@ class WorkoutRepository {
 
   Future<void> fetchAndSaveWorkouts(UserData userData) async {
     try {
-      List<Workout> workouts = await apiService.generateWorkout(userData);
-
-      // Lưu dữ liệu vào SQLite
+      List<Workout> workouts =
+          await apiService.generateWorkout(userData); // Lưu dữ liệu vào SQLite
       await dbHelper.clearWorkouts(); // Xóa dữ liệu cũ (nếu có)
       for (var workout in workouts) {
         await dbHelper.insertWorkout(workout); // Lưu từng bài tập vào SQLite

@@ -64,7 +64,7 @@ class ActivityRingsWidget extends StatelessWidget {
     return Column(
       children: [
         Container(
-          width: 320,
+          width: 350,
           height: 170,
           decoration: BoxDecoration(
             color: const Color.fromARGB(255, 26, 25, 25),

@@ -7,7 +7,6 @@ import 'package:app/screens/Information/Localloading.dart';
 import 'package:app/screens/Login/login.dart';
 
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -70,29 +69,33 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: const CustomAppBar(),
       backgroundColor: const Color(0x0029323d),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      body: ListView(
         children: [
-          SizedBox(
-            height:
-                MediaQuery.of(context).size.height * 0.96, // Chiều cao cố định
-            child: PageView(
-              controller: _pageController,
-              onPageChanged: (index) {
-                setState(() {
-                  _currentPage = index;
-                });
-              },
-              children: slides.asMap().entries.map((entry) {
-                var data = entry.value;
-                return SlideItem(
-                  title: data["title"]!,
-                  description: data["description"]!,
-                  imagePath: data["imagePath"]!,
-                  onPressd: _nextPage,
-                );
-              }).toList(),
-            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                height: MediaQuery.of(context).size.height *
+                    0.96, // Chiều cao cố định
+                child: PageView(
+                  controller: _pageController,
+                  onPageChanged: (index) {
+                    setState(() {
+                      _currentPage = index;
+                    });
+                  },
+                  children: slides.asMap().entries.map((entry) {
+                    var data = entry.value;
+                    return SlideItem(
+                      title: data["title"]!,
+                      description: data["description"]!,
+                      imagePath: data["imagePath"]!,
+                      onPressd: _nextPage,
+                    );
+                  }).toList(),
+                ),
+              ),
+            ],
           ),
         ],
       ),
