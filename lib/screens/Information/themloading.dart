@@ -10,7 +10,7 @@ class ThemLoadingScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Tự động kiểm tra và chuyển hướng khi build
-    Future.delayed(Duration(seconds: 10), () async {
+    Future.delayed(Duration(seconds: 2), () async {
       final userData = await LocalStorage.loadUserData();
       if (kDebugMode) {
         print('Dữ liệu đọc được: $userData');

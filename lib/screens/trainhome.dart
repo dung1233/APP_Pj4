@@ -2,6 +2,7 @@ import 'package:app/screens/BaoCao/report_screen.dart';
 import 'package:app/screens/Khampha/explore_screen.dart';
 
 import 'package:app/screens/Train/train_screen.dart';
+import 'package:app/screens/User/test.dart';
 import 'package:app/screens/User/user_screen.dart';
 import 'package:app/screens/Shop/shop_screen.dart'; // Import ShopScreen
 import 'package:flutter/material.dart';
@@ -31,7 +32,8 @@ class _TrainhomeState extends State<Trainhome> {
       ExploreScreen(userData: widget.userData),
       ReportScreen(userData: widget.userData),
       ShopScreen(userData: widget.userData),
-      UserProfilePage(userData: widget.userData)
+      // UserProfilePage(userData: widget.userData)
+      TestScreen()
     ];
   }
 

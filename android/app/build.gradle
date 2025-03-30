@@ -23,7 +23,7 @@ android {
         applicationId = "com.example.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdkVersion 23 //camera
+        minSdkVersion 23 //camera and model 3d require 21 but it ok
         targetSdk = 33 //camera
         versionCode = flutter.versionCode
         versionName = flutter.versionName
