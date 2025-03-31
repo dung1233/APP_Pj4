@@ -104,6 +104,7 @@ flutter:
     - assets/icons/
 
     - assets/img/
+    - assets/work/
     
     - assets/splash/
     - assets/pose/fitness_pose_samples.csv

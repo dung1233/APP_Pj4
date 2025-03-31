@@ -49,13 +49,13 @@ class _TrainhomeState extends State<Trainhome> {
       bottomNavigationBar: Theme(
         data: ThemeData(
           navigationBarTheme: NavigationBarThemeData(
-            indicatorColor: const Color.fromARGB(255, 10, 33, 241),
+            indicatorColor: const Color(0xFFFF6F00),
             backgroundColor: Colors.white,
             labelTextStyle: WidgetStateProperty.resolveWith<TextStyle>(
               (states) {
                 if (states.contains(WidgetState.selected)) {
                   return const TextStyle(
-                    color: Color.fromARGB(255, 79, 59, 255),
+                    color: Color(0xFFFF6F00),
                     fontWeight: FontWeight.bold,
                   );
                 }
@@ -74,7 +74,7 @@ class _TrainhomeState extends State<Trainhome> {
           },
           destinations: [
             NavigationDestination(
-              icon: Icon(Icons.timer,
+              icon: Icon(Icons.home,
                   color: selectedIndex == 0 ? Colors.white : Colors.black),
               label: 'Train',
             ),

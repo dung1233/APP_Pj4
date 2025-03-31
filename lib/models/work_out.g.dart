@@ -17,6 +17,7 @@ Workout _$WorkoutFromJson(Map<String, dynamic> json) => Workout(
       duration: (json['duration'] as num?)?.toInt(),
       restDay: json['restDay'] as bool?,
       distance: (json['distance'] as num?)?.toDouble(),
+      status: json['status'] as String? ?? "NOT_STARTED",
     );
 
 Map<String, dynamic> _$WorkoutToJson(Workout instance) => <String, dynamic>{
@@ -30,4 +31,5 @@ Map<String, dynamic> _$WorkoutToJson(Workout instance) => <String, dynamic>{
       'duration': instance.duration,
       'restDay': instance.restDay,
       'distance': instance.distance,
+      'status': instance.status,
     };

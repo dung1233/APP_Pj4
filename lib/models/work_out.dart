@@ -14,6 +14,7 @@ class Workout {
   final int? duration;
   final bool? restDay;
   final double? distance;
+  String status;
 
   Workout({
     this.id,
@@ -26,6 +27,7 @@ class Workout {
     this.duration,
     this.restDay,
     this.distance,
+    this.status = "NOT_STARTED",
   });
 
   // Phương thức từ JSON sang đối tượng Workout
@@ -49,6 +51,7 @@ class Workout {
       restDay: map['restDay'] ==
           1, // SQLite không hỗ trợ bool, nên lưu dưới dạng int (0 hoặc 1)
       distance: map['distance'],
+      status: map['status'] ?? "NOT_STARTED",
     );
   }
 
@@ -65,6 +68,7 @@ class Workout {
       'duration': duration,
       'restDay': restDay == true ? 1 : 0, // Chuyển bool thành int
       'distance': distance,
+      'status': status,
     };
   }
 }

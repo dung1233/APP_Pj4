@@ -1,3 +1,4 @@
+import 'package:app/screens/Train/icons_user.dart';
 import 'package:app/screens/UI/Beginer/beginerdata.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -70,6 +71,7 @@ class _TrainScreenState extends State<TrainScreen> {
           color: const Color.fromARGB(255, 255, 255, 255),
           child: Column(
             children: [
+              IconsUser(),
               Showcase(
                 key: _showcasetaskKey,
                 description: "Task.",
@@ -82,9 +84,9 @@ class _TrainScreenState extends State<TrainScreen> {
                 children: [
                   Showcase(
                     key: _showcaseBeginnerKey,
-                    description: "Bài tập phù hợp.",
+                    description: "Bài tập .",
                     child:
-                        BeginnerScreen(), // 🔥 Truyền userData vào BeginnerScreen
+                        BeginerScrenn(), // 🔥 Truyền userData vào BeginnerScreen
                   ),
 
                   _buildSection("Beginer Section", BeginnerDataWidget()),

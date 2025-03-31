@@ -1,6 +1,6 @@
 import 'package:app/data/DatabaseHelper.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
 import 'package:app/models/work_out.dart';
 
 class BeginnerDataWidget extends StatefulWidget {
@@ -28,7 +28,9 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
         await dbHelper.getWorkouts(); // 📦 Lấy dữ liệu từ SQLite
 
     if (allWorkouts.isEmpty) {
-      print("⚠️ Không có dữ liệu trong SQLite.");
+      if (kDebugMode) {
+        print("⚠️ Không có dữ liệu trong SQLite.");
+      }
       setState(() => isLoading = false);
       return;
     }
@@ -60,29 +62,31 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
                 List<Workout> weekData = entry.value;
 
                 return Padding(
-                  padding: const EdgeInsets.symmetric(
-                      vertical: 10.0, horizontal: 15),
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 5.0, horizontal: 10),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // ✅ Tiêu đề tuần
                       Padding(
-                        padding: const EdgeInsets.only(left: 10),
+                        padding: const EdgeInsets.only(left: 5),
                         child: Row(
                           children: [
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 15, vertical: 8),
+                                  horizontal: 8, vertical: 5),
                               decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                    colors: [Colors.green, Colors.teal]),
+                                gradient: const LinearGradient(colors: [
+                                  Color(0xFFFF6F00),
+                                  Color(0xFFFF6F00)
+                                ]),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
                                 'Week ${weekIndex + 1}',
                                 style: const TextStyle(
                                   color: Colors.white,
-                                  fontSize: 16,
+                                  fontSize: 14,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -103,69 +107,114 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
                         itemCount: weekData.length,
                         itemBuilder: (context, index) {
                           final workout = weekData[index];
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8.0),
-                            child: Container(
-                              width: double.infinity,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.05),
-                                    spreadRadius: 1,
-                                    blurRadius: 6,
-                                    offset: const Offset(2, 4),
+                          return Stack(
+                            children: [
+                              if (index < weekData.length - 1)
+                                Positioned(
+                                  left: 30,
+                                  top: 50,
+                                  bottom: -10,
+                                  child: Container(
+                                    width: 3,
+                                    color: Color(0xFFFF6F00).withOpacity(0.8),
                                   ),
-                                ],
-                              ),
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 15, vertical: 12),
-                              child: Row(
-                                children: [
-                                  // ✅ Icon bên trái
-                                  Container(
-                                    decoration: BoxDecoration(
-                                      color: Colors.deepPurple.withOpacity(0.2),
-                                      shape: BoxShape.circle,
+                                ),
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 10.0),
+                                child: Container(
+                                  width: 300,
+                                  height: 155,
+                                  padding:
+                                      const EdgeInsets.only(left: 20, top: 15),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(20),
+                                    boxShadow: [
+                                      BoxShadow(
+                                          color: Colors.black26,
+                                          offset: Offset(0, 4),
+                                          blurRadius: 8),
+                                    ],
+                                    image: DecorationImage(
+                                      image: AssetImage("assets/img/OP5.jpg"),
+                                      fit: BoxFit.cover,
                                     ),
-                                    padding: const EdgeInsets.all(10),
-                                    child: const Icon(Icons.fitness_center,
-                                        color: Colors.deepPurple, size: 30),
                                   ),
-                                  const SizedBox(width: 15),
-
-                                  // ✅ Nội dung bài tập
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          "Day ${workout.day ?? 'Unknown'}",
-                                          style: const TextStyle(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        "Day ${workout.day ?? 'Unknown'}",
+                                        style: TextStyle(
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        workout.exerciseName ?? "No Name",
+                                        style: TextStyle(
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.orange),
+                                      ),
+                                      const SizedBox(height: 5),
+                                      Text(
+                                        "Sets: ${workout.sets ?? 0} - Reps: ${workout.reps ?? 0}",
+                                        style: TextStyle(
+                                            fontSize: 18, color: Colors.white),
+                                      ),
+                                      const SizedBox(height: 10),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                            "",
+                                            style: TextStyle(
                                               fontSize: 16,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.black),
-                                        ),
-                                        Text(
-                                          workout.exerciseName ?? "No Name",
-                                          style: const TextStyle(
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.deepPurple),
-                                        ),
-                                        Text(
-                                          "Sets: ${workout.sets ?? 0} - Reps: ${workout.reps ?? 0}",
-                                          style: const TextStyle(
-                                              color: Colors.grey, fontSize: 14),
-                                        ),
-                                      ],
-                                    ),
+                                              color:
+                                                  workout.status == "COMPLETED"
+                                                      ? Colors.green
+                                                      : Colors.red,
+                                            ),
+                                          ),
+                                          IconButton(
+                                            icon: Icon(
+                                              workout.status == "COMPLETED"
+                                                  ? Icons.check_circle
+                                                  : Icons
+                                                      .radio_button_unchecked,
+                                              color:
+                                                  workout.status == "COMPLETED"
+                                                      ? Colors.green
+                                                      : Colors.grey,
+                                            ),
+                                            onPressed: () async {
+                                              final dbHelper = DatabaseHelper();
+                                              String newStatus =
+                                                  workout.status == "COMPLETED"
+                                                      ? "NOT_STARTED"
+                                                      : "COMPLETED";
+
+                                              await dbHelper
+                                                  .updateWorkoutStatus(
+                                                      workout.id!, newStatus);
+
+                                              setState(() {
+                                                workout.status = newStatus;
+                                              });
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                    ],
                                   ),
-                                ],
+                                ),
                               ),
-                            ),
+                            ],
                           );
                         },
                       ),

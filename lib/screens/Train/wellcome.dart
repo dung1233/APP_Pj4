@@ -1,5 +1,7 @@
 import 'package:app/screens/ol.dart';
+import 'package:app/screens/ola.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart'; // Thư viện để format ngày tháng
 
 class Wellcome extends StatefulWidget {
   const Wellcome({super.key});
@@ -9,19 +11,15 @@ class Wellcome extends StatefulWidget {
   _WellcomeState createState() => _WellcomeState();
 }
 
-List<String> getLast7Days() {
-  DateTime now = DateTime.now();
-  return List.generate(7, (index) {
-    DateTime day = now.subtract(Duration(days: index));
-    return "${day.day}"; // Định dạng dd/MM
-  }).reversed.toList(); // Đảo ngược để ngày gần nhất bên phải
-}
+final List<DateTime> weekDates = List.generate(7, (i) {
+  return DateTime.now().add(Duration(days: i));
+});
 
 class _WellcomeState extends State<Wellcome> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(top: 25, left: 22, right: 20),
+      padding: const EdgeInsets.only(top: 0, left: 0, right: 0),
       child: GestureDetector(
         onTap: () {
           Navigator.push(
@@ -29,58 +27,54 @@ class _WellcomeState extends State<Wellcome> {
         },
         child: Container(
           width: double.infinity,
-          height: 100,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(15),
-            boxShadow: [
-              BoxShadow(
-                // ignore: deprecated_member_use
-                color: Colors.black.withOpacity(0.1),
-                offset: const Offset(0, 4),
-                blurRadius: 8,
-              ),
-            ],
-          ),
+          height: 120,
           padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                alignment:
-                    Alignment.topLeft, // Căn toàn bộ nội dung lên trên cùng
-                child: Text("WEEK GOAL",
-                    style:
-                        TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              ),
+              // Welcome & Avatar
+              const SizedBox(height: 20),
+              // Date Selector
               SizedBox(
-                height: 12,
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: getLast7Days().map((date) {
-                  bool isToday = date == "${DateTime.now().day}";
-                  return Column(
-                    children: [
-                      Container(
-                        width: 32, // Độ rộng nền tròn
-                        height: 32, // Chiều cao nền tròn
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: isToday ? Colors.black : Colors.grey[300],
-                          shape: BoxShape.circle,
-                        ),
-                        child: Text(
-                          date,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: isToday ? Colors.white : Colors.black,
-                          ),
-                        ),
+                height: 70,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: weekDates.length,
+                  itemBuilder: (context, index) {
+                    bool isSelected = index == 0;
+                    return Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 7),
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: isSelected ? Colors.black : Colors.white,
+                        borderRadius: BorderRadius.circular(25),
+                        border: Border.all(color: Colors.grey.shade300),
                       ),
-                    ],
-                  );
-                }).toList(),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            DateFormat('d')
+                                .format(weekDates[index]), // Hiển thị ngày
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: isSelected ? Colors.white : Colors.black,
+                            ),
+                          ),
+                          Text(
+                            DateFormat('E').format(weekDates[
+                                index]), // Hiển thị thứ (Mon, Tue, ...)
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: isSelected ? Colors.white : Colors.black,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
               ),
             ],
           ),
