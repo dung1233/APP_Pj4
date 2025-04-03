@@ -13,6 +13,14 @@ class Test extends StatefulWidget {
 }
 
 class _TestState extends State<Test> {
+  double getWidthPercentage(BuildContext context, double percentage) {
+    return MediaQuery.of(context).size.width * percentage;
+  }
+
+  double getheightPercentage(BuildContext context, double percentage) {
+    return MediaQuery.of(context).size.height * percentage;
+  }
+
   final List<Map<String, dynamic>> workouts = [
     {
       "animation": "assets/img/Animation - 1743427831861.json",
@@ -52,7 +60,7 @@ class _TestState extends State<Test> {
         child: ListView(
           children: [
             Container(
-              height: 190,
+              height: getheightPercentage(context, 0.23),
               padding: const EdgeInsets.only(left: 25, top: 30),
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -127,7 +135,8 @@ class _TestState extends State<Test> {
                   style: TextStyle(fontSize: 20),
                 ),
                 SizedBox(
-                  height: 380, // 🔥 Đặt chiều cao cố định cho ListView
+                  height: getheightPercentage(
+                      context, 0.54), // 🔥 Đặt chiều cao cố định cho ListView
                   child: ListView.builder(
                     itemCount: workouts.length,
                     itemBuilder: (context, index) {

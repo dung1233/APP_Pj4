@@ -40,6 +40,7 @@ class _LoginScreenState extends State<LoginScreen> {
         listen: false); // 👈 Thêm UserProvider
 
     try {
+      // ignore: unused_local_variable
       final success = await authProvider.login(
         _emailController.text,
         _passwordController.text,

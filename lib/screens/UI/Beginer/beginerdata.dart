@@ -123,8 +123,7 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
                                 padding:
                                     const EdgeInsets.symmetric(vertical: 10.0),
                                 child: Container(
-                                  width: 300,
-                                  height: 155,
+                                  width: double.infinity,
                                   padding:
                                       const EdgeInsets.only(left: 20, top: 15),
                                   decoration: BoxDecoration(
