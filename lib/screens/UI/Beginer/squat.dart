@@ -1,5 +1,4 @@
-
-import 'package:app/screens/TEST/squat_detector_view.dart';
+import 'package:training_souls/screens/TEST/squat_detector_view.dart';
 import 'package:flutter/material.dart';
 
 class Squat extends StatefulWidget {
@@ -103,7 +102,7 @@ class _SquatState extends State<Squat> {
                     ),
                     SizedBox(
                         height:
-                        8), // Khoảng cách giữa Gap bung và Số lần còn lại
+                            8), // Khoảng cách giữa Gap bung và Số lần còn lại
                     Padding(
                       padding: EdgeInsets.only(left: 60.0),
                       child: Text(

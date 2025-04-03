@@ -1,9 +1,9 @@
-import 'package:app/screens/BaoCao/report_screen.dart';
-import 'package:app/screens/Khampha/explore_screen.dart';
+import 'package:training_souls/screens/BaoCao/report_screen.dart';
+import 'package:training_souls/screens/Khampha/explore_screen.dart';
 
-import 'package:app/screens/Train/train_screen.dart';
-import 'package:app/screens/User/user_screen.dart';
-import 'package:app/screens/Shop/shop_screen.dart'; // Import ShopScreen
+import 'package:training_souls/screens/Train/train_screen.dart';
+import 'package:training_souls/screens/User/user_screen.dart';
+import 'package:training_souls/screens/Shop/shop_screen.dart'; // Import ShopScreen
 import 'package:flutter/material.dart';
 
 class Trainhome extends StatefulWidget {

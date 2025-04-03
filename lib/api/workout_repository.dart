@@ -1,10 +1,10 @@
-import 'package:app/data/DatabaseHelper.dart';
-import 'package:app/models/work_out.dart';
+import 'package:training_souls/data/DatabaseHelper.dart';
+import 'package:training_souls/models/work_out.dart';
 import 'package:dio/dio.dart';
 
-import 'package:app/api/api_service.dart';
+import 'package:training_souls/api/api_service.dart';
 
-import 'package:app/models/user_data.dart';
+import 'package:training_souls/models/user_data.dart';
 
 class WorkoutRepository {
   final ApiService apiService = ApiService(Dio());

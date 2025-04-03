@@ -1,6 +1,6 @@
-import 'package:app/data/DatabaseHelper.dart';
-import 'package:app/models/work_out.dart';
-import 'package:app/screens/trainhome.dart';
+import 'package:training_souls/data/DatabaseHelper.dart';
+import 'package:training_souls/models/work_out.dart';
+import 'package:training_souls/screens/trainhome.dart';
 
 import 'package:flutter/material.dart';
 

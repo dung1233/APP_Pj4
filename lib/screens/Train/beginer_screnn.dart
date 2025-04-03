@@ -1,7 +1,7 @@
-import 'package:app/data/DatabaseHelper.dart';
-import 'package:app/models/work_out.dart';
-import 'package:app/screens/Test.dart';
-import 'package:app/screens/UI/Beginer/trainbeginer.dart';
+import 'package:training_souls/data/DatabaseHelper.dart';
+import 'package:training_souls/models/work_out.dart';
+import 'package:training_souls/screens/Test.dart';
+import 'package:training_souls/screens/UI/Beginer/trainbeginer.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -61,7 +61,7 @@ class _BeginerScrennState extends State<BeginerScrenn> {
           BoxShadow(color: Colors.black26, offset: Offset(0, 4), blurRadius: 8),
         ],
         image: DecorationImage(
-          image: AssetImage("assets/img/pushup.jpg"),
+          image: AssetImage("assets/img/situp.jpg"),
           fit: BoxFit.cover,
           colorFilter: ColorFilter.mode(
             const Color.fromARGB(255, 0, 0, 0)
@@ -74,13 +74,13 @@ class _BeginerScrennState extends State<BeginerScrenn> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "Day 1",
+            "Day 3",
             style: TextStyle(
                 fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
           ),
           const SizedBox(height: 8),
           Text(
-            "Squat & Push-up",
+            "Squat & Sit-up",
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w600,

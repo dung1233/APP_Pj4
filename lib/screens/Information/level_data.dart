@@ -1,7 +1,7 @@
-import 'package:app/data/local_storage.dart';
+import 'package:training_souls/data/local_storage.dart';
 
-import 'package:app/screens/Information/themloading.dart';
-import 'package:app/widget/elevatedButton.dart';
+import 'package:training_souls/screens/Information/themloading.dart';
+import 'package:training_souls/widget/elevatedButton.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 

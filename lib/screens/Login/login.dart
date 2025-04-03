@@ -1,12 +1,12 @@
 // ignore: depend_on_referenced_packages
-import 'package:app/providers/auth_provider.dart';
-import 'package:app/providers/user_provider.dart';
-import 'package:app/providers/workout_provider.dart';
-import 'package:app/screens/Information/data.dart';
+import 'package:training_souls/providers/auth_provider.dart';
+import 'package:training_souls/providers/user_provider.dart';
+import 'package:training_souls/providers/workout_provider.dart';
+import 'package:training_souls/screens/Information/data.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
-import 'package:app/screens/Login/sign_up.dart';
-import 'package:app/screens/trainhome.dart';
+import 'package:training_souls/screens/Login/sign_up.dart';
+import 'package:training_souls/screens/trainhome.dart';
 import 'package:flutter/material.dart';
 
 class LoginScreen extends StatefulWidget {

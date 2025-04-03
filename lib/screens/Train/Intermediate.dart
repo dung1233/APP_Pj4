@@ -1,4 +1,4 @@
-import 'package:app/screens/Train/slide_item.dart';
+import 'package:training_souls/screens/Train/slide_item.dart';
 import 'package:flutter/material.dart';
 
 class Intermediate extends StatefulWidget {

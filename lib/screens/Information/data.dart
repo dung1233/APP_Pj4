@@ -1,9 +1,9 @@
-import 'package:app/data/local_storage.dart';
-import 'package:app/screens/Information/birthday.dart';
+import 'package:training_souls/data/local_storage.dart';
+import 'package:training_souls/screens/Information/birthday.dart';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:app/widget/elevatedButton.dart';
+import 'package:training_souls/widget/elevatedButton.dart';
 
 class Datascreen extends StatefulWidget {
   const Datascreen({super.key});

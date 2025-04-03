@@ -1,4 +1,4 @@
-import 'package:app/screens/UI/Beginer/trainbeginer.dart';
+import 'package:training_souls/screens/UI/Beginer/trainbeginer.dart';
 import 'package:flutter/material.dart';
 import 'dart:math';
 

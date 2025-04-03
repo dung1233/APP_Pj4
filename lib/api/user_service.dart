@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:retrofit/retrofit.dart';
-import 'package:app/models/register_request.dart';
-import 'package:app/models/register_response.dart';
+import 'package:training_souls/models/register_request.dart';
+import 'package:training_souls/models/register_response.dart';
 
 part 'user_service.g.dart'; // ✅ File sinh tự động
 

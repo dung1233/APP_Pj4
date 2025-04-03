@@ -1,8 +1,8 @@
-import 'package:app/data/DatabaseHelper.dart';
+import 'package:training_souls/data/DatabaseHelper.dart';
 import 'package:flutter/material.dart';
-import 'package:app/api/api_service.dart';
+import 'package:training_souls/api/api_service.dart';
 
-import 'package:app/models/work_out.dart';
+import 'package:training_souls/models/work_out.dart';
 
 class WorkoutProvider extends ChangeNotifier {
   List<Workout> _workouts = [];

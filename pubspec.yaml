@@ -1,4 +1,4 @@
-name: app
+name: training_souls
 description: "A new Flutter project."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
@@ -68,13 +68,23 @@ dependencies:
   path: any
   flutter_native_splash: ^2.4.4
   camera: ^0.10.5+2
-  hive_flutter: ^1.1.0
-  hive: ^2.2.3 
-  sqflite: ^2.4.1
 
   #Model 3d
   flutter_3d_controller: ^2.1.0
-#  model_viewer_plus: ^1.9.1 viết doc tù vl
+  #  model_viewer_plus: ^1.9.1 viết doc tù vl
+  hive_flutter: ^1.1.0
+  hive: ^2.2.3 
+  sqflite: ^2.4.1
+  flutter_launcher_icons: "^0.14.3"
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/splash/slaper.png" # Kiểm tra lại đường dẫn ảnh icon
+  adaptive_icon_background: "#ffffff" # Hoặc đường dẫn ảnh nền
+  adaptive_icon_foreground: "assets/splash/slaper.png" # Thêm foreground icon cho Android
+
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

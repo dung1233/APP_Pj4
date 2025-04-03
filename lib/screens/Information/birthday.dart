@@ -1,5 +1,5 @@
-import 'package:app/data/local_storage.dart';
-import 'package:app/screens/Information/hight.dart';
+import 'package:training_souls/data/local_storage.dart';
+import 'package:training_souls/screens/Information/hight.dart';
 
 import 'package:flutter/material.dart';
 

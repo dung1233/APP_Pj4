@@ -1,5 +1,6 @@
 // ignore: file_names
 import 'package:flutter/material.dart';
+import 'package:training_souls/screens/User/status.dart';
 
 class UserProfilePage extends StatefulWidget {
   const UserProfilePage({super.key});
@@ -53,7 +54,13 @@ class _UserScreenState extends State<UserProfilePage> {
                   ListTile(
                     leading: const Icon(Icons.person),
                     title: const Text("Tài khoản"),
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => StatusScreen()),
+                      );
+
+                    },
                   ),
                   ListTile(
                     leading: const Icon(Icons.settings),
