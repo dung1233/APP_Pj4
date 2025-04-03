@@ -1,32 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_3d_controller/flutter_3d_controller.dart';
 
-class StatusScreen extends StatelessWidget {
+
+class StatusScreen extends StatefulWidget {
   const StatusScreen({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Status',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-        useMaterial3: true,
-      ),
-      home: const MyHomePage(title: 'Status'),
-    );
-  }
+
+  _StatusScreenState createState() => _StatusScreenState();
+
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
+class _StatusScreenState extends State<StatusScreen> {
   Flutter3DController controller = Flutter3DController();
   String? chosenAnimation;
   String? chosenTexture;
@@ -47,18 +31,6 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: const Color(0xff0d2039),
-        title: Center(
-          child: Text(
-            widget.title,
-            style: const TextStyle(
-                color: Color(0xfffffefe),
-                fontSize: 20,
-                fontWeight: FontWeight.bold),
-          ),
-        ),
-      ),
       body: Stack(
         children: [
           Column(

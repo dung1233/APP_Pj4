@@ -57,9 +57,8 @@ class _UserScreenState extends State<UserProfilePage> {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => StatusScreen()),
+                        MaterialPageRoute(builder: (context) => const StatusScreen()),
                       );
-
                     },
                   ),
                   ListTile(
