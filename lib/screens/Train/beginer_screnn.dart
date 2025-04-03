@@ -61,7 +61,7 @@ class _BeginerScrennState extends State<BeginerScrenn> {
           BoxShadow(color: Colors.black26, offset: Offset(0, 4), blurRadius: 8),
         ],
         image: DecorationImage(
-          image: AssetImage("assets/img/pushup.jpg"),
+          image: AssetImage("assets/img/situp.jpg"),
           fit: BoxFit.cover,
           colorFilter: ColorFilter.mode(
             const Color.fromARGB(255, 0, 0, 0)
@@ -74,13 +74,13 @@ class _BeginerScrennState extends State<BeginerScrenn> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "Day 1",
+            "Day 3",
             style: TextStyle(
                 fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
           ),
           const SizedBox(height: 8),
           Text(
-            "Squat & Push-up",
+            "Squat & Sit-up",
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w600,

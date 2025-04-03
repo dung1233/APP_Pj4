@@ -52,7 +52,7 @@ class _HomePageState extends State<HomePage> {
             ),
             Spacer(),
             Text(
-              "FitBuddy Features",
+              "Training Souls",
               style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
@@ -64,7 +64,7 @@ class _HomePageState extends State<HomePage> {
 
             // Dòng mô tả
             Text(
-              "Track, Connect, Customize",
+              "Let train your souls",
               style: TextStyle(
                 fontSize: 16,
                 color: Colors.grey[600],

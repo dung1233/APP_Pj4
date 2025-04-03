@@ -52,7 +52,7 @@ class _TestState extends State<Test> {
         child: ListView(
           children: [
             Container(
-              height: 180,
+              height: 190,
               padding: const EdgeInsets.only(left: 25, top: 30),
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -64,7 +64,7 @@ class _TestState extends State<Test> {
                       blurRadius: 5),
                 ],
                 image: DecorationImage(
-                  image: AssetImage("assets/img/pushup.jpg"), // 🔥 Hiển thị ảnh
+                  image: AssetImage("assets/img/situp.jpg"), // 🔥 Hiển thị ảnh
                   fit: BoxFit.cover,
                   colorFilter: ColorFilter.mode(
                     // ignore: deprecated_member_use
@@ -78,7 +78,7 @@ class _TestState extends State<Test> {
                 children: [
                   const SizedBox(height: 20),
                   Text(
-                    "Day 1",
+                    "Day 3",
                     style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -86,7 +86,7 @@ class _TestState extends State<Test> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    "Khởi động sức mạnh",
+                    " Sức mạnh",
                     style: TextStyle(
                         fontSize: 18,
                         color: Colors.white,
@@ -111,7 +111,7 @@ class _TestState extends State<Test> {
                     children: [
                       _buildMetricItem("300", "Calo"),
                       _buildMetricItem("3", "Set"),
-                      _buildMetricItem("30s", "Thời gian"),
+                      _buildMetricItem("18p", "Thời gian"),
                     ],
                   ),
                 ),
@@ -127,7 +127,7 @@ class _TestState extends State<Test> {
                   style: TextStyle(fontSize: 20),
                 ),
                 SizedBox(
-                  height: 390, // 🔥 Đặt chiều cao cố định cho ListView
+                  height: 380, // 🔥 Đặt chiều cao cố định cho ListView
                   child: ListView.builder(
                     itemCount: workouts.length,
                     itemBuilder: (context, index) {

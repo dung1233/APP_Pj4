@@ -1,3 +1,4 @@
+import 'package:app/models/item.dart';
 import 'package:app/models/work_out.dart';
 import 'package:dio/dio.dart';
 import 'package:retrofit/retrofit.dart';
@@ -17,4 +18,12 @@ abstract class ApiService {
 
   @GET("/workout")
   Future<List<Workout>> getWorkouts(@Header("Authorization") String token);
+
+  @GET("/items")
+  Future<List<Item>> getItems();
+  @POST("/purchase/{itemId}")
+  Future<void> purchaseItem(
+    @Path("itemId") int itemId,
+    @Header("Authorization") String token,
+  );
 }
