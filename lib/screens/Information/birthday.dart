@@ -1,4 +1,4 @@
-import 'package:app/data/local.dart';
+import 'package:app/data/local_storage.dart';
 import 'package:app/screens/Information/hight.dart';
 
 import 'package:flutter/material.dart';
@@ -168,7 +168,11 @@ class _BirthDateScreenState extends State<BirthDateScreen> {
               onPressed: isButtonEnabled
                   ? () async {
                       if (_selectedDate != null) {
-                        await LocalStorage.saveUserData(age: _calculatedAge);
+                        await LocalStorage.saveUserData(
+                            age: _calculatedAge,
+                            activity_level: '',
+                            fitness_goal: '',
+                            medical_conditions: '');
                         print(
                             "✅ Đã lưu tuổi vào LocalStorage: $_calculatedAge");
                         Navigator.push(

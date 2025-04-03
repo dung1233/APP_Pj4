@@ -2,15 +2,14 @@ import 'package:app/screens/BaoCao/report_screen.dart';
 import 'package:app/screens/Khampha/explore_screen.dart';
 
 import 'package:app/screens/Train/train_screen.dart';
-import 'package:app/screens/User/test.dart';
 import 'package:app/screens/User/user_screen.dart';
 import 'package:app/screens/Shop/shop_screen.dart'; // Import ShopScreen
 import 'package:flutter/material.dart';
 
 class Trainhome extends StatefulWidget {
-  final Map<String, dynamic> userData; // Thêm trường dữ liệu
+// Thêm trường dữ liệu
 
-  const Trainhome({super.key, required this.userData}); // Sửa constructor
+  // Sửa constructor
 
   @override
   // ignore: library_private_types_in_public_api
@@ -28,12 +27,11 @@ class _TrainhomeState extends State<Trainhome> {
 
     // Khởi tạo màn hình với dữ liệu
     _screens = [
-      TrainScreen(userData: widget.userData), // Truyền vào đây
-      ExploreScreen(userData: widget.userData),
-      ReportScreen(userData: widget.userData),
-      ShopScreen(userData: widget.userData),
-      // UserProfilePage(userData: widget.userData)
-      TestScreen()
+      TrainScreen(), // Truyền vào đây
+      ExploreScreen(),
+      ReportScreen(),
+      ShopScreen(),
+      UserProfilePage()
     ];
   }
 
@@ -51,13 +49,13 @@ class _TrainhomeState extends State<Trainhome> {
       bottomNavigationBar: Theme(
         data: ThemeData(
           navigationBarTheme: NavigationBarThemeData(
-            indicatorColor: const Color.fromARGB(255, 10, 33, 241),
+            indicatorColor: const Color(0xFFFF6F00),
             backgroundColor: Colors.white,
             labelTextStyle: WidgetStateProperty.resolveWith<TextStyle>(
               (states) {
                 if (states.contains(WidgetState.selected)) {
                   return const TextStyle(
-                    color: Color.fromARGB(255, 79, 59, 255),
+                    color: Color(0xFFFF6F00),
                     fontWeight: FontWeight.bold,
                   );
                 }
@@ -73,11 +71,10 @@ class _TrainhomeState extends State<Trainhome> {
             setState(() {
               selectedIndex = index;
             });
-            _pageController.jumpToPage(index);
           },
           destinations: [
             NavigationDestination(
-              icon: Icon(Icons.timer,
+              icon: Icon(Icons.home,
                   color: selectedIndex == 0 ? Colors.white : Colors.black),
               label: 'Train',
             ),
@@ -109,14 +106,8 @@ class _TrainhomeState extends State<Trainhome> {
         toolbarHeight: 5,
         backgroundColor: Colors.white,
       ),
-      body: PageView(
-        controller: _pageController,
-        physics: const NeverScrollableScrollPhysics(), // Ngăn swipe tay
-        onPageChanged: (index) {
-          setState(() {
-            selectedIndex = index;
-          });
-        },
+      body: IndexedStack(
+        index: selectedIndex, // Giữ nguyên trạng thái khi chuyển tab
         children: _screens,
       ),
     );

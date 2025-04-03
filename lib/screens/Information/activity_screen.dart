@@ -1,6 +1,5 @@
-import 'package:app/data/local.dart';
+import 'package:app/data/local_storage.dart';
 import 'package:app/screens/Information/fitness_goal.dart';
-import 'package:app/screens/Information/themloading.dart';
 import 'package:app/widget/elevatedButton.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -30,7 +29,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
 
   void _loadactivity() async {
     Map<String, dynamic> userData = await LocalStorage.loadUserData();
-    String saveactivity = userData['activity'] ?? "";
+    String saveactivity = userData['activity_level'] ?? "";
     int index =
         options.indexWhere((options) => options['title'] == saveactivity);
     if (index != -1) {
@@ -44,10 +43,13 @@ class _ActivityScreenState extends State<ActivityScreen> {
   }
 
   void _saveactivity() async {
-    String activity = options[selectedOption]['title']!;
-    await LocalStorage.saveUserData(activity: activity);
+    String activityLevel = options[selectedOption]['title']!;
+    await LocalStorage.saveUserData(
+        activity_level: activityLevel,
+        fitness_goal: '',
+        medical_conditions: '');
     if (kDebugMode) {
-      print("✅ activity đã  lưu moi: $activity");
+      print("✅ activity đã  lưu moi: $activityLevel");
     }
   }
 
@@ -129,8 +131,11 @@ class _ActivityScreenState extends State<ActivityScreen> {
               isEnabled: selectedOption != -1,
               onPressed: () async {
                 if (selectedOption == -1) return;
-                String activity = options[selectedOption]['title']!;
-                await LocalStorage.saveUserData(activity: activity);
+                String activityLevel = options[selectedOption]['title']!;
+                await LocalStorage.saveUserData(
+                    activity_level: activityLevel,
+                    fitness_goal: '',
+                    medical_conditions: '');
                 Navigator.push(
                     // ignore: use_build_context_synchronously
                     context,

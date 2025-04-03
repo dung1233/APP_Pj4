@@ -1,56 +1,27 @@
+import 'package:app/data/local_storage.dart';
 import 'package:app/screens/Home/app_bar.dart';
-import 'package:app/screens/Home/slide_Item.dart';
+import 'package:app/screens/Information/Localloading.dart';
 import 'package:app/screens/Login/login.dart';
-
 import 'package:flutter/material.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
   @override
-  // ignore: library_private_types_in_public_api
   _HomePageState createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
-  final List<Map<String, String>> slides = [
-    {
-      "title": "Choose Your Level",
-      "description":
-          "One of the most common layout patterns is to arrange widgets vertically or horizontally!",
-      "imagePath": "assets/img/banner.jpg"
-    },
-    {
-      "title": "Overcome Challenges",
-      "description":
-          "Push beyond your limits and face every obstacle head-on with courage and determination!",
-      "imagePath": "assets/img/OP4.jpg"
-    },
-    {
-      "title": "Challenge Your Limits",
-      "description":
-          "Dare to step outside your comfort zone and discover the strength you never knew you had!",
-      "imagePath": "assets/img/banner1.jpg"
-    }
-  ];
+  void _nextPage() async {
+    String? token = await LocalStorage.getToken();
 
-  final PageController _pageController = PageController();
-  int _currentPage = 0;
+    Widget nextScreen =
+        (token != null && token.isNotEmpty) ? Localloading() : LoginScreen();
 
-  void _nextPage() {
-    if (_currentPage < 2) {
-      _pageController.animateToPage(
-        _currentPage + 1,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
-    } else {
-      // Điều hướng sang trang khác
-      Navigator.push(
+    if (context.mounted) {
+      Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
-            builder: (context) =>
-                LoginScreen()), // Thay NewScreen bằng trang khác của em
+        MaterialPageRoute(builder: (context) => nextScreen),
       );
     }
   }
@@ -59,32 +30,68 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: const CustomAppBar(),
-      backgroundColor: const Color(0x0029323d),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            height:
-                MediaQuery.of(context).size.height * 0.96, // Chiều cao cố định
-            child: PageView(
-              controller: _pageController,
-              onPageChanged: (index) {
-                setState(() {
-                  _currentPage = index;
-                });
-              },
-              children: slides.asMap().entries.map((entry) {
-                var data = entry.value;
-                return SlideItem(
-                  title: data["title"]!,
-                  description: data["description"]!,
-                  imagePath: data["imagePath"]!,
-                  onPressd: _nextPage,
-                );
-              }).toList(),
+      backgroundColor: Colors.white, // Màu nền trắng như mẫu
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Tiêu đề
+            Spacer(),
+            // Ảnh banner
+            Container(
+              height: 300,
+              width: MediaQuery.of(context).size.width * 0.6,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                image: DecorationImage(
+                  image: AssetImage(
+                      "assets/img/home.jpg"), // Thay bằng ảnh của bạn
+                  fit: BoxFit.cover,
+                ),
+              ),
             ),
-          ),
-        ],
+            Spacer(),
+            Text(
+              "FitBuddy Features",
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+              ),
+            ),
+
+            SizedBox(height: 10),
+
+            // Dòng mô tả
+            Text(
+              "Track, Connect, Customize",
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey[600],
+              ),
+            ),
+            // Nút Get Started
+            Spacer(),
+            ElevatedButton(
+              onPressed: _nextPage,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Color(0xFFFF6F00), // Màu nút
+                padding: EdgeInsets.symmetric(horizontal: 120, vertical: 15),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
+              ),
+              child: Text(
+                "Get started",
+                style: TextStyle(
+                  fontSize: 18,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+            Spacer(),
+          ],
+        ),
       ),
     );
   }

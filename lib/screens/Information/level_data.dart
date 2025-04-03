@@ -1,6 +1,6 @@
-import 'package:app/data/local.dart';
+import 'package:app/data/local_storage.dart';
 
-import 'package:app/screens/Information/name_data.dart';
+import 'package:app/screens/Information/themloading.dart';
 import 'package:app/widget/elevatedButton.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -43,7 +43,11 @@ class _LeverdataState extends State<Leverdata> {
 
   void _saveLevel() async {
     String level = options[selectedOption]['title']!;
-    await LocalStorage.saveUserData(level: level);
+    await LocalStorage.saveUserData(
+        level: level,
+        activity_level: '',
+        fitness_goal: '',
+        medical_conditions: '');
     if (kDebugMode) {
       print("✅ Đã lưu Level mới: $level");
     }
@@ -128,12 +132,17 @@ class _LeverdataState extends State<Leverdata> {
               onPressed: () async {
                 if (selectedOption == -1) return;
                 String level = options[selectedOption]['title']!;
-                await LocalStorage.saveUserData(level: level);
+                await LocalStorage.saveUserData(
+                    level: level,
+                    activity_level: '',
+                    fitness_goal: '',
+                    medical_conditions: '');
                 Navigator.push(
                     // ignore: use_build_context_synchronously
                     context,
                     MaterialPageRoute(
-                        builder: (BuildContext context) => const NameScreen()));
+                        builder: (BuildContext context) =>
+                            ThemLoadingScreen()));
               },
             ),
             // Truyền trạng thái vào nút START

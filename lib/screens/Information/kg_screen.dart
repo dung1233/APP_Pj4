@@ -1,6 +1,7 @@
-import 'package:app/data/local.dart';
+import 'package:app/data/local_storage.dart';
 import 'package:app/screens/Information/activity_screen.dart';
 import 'package:app/widget/elevatedButton.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class KgScreen extends StatefulWidget {
@@ -31,13 +32,15 @@ class _KgScreenState extends State<KgScreen> {
 
   void _loadKg() async {
     Map<String, dynamic> userData = await LocalStorage.loadUserData();
-    int? savedKg = userData['kg']; // Lấy giá trị từ local storage
+    int? savedweight = userData['weight']; // Lấy giá trị từ local storage
 
-    print("📌 Kg đã lưu trong LocalStorage: $savedKg");
+    if (kDebugMode) {
+      print("📌 weight đã lưu trong LocalStorage: $savedweight");
+    }
 
-    if (savedKg != null && savedKg >= 35 && savedKg <= 100) {
+    if (savedweight != null && savedweight >= 35 && savedweight <= 100) {
       setState(() {
-        _controller.text = savedKg.toString();
+        _controller.text = savedweight.toString();
         isButtonEnabled = true; // Chỉ bật nút nếu hợp lệ
       });
     } else {
@@ -49,17 +52,22 @@ class _KgScreenState extends State<KgScreen> {
   }
 
   void _validateInput() {
-    int? kg = int.tryParse(_controller.text.trim()); // Chuyển thành số
+    int? weight = int.tryParse(_controller.text.trim()); // Chuyển thành số
     setState(() {
-      isButtonEnabled = kg != null && kg >= 35 && kg <= 100;
+      isButtonEnabled = weight != null && weight >= 35 && weight <= 100;
     });
   }
 
   void _onNextPressed() async {
-    int? kg = int.tryParse(_controller.text.trim());
-    if (kg != null && kg >= 35 && kg <= 100) {
-      await LocalStorage.saveUserData(kg: kg);
+    int? weight = int.tryParse(_controller.text.trim());
+    if (weight != null && weight >= 35 && weight <= 100) {
+      await LocalStorage.saveUserData(
+          weight: weight,
+          activity_level: '',
+          fitness_goal: '',
+          medical_conditions: '');
       Navigator.push(
+        // ignore: use_build_context_synchronously
         context,
         MaterialPageRoute(builder: (context) => ActivityScreen()),
       );

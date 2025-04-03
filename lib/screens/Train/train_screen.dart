@@ -1,18 +1,16 @@
+import 'package:app/screens/Train/icons_user.dart';
 import 'package:app/screens/UI/Beginer/beginerdata.dart';
-import 'package:app/screens/UI/Hard/harddata.dart';
-import 'package:app/screens/UI/medium/mediumdata.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:showcaseview/showcaseview.dart';
-import 'package:app/screens/Train/Intermediate.dart';
 import 'package:app/screens/Train/beginer_screnn.dart';
-import 'package:app/screens/Train/icons_user.dart';
+
 import 'package:app/screens/Train/wellcome.dart';
 
 class TrainScreen extends StatefulWidget {
-  final Map<String, dynamic> userData;
-
-  const TrainScreen({super.key, required this.userData});
+  const TrainScreen({
+    super.key,
+  });
 
   @override
   // ignore: library_private_types_in_public_api
@@ -70,10 +68,10 @@ class _TrainScreenState extends State<TrainScreen> {
     return Builder(
       builder: (context) => SingleChildScrollView(
         child: Container(
-          color: Colors.white,
+          color: const Color.fromARGB(255, 255, 255, 255),
           child: Column(
             children: [
-              IconsUser(userData: widget.userData),
+              IconsUser(),
               Showcase(
                 key: _showcasetaskKey,
                 description: "Task.",
@@ -84,62 +82,16 @@ class _TrainScreenState extends State<TrainScreen> {
               ),
               Column(
                 children: [
-                  if (widget.userData['level'] == 'Beginer')
-                    Showcase(
-                      key: _showcaseBeginnerKey,
-                      description: "Bài tập phù hợp.",
-                      child: BeginnerScreen(
-                          userData: widget
-                              .userData), // 🔥 Truyền userData vào BeginnerScreen
-                    )
-                  else if (widget.userData['level'] == 'Medium')
-                    Intermediate()
-                  else
-                    Text('Error: Unknown Level'),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      ElevatedButton(
-                        style: buttonStyle,
-                        onPressed: () {},
-                        child: Text("Beginner",
-                            style: TextStyle(
-                                color: Colors.black,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 15)),
-                      ),
-                      // ElevatedButton(
-                      //   style: buttonStyle,
-                      //   onPressed: () {},
-                      //   child: Text(
-                      //     "Medium",
-                      //     style: TextStyle(
-                      //         color: Colors.black,
-                      //         fontWeight: FontWeight.bold,
-                      //         fontSize: 15),
-                      //   ),
-                      // ),
-                      // ElevatedButton(
-                      //   style: buttonStyle,
-                      //   onPressed: () {},
-                      //   child: Text(
-                      //     "Hard",
-                      //     style: TextStyle(
-                      //         color: Colors.black,
-                      //         fontWeight: FontWeight.bold,
-                      //         fontSize: 15),
-                      //   ),
-                      // ),
-                    ],
+                  Showcase(
+                    key: _showcaseBeginnerKey,
+                    description: "Bài tập .",
+                    child:
+                        BeginerScrenn(), // 🔥 Truyền userData vào BeginnerScreen
                   ),
-                  if (widget.userData['level'] == 'Beginer')
-                    _buildSection("Beginer Section", BeginnerDataWidget())
-                  else if (widget.userData['level'] == 'Medium')
-                    _buildSection("Medium Section", MediumDataWidget())
-                  else if (widget.userData['level'] == 'Hard')
-                    _buildSection("Hard Section", HardDataWidget())
-                  else
-                    Text('lo erro road map')
+
+                  _buildSection("Beginer Section", BeginnerDataWidget()),
+
+                  // _buildSection("Medium Section", MediumDataWidget())
                 ],
               ),
             ],
@@ -178,6 +130,7 @@ class _TrainScreenState extends State<TrainScreen> {
 
   void _startShowCase(BuildContext context) {
     final showcase = ShowCaseWidget.of(context);
+    // ignore: unnecessary_null_comparison
     if (showcase == null || !mounted) return;
 
     debugPrint('🚀 Starting Showcase...');

@@ -1,85 +1,116 @@
-import 'package:app/screens/Train/beginerdata.dart';
+import 'package:app/data/DatabaseHelper.dart';
+import 'package:app/models/work_out.dart';
+import 'package:app/screens/Test.dart';
 import 'package:app/screens/UI/Beginer/trainbeginer.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-class BeginnerScreen extends StatelessWidget {
-  final Map<String, dynamic> userData;
+class BeginerScrenn extends StatefulWidget {
+  const BeginerScrenn({Key? key}) : super(key: key);
 
-  const BeginnerScreen({super.key, required this.userData});
+  @override
+  _BeginerScrennState createState() => _BeginerScrennState();
+}
+
+class _BeginerScrennState extends State<BeginerScrenn> {
+  List<List<Workout>> weeks = []; // ✅ Dữ liệu từ Hive
+  bool isLoading = true; // ✅ Trạng thái tải dữ liệu
+  @override
+  void initState() {
+    super.initState();
+    _loadWorkoutsFromSQLite(); // ✅ Tải dữ liệu từ Hive khi widget khởi tạo
+  }
+
+  Future<void> _loadWorkoutsFromSQLite() async {
+    final dbHelper =
+        DatabaseHelper(); // 🛠 Sử dụng DatabaseHelper để truy cập SQLite
+    final List<Workout> allWorkouts =
+        await dbHelper.getWorkouts(); // 📦 Lấy dữ liệu từ SQLite
+
+    if (allWorkouts.isEmpty) {
+      if (kDebugMode) {
+        print("⚠️ Không có dữ liệu trong SQLite.");
+      }
+      setState(() => isLoading = false);
+      return;
+    }
+
+    // ✅ Chia bài tập thành danh sách tuần
+    List<List<Workout>> groupedWeeks = [];
+    for (var i = 0; i < allWorkouts.length; i += 7) {
+      groupedWeeks.add(allWorkouts.sublist(
+          i, (i + 7) > allWorkouts.length ? allWorkouts.length : (i + 7)));
+    }
+
+    setState(() {
+      weeks = groupedWeeks; // 🛠 Cập nhật UI với dữ liệu từ SQLite
+      isLoading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    final int currentDay =
-        userData["currentDay"] ?? 2; // 🔥 Lấy ngày hiện tại từ userData
-
-    // Lấy bài tập hôm nay từ danh sách beginnerWorkouts
-    final workout = beginnerWorkouts.firstWhere(
-      (w) => w["day"] == currentDay,
-      orElse: () => {
-        "day": 0,
-        "img": "assets/img/default.jpg", // 🔥 Ảnh mặc định nếu không có
-        "title": "Không có bài tập",
-        "description": ""
-      },
-    );
-
     return Container(
-      width: 320,
-      height: 250,
-      padding: const EdgeInsets.only(left: 25, top: 30),
+      width: 300,
+      height: 200,
+      padding: const EdgeInsets.only(left: 25, top: 10),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: const [
-          BoxShadow(color: Colors.black26, offset: Offset(0, 2), blurRadius: 5),
+        borderRadius: BorderRadius.circular(20), // 🔥 Tăng độ bo góc
+        boxShadow: [
+          BoxShadow(color: Colors.black26, offset: Offset(0, 4), blurRadius: 8),
         ],
         image: DecorationImage(
-          image: AssetImage(
-              workout["img"] ?? "assets/img/default.jpg"), // 🔥 Hiển thị ảnh
+          image: AssetImage("assets/img/pushup.jpg"),
           fit: BoxFit.cover,
           colorFilter: ColorFilter.mode(
-            // ignore: deprecated_member_use
-            Colors.black.withOpacity(0.5), // 🔥 Làm tối ảnh nền
-            BlendMode.darken,
-          ), // 🔥 Ảnh sẽ căng full khung
+            const Color.fromARGB(255, 0, 0, 0)
+                .withOpacity(0.5), // 🔥 Overlay màu cam nhẹ
+            BlendMode.multiply,
+          ),
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "Day: ${workout['day']}",
+            "Day 1",
             style: TextStyle(
                 fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
           ),
           const SizedBox(height: 8),
           Text(
-            workout["title"],
+            "Squat & Push-up",
             style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: Colors.yellowAccent),
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+              color: Colors.orange,
+            ),
           ),
           const SizedBox(height: 5),
           Text(
-            workout["description"],
+            "Khởi động sức mạnh",
             style: TextStyle(fontSize: 18, color: Colors.white),
           ),
           Spacer(),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 30),
+          OutlinedButton(
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+              side: BorderSide(color: Colors.white, width: 1), // Viền trắng
+              backgroundColor: Color.fromARGB(255, 255, 255, 255), // 🔥 Nền cam
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30)), // 🔥 Bo góc
             ),
             onPressed: () {
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (BuildContext) => AIMyWidget()));
+              Navigator.push(
+                  context, MaterialPageRoute(builder: (context) => Test()));
             },
             child: Text(
               "Start",
               style: TextStyle(
-                color: Colors.black,
-                fontSize: 18,
-              ),
+                  color: Colors.black,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold),
             ),
           ),
           Spacer(),

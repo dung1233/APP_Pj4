@@ -1,11 +1,10 @@
-// ignore: file_names
 import 'package:app/screens/Test.dart';
 import 'package:app/screens/ol.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class ExploreScreen extends StatelessWidget {
-  const ExploreScreen({super.key, required Map<String, dynamic> userData});
+  const ExploreScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -35,6 +34,9 @@ class ExploreScreen extends StatelessWidget {
             ),
           ),
           _hotnew(context),
+          SizedBox(
+            height: 15,
+          ),
           const Padding(
             padding: EdgeInsets.all(15.0),
             child: Text(
@@ -177,7 +179,7 @@ class ExploreScreen extends StatelessWidget {
                   fontWeight: FontWeight.bold), // title style
               const TextStyle(
                   color: Colors.white, fontSize: 14), // subtitle style
-              () => const Ola(),
+              () => const Ol(),
             )
           ],
         ),
@@ -341,13 +343,13 @@ Widget _blogCart(
               child: Image.asset(
                 imagePath,
                 fit: BoxFit.cover,
-                height: 130,
+                height: 115,
               ),
             ),
           ),
           Container(
             width: 220, // Dùng width trực tiếp trong Container
-            height: 70,
+
             padding: const EdgeInsets.all(5.0),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(5),

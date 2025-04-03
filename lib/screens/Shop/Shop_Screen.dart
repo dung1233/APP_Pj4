@@ -2,7 +2,7 @@ import 'package:app/screens/details/details_screen.dart';
 import 'package:flutter/material.dart';
 
 class ShopScreen extends StatefulWidget {
-  const ShopScreen({super.key, required Map<String, dynamic> userData});
+  ShopScreen({super.key});
 
   @override
   // ignore: library_private_types_in_public_api

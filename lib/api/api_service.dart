@@ -1,0 +1,20 @@
+import 'package:app/models/work_out.dart';
+import 'package:dio/dio.dart';
+import 'package:retrofit/retrofit.dart';
+import 'package:app/models/user_data.dart';
+
+part 'api_service.g.dart';
+
+@RestApi(baseUrl: "http://54.251.220.228:8080/trainingSouls")
+abstract class ApiService {
+  factory ApiService(Dio dio, {String baseUrl}) = _ApiService;
+
+  @POST("/users/save-profile")
+  Future<void> sendUserData(@Body() UserData userData);
+
+  @POST("/workout/generate")
+  Future<List<Workout>> generateWorkout(@Body() UserData userData);
+
+  @GET("/workout")
+  Future<List<Workout>> getWorkouts(@Header("Authorization") String token);
+}

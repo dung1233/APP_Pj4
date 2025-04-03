@@ -1,0 +1,14 @@
+import 'package:dio/dio.dart';
+import 'package:retrofit/retrofit.dart';
+import 'package:app/models/register_request.dart';
+import 'package:app/models/register_response.dart';
+
+part 'user_service.g.dart'; // ✅ File sinh tự động
+
+@RestApi(baseUrl: "http://54.251.220.228:8080/trainingSouls/users")
+abstract class UserService {
+  factory UserService(Dio dio, {String baseUrl}) = _UserService;
+
+  @POST("/create-user") // ✅ API Đăng ký
+  Future<RegisterResponse> register(@Body() RegisterRequest request);
+}
