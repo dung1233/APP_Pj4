@@ -28,6 +28,7 @@ class _StatusScreenState extends State<StatusScreen> {
     availableModels = [srcGlb, srcGlb1]; // Khóa cứng danh sách ngay từ đầu
   }
 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
