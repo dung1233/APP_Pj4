@@ -16,6 +16,7 @@ class _StatusScreenState extends State<StatusScreen> {
   String? chosenTexture;
   String? chosenModel;
   bool changeModel = false;
+  bool isLoading = false; // Biến trạng thái loading
   String srcGlb1 = 'assets/3dmodel/escanor_2.glb';
   String srcGlb = 'assets/3dmodel/RunningEscanor.glb';
   late final List<String> availableModels;
@@ -31,14 +32,35 @@ class _StatusScreenState extends State<StatusScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // sua loi quay load model 3d
+    void handleBackButton() {
+      setState(() {
+        isLoading = true; // Hiển thị vòng loading
+        srcGlb1 = "";    // Xóa model
+      });
+
+      Future.delayed(const Duration(seconds: 1), () {
+        Navigator.pop(context, true);
+      });
+    }
+
     return Scaffold(
+      appBar: AppBar(
+        title: const Text("Status Screen"),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: handleBackButton, // Gọi hàm chung
+        ),
+      ),
       body: Stack(
         children: [
           Column(
             children: [
               Expanded(
                 flex: 2,
-                child: Flutter3DViewer(
+                child: srcGlb1 == null
+                    ? const Center(child: CircularProgressIndicator()) // Vòng load
+                : Flutter3DViewer(
                   activeGestureInterceptor: true,
                   progressBarColor: Colors.lightBlue,
                   enableTouch: true,
@@ -57,6 +79,13 @@ class _StatusScreenState extends State<StatusScreen> {
                 ),
               ),
               _buildInfoPanel(),
+              ElevatedButton(
+                onPressed: handleBackButton, // Gọi hàm chung
+                child: isLoading
+                    ? const CircularProgressIndicator(color: Colors.white) // Hiển thị vòng load
+                    : const Text("Back"),
+              ),
+
             ],
           ),
           Positioned(
