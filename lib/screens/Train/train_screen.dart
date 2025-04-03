@@ -1,11 +1,11 @@
-import 'package:app/screens/Train/icons_user.dart';
-import 'package:app/screens/UI/Beginer/beginerdata.dart';
+import 'package:training_souls/screens/Train/icons_user.dart';
+import 'package:training_souls/screens/UI/Beginer/beginerdata.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:showcaseview/showcaseview.dart';
-import 'package:app/screens/Train/beginer_screnn.dart';
+import 'package:training_souls/screens/Train/beginer_screnn.dart';
 
-import 'package:app/screens/Train/wellcome.dart';
+import 'package:training_souls/screens/Train/wellcome.dart';
 
 class TrainScreen extends StatefulWidget {
   const TrainScreen({

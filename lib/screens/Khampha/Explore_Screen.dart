@@ -1,5 +1,5 @@
-import 'package:app/screens/Test.dart';
-import 'package:app/screens/ol.dart';
+import 'package:training_souls/screens/Test.dart';
+import 'package:training_souls/screens/ol.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 

@@ -1,4 +1,4 @@
-import 'package:app/models/work_out.dart';
+import 'package:training_souls/models/work_out.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 

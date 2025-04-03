@@ -1,6 +1,6 @@
 // TODO Implement this library.
-import 'package:app/screens/TEST/pushup_detector_view.dart';
-import 'package:app/work.dart';
+import 'package:training_souls/screens/TEST/pushup_detector_view.dart';
+import 'package:training_souls/work.dart';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 

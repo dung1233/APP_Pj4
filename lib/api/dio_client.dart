@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import 'package:app/data/local_storage.dart';
+import 'package:training_souls/data/local_storage.dart';
 import 'package:flutter/foundation.dart';
 
 class DioClient {

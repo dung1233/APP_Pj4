@@ -1,4 +1,4 @@
-import 'package:app/models/work_out.dart';
+import 'package:training_souls/models/work_out.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 

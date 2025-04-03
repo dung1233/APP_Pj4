@@ -1,9 +1,9 @@
 // lib/services/workout_service.dart
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:app/models/user_data.dart';
-import 'package:app/models/work_out.dart';
-import 'package:app/api/api_service.dart';
+import 'package:training_souls/models/user_data.dart';
+import 'package:training_souls/models/work_out.dart';
+import 'package:training_souls/api/api_service.dart';
 
 class WorkoutService {
   final ApiService apiService;

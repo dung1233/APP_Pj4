@@ -1,5 +1,5 @@
-import 'package:app/screens/TEST/pushup_detector_view.dart';
-import 'package:app/screens/TEST/squat_detector_view.dart';
+import 'package:training_souls/screens/TEST/pushup_detector_view.dart';
+import 'package:training_souls/screens/TEST/squat_detector_view.dart';
 
 import 'package:flutter/material.dart';
 

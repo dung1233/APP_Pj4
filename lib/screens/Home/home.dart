@@ -1,7 +1,7 @@
-import 'package:app/data/local_storage.dart';
-import 'package:app/screens/Home/app_bar.dart';
-import 'package:app/screens/Information/Localloading.dart';
-import 'package:app/screens/Login/login.dart';
+import 'package:training_souls/data/local_storage.dart';
+import 'package:training_souls/screens/Home/app_bar.dart';
+import 'package:training_souls/screens/Information/Localloading.dart';
+import 'package:training_souls/screens/Login/login.dart';
 import 'package:flutter/material.dart';
 
 class HomePage extends StatefulWidget {

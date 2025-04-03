@@ -1,5 +1,5 @@
-import 'package:app/screens/ol.dart';
-import 'package:app/screens/ola.dart';
+import 'package:training_souls/screens/ol.dart';
+import 'package:training_souls/screens/ola.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart'; // Thư viện để format ngày tháng
 

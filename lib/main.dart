@@ -1,15 +1,15 @@
-import 'package:app/providers/user_provider.dart';
+import 'package:training_souls/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:dio/dio.dart';
 
-import 'package:app/api/auth_service.dart';
-import 'package:app/api/api_service.dart';
-import 'package:app/providers/auth_provider.dart';
-import 'package:app/providers/workout_provider.dart';
-import 'package:app/hive_service.dart';
-import 'package:app/screens/home/home.dart';
+import 'package:training_souls/api/auth_service.dart';
+import 'package:training_souls/api/api_service.dart';
+import 'package:training_souls/providers/auth_provider.dart';
+import 'package:training_souls/providers/workout_provider.dart';
+import 'package:training_souls/hive_service.dart';
+import 'package:training_souls/screens/home/home.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

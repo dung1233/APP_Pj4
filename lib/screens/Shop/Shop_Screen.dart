@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:app/api/api_service.dart';
-import 'package:app/models/item.dart';
-import 'package:app/models/purchase_response.dart';
+import 'package:training_souls/api/api_service.dart';
+import 'package:training_souls/models/item.dart';
+import 'package:training_souls/models/purchase_response.dart';
 import 'package:dio/dio.dart';
 import 'package:hive/hive.dart';
 import 'package:shared_preferences/shared_preferences.dart';

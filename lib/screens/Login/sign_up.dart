@@ -1,8 +1,8 @@
-import 'package:app/APi/user_service.dart';
-import 'package:app/screens/Login/login.dart';
+import 'package:training_souls/APi/user_service.dart';
+import 'package:training_souls/screens/Login/login.dart';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
-import 'package:app/models/register_request.dart';
+import 'package:training_souls/models/register_request.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:app/api/auth_service.dart';
-import 'package:app/data/local_storage.dart';
-import 'package:app/models/login_request.dart';
+import 'package:training_souls/api/auth_service.dart';
+import 'package:training_souls/data/local_storage.dart';
+import 'package:training_souls/models/login_request.dart';
 
 class AuthProvider extends ChangeNotifier {
   bool _isLoading = false;
