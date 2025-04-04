@@ -100,7 +100,23 @@ class _StatusScreenState extends State<StatusScreen> {
               children: _buildFloatingButtons(),
 
             ),
-          )
+          ),
+          Positioned(
+            top: 16,  // Đưa lên trên cùng
+            left: 20, // Di chuyển nút sang bên trái
+            child: _iconButton(Icons.accessibility_new, () async {
+              String? selectedModel = await showPickerDialog(
+                  'Choose Model', availableModels, srcGlb1);
+
+              if (selectedModel != null && selectedModel != srcGlb1) {
+                setState(() {
+                  srcGlb1 = selectedModel;
+                  chosenAnimation = null;
+                  chosenTexture = null;
+                });
+              }
+            }),
+          ),
         ],
       ),
     );
@@ -173,19 +189,19 @@ class _StatusScreenState extends State<StatusScreen> {
               : 'assets/3dmodel/RunningEscanor.glb';
         });
       }, size: 30),
-      _iconButton(Icons.accessibility_new, () async {
-
-        String? selectedModel = await showPickerDialog(
-            'Choose Model', availableModels, srcGlb1);
-
-        if (selectedModel != null && selectedModel != srcGlb1) {
-          setState(() {
-            srcGlb1 = selectedModel;
-            chosenAnimation = null;
-            chosenTexture = null;
-          });
-        }
-      }),
+      // _iconButton(Icons.accessibility_new, () async {
+      //
+      //   String? selectedModel = await showPickerDialog(
+      //       'Choose Model', availableModels, srcGlb1);
+      //
+      //   if (selectedModel != null && selectedModel != srcGlb1) {
+      //     setState(() {
+      //       srcGlb1 = selectedModel;
+      //       chosenAnimation = null;
+      //       chosenTexture = null;
+      //     });
+      //   }
+      // }),
 
 
     ];
