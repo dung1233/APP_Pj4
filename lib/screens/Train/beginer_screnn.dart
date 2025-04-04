@@ -51,7 +51,7 @@ class _BeginerScrennState extends State<BeginerScrenn> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 300,
+      width: MediaQuery.of(context).size.width * 0.8,
       height: 200,
       padding: const EdgeInsets.only(left: 25, top: 10),
       decoration: BoxDecoration(

@@ -68,10 +68,10 @@ dependencies:
   path: any
   flutter_native_splash: ^2.4.4
   camera: ^0.10.5+2
-
   #Model 3d
   flutter_3d_controller: ^2.1.0
   #  model_viewer_plus: ^1.9.1 viết doc tù vl
+
   hive_flutter: ^1.1.0
   hive: ^2.2.3 
   sqflite: ^2.4.1
@@ -152,3 +152,5 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+# sau do chay lenh terminal:
+#   flutter pub run flutter_native_splash:create

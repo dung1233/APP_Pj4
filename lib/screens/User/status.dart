@@ -78,13 +78,17 @@ class _StatusScreenState extends State<StatusScreen> {
                   src: srcGlb1,
                 ),
               ),
+
+
               _buildInfoPanel(),
-              ElevatedButton(
-                onPressed: handleBackButton, // Gọi hàm chung
-                child: isLoading
-                    ? const CircularProgressIndicator(color: Colors.white) // Hiển thị vòng load
-                    : const Text("Back"),
-              ),
+
+              //nut phong bi loi
+              // ElevatedButton(
+              //   onPressed: handleBackButton, // Gọi hàm chung
+              //   child: isLoading
+              //       ? const CircularProgressIndicator(color: Colors.white) // Hiển thị vòng load
+              //       : const Text("Back"),
+              // ),
 
             ],
           ),
@@ -92,6 +96,7 @@ class _StatusScreenState extends State<StatusScreen> {
             top: 16,  // Đưa lên trên cùng
             right: 20, // Giữ bên phải
             child: Column(
+              mainAxisSize: MainAxisSize.min, // Tránh lỗi tràn
               children: _buildFloatingButtons(),
 
             ),
@@ -102,31 +107,36 @@ class _StatusScreenState extends State<StatusScreen> {
   }
 
   Widget _buildInfoPanel() {
-    return Container(
-      padding: const EdgeInsets.all(16.0),
-      decoration: const BoxDecoration(
-        color: Color(0xFF384FA6), // FF là giá trị Alpha (độ trong suốt)
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
+    return Expanded(
+      child: SingleChildScrollView(
+        child: Container(
+          padding: const EdgeInsets.all(16.0),
+          decoration: const BoxDecoration(
+            color: Color(0xFFFCF5FD), // Màu nền
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildTripleRow("Name", "???", "Level", "??"),
+              _buildSingleRow("Title", "???"),
+              const Divider(color: Colors.white),
+              _buildProgressRow("Power", "???", 0.75),
+              const Divider(color: Colors.white),
+              _buildTripleRow("Health", "???", "Strength", "??"),
+              _buildTripleRow("Endurance", "???", "Agility", "??"),
+              const Divider(color: Colors.white),
+              _buildSingleRow("Death point", "??"),
+            ],
+          ),
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildTripleRow("Name", "???", "Level", "??"),
-          _buildSingleRow("Title", "???"),
-          const Divider(color: Colors.white),
-          _buildProgressRow("Power", "???", 0.75),
-          const Divider(color: Colors.white),
-          _buildTripleRow("Health", "???", "Strength", "??"),
-          _buildTripleRow("Endurance", "???", "Agility", "??"),
-          const Divider(color: Colors.white),
-          _buildSingleRow("Death point", "??"),
-        ],
       ),
     );
   }
+
 
   List<Widget> _buildFloatingButtons() {
     return [
@@ -163,7 +173,7 @@ class _StatusScreenState extends State<StatusScreen> {
               : 'assets/3dmodel/RunningEscanor.glb';
         });
       }, size: 30),
-      _iconButton(Icons.format_list_bulleted_outlined, () async {
+      _iconButton(Icons.accessibility_new, () async {
 
         String? selectedModel = await showPickerDialog(
             'Choose Model', availableModels, srcGlb1);
@@ -195,21 +205,21 @@ class _StatusScreenState extends State<StatusScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text("$title1: $value1", style: const TextStyle(fontSize: 16, color: Colors.white)),
-        Text("$title2: $value2", style: const TextStyle(fontSize: 16, color: Colors.white)),
+        Text("$title1: $value1", style: const TextStyle(fontSize: 16, color: Colors.black)),
+        Text("$title2: $value2", style: const TextStyle(fontSize: 16, color: Colors.black)),
       ],
     );
   }
 
   Widget _buildSingleRow(String title, String value) {
-    return Text("$title: $value", style: const TextStyle(fontSize: 16, color: Colors.white));
+    return Text("$title: $value", style: const TextStyle(fontSize: 16, color: Colors.black));
   }
 
   Widget _buildProgressRow(String title,  String value, double progress,) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("$title: $value", style: const TextStyle(fontSize: 16, color: Colors.white)),
+        Text("$title: $value", style: const TextStyle(fontSize: 16, color: Colors.black)),
         const SizedBox(height: 4),
         LinearProgressIndicator(
           value: progress,

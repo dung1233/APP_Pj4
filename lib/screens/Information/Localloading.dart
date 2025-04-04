@@ -14,6 +14,7 @@ class Localloading extends StatefulWidget {
 }
 
 class _LocalloadingState extends State<Localloading> {
+  // ignore: unused_field
   bool _isLoading = true; // ✅ Biến để hiển thị loading
   @override
   void initState() {
