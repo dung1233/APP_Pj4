@@ -59,9 +59,7 @@ class _StatusScreenState extends State<StatusScreen> {
             children: [
               Expanded(
                 flex: 2,
-                child: srcGlb1 == null
-                    ? const Center(child: CircularProgressIndicator()) // Vòng load
-                : Flutter3DViewer(
+                child: Flutter3DViewer(
                   activeGestureInterceptor: true,
                   progressBarColor: Colors.lightBlue,
                   enableTouch: true,
