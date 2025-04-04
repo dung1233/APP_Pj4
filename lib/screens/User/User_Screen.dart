@@ -1,8 +1,9 @@
 // ignore: file_names
 import 'package:flutter/material.dart';
+import 'package:training_souls/screens/User/status.dart';
 
 class UserProfilePage extends StatefulWidget {
-  const UserProfilePage({super.key, required Map<String, dynamic> userData});
+  const UserProfilePage({super.key});
 
   @override
   // ignore: library_private_types_in_public_api
@@ -10,6 +11,17 @@ class UserProfilePage extends StatefulWidget {
 }
 
 class _UserScreenState extends State<UserProfilePage> {
+  Future<void> navigateToStatusScreen() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => StatusScreen()),
+    );
+
+    if (result == true) {
+      setState(() {}); // Cập nhật UI để đảm bảo model bị hủy ngay lập tức
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -53,7 +65,7 @@ class _UserScreenState extends State<UserProfilePage> {
                   ListTile(
                     leading: const Icon(Icons.person),
                     title: const Text("Tài khoản"),
-                    onTap: () {},
+                    onTap: navigateToStatusScreen, // Gọi hàm mở StatusScreen
                   ),
                   ListTile(
                     leading: const Icon(Icons.settings),
