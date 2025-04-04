@@ -9,7 +9,6 @@ class HeaderScreen extends StatefulWidget {
 }
 
 class _HeaderScreenState extends State<HeaderScreen> {
-  int _selectedButtonIndex = 0;
   late DateRangePickerController _datePickerController;
 
   @override
