@@ -1,0 +1,9 @@
+<svg width="200" height="100" viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- Biểu tượng Nam -->
+  <g fill="#3498db">
+    <circle cx="50" cy="30" r="15"/>
+    <rect x="40" y="50" width="20" height="30"/>
+    <line x1="40" y1="80" x2="30" y2="100" stroke="#3498db" stroke-width="5"/>
+    <line x1="60" y1="80" x2="70" y2="100" stroke="#3498db" stroke-width="5"/>
+    <line x1="50" y1="50" x2="50" y2="80" stroke="#3498db" stroke-width="5"/>
+  </g>

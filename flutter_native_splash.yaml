@@ -1,0 +1,7 @@
+flutter_native_splash:
+  android: true          # Tạo splash screen cho Android
+  ios: true              # Tạo splash screen cho iOS
+  color: "#ffffff"  # Màu nền của splash screen
+  image: "assets/splash/slapa.png"  # Hình ảnh hiển thị chính giữa splash screen
+  fullscreen: true       # Hiển thị splash screen ở chế độ toàn màn hình (không có thanh trạng thái)
+  android_gravity: center  # Vị trí của hình ảnh trên Android (top, center, bottom)
