@@ -20,6 +20,7 @@ class _StatusScreenState extends State<StatusScreen> {
   String srcGlb1 = 'assets/3dmodel/escanor_2.glb';
   String srcGlb = 'assets/3dmodel/RunningEscanor.glb';
   late final List<String> availableModels;
+
   @override
   void initState() {
     super.initState();
@@ -221,21 +222,120 @@ class _StatusScreenState extends State<StatusScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text("$title1: $value1", style: const TextStyle(fontSize: 16, color: Colors.black)),
-        Text("$title2: $value2", style: const TextStyle(fontSize: 16, color: Colors.black)),
+        Row(
+          children: [
+            // Kiểm tra title1 và hiển thị ảnh tương ứng
+            if (title1 == "Health")
+              Image.asset(
+                'assets/img/Health.png',
+                width: 24,
+                height: 24,
+              ),
+            if (title1 == "Endurance")  // Thêm điều kiện cho Endurance
+              Image.asset(
+                'assets/img/Endurance.png',
+                width: 24,
+                height: 24,
+              ),
+            const SizedBox(width: 8),
+            Text("$title1: $value1", style: const TextStyle(fontSize: 16, color: Colors.black)),
+          ],
+        ),
+        Row(
+          children: [
+            // Kiểm tra title2 và hiển thị ảnh tương ứng
+            if (title2 == "Strength")
+              Image.asset(
+                'assets/img/Strength.png',
+                width: 24,
+                height: 24,
+              ),
+            if (title2 == "Agility")  // Thêm điều kiện cho Agility
+              Image.asset(
+                'assets/img/aigilty.png',
+                width: 24,
+                height: 24,
+              ),
+            const SizedBox(width: 8),
+            Text("$title2: $value2", style: const TextStyle(fontSize: 16, color: Colors.black)),
+          ],
+        ),
       ],
     );
   }
 
+
+
+
   Widget _buildSingleRow(String title, String value) {
-    return Text("$title: $value", style: const TextStyle(fontSize: 16, color: Colors.black));
+    return Row(
+      children: [
+        // Trực tiếp gọi ảnh cho từng title
+        if (title == "Death point")
+          Image.asset(
+            'assets/img/Agility.png', // Đường dẫn đến ảnh
+            width: 24,
+            height: 24,
+          ),
+        const SizedBox(width: 8),
+        Text("$title: $value", style: const TextStyle(fontSize: 16, color: Colors.black)),
+      ],
+    );
   }
 
-  Widget _buildProgressRow(String title,  String value, double progress,) {
+
+  Widget _buildProgressRow(String title, String value, double progress) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("$title: $value", style: const TextStyle(fontSize: 16, color: Colors.black)),
+        Row(
+          children: [
+            // Trực tiếp gọi ảnh cho "Power"
+            if (title == "Power")
+              Image.asset(
+                'assets/img/Power.png', // Đường dẫn đến ảnh
+                width: 24,
+                height: 24,
+              ),
+            // Trực tiếp gọi ảnh cho "Health"
+            if (title == "Health")
+              Image.asset(
+                'assets/img/Health.png', // Đường dẫn đến ảnh
+                width: 24,
+                height: 24,
+              ),
+            // Trực tiếp gọi ảnh cho "Strength"
+            if (title == "Strength")
+              Image.asset(
+                'assets/img/Strength.png', // Đường dẫn đến ảnh
+                width: 24,
+                height: 24,
+              ),
+            // Trực tiếp gọi ảnh cho "Endurance"
+            if (title == "Endurance")
+              Image.asset(
+                'assets/img/Endurance.png', // Đường dẫn đến ảnh
+                width: 24,
+                height: 24,
+              ),
+            // Trực tiếp gọi ảnh cho "Agility"
+            if (title == "Agility")
+              Image.asset(
+                'assets/img/aigilty.png', // Đường dẫn đến ảnh
+                width: 24,
+                height: 24,
+              ),
+            // Trực tiếp gọi ảnh cho "Death point"
+            if (title == "Death point")
+              Image.asset(
+                'assets/img/Agility.png', // Đường dẫn đến ảnh
+                width: 24,
+                height: 24,
+              ),
+            const SizedBox(width: 8),
+            Text("$title: $value", style: const TextStyle(fontSize: 16, color: Colors.black)),
+          ],
+        ),
         const SizedBox(height: 4),
         LinearProgressIndicator(
           value: progress,
@@ -246,6 +346,7 @@ class _StatusScreenState extends State<StatusScreen> {
       ],
     );
   }
+
 
   Future<String?> showPickerDialog(String title, List<String> inputList,
       [String? chosenItem]) async {
