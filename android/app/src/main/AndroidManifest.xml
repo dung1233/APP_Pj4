@@ -5,7 +5,8 @@
     <application
         android:label="Training Souls"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:usesCleartextTraffic="true"> <!-- model 3d -->
         <activity
             android:name=".MainActivity"
             android:exported="true"

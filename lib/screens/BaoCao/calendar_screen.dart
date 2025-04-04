@@ -9,6 +9,7 @@ class CalendarScreen extends StatefulWidget {
 }
 
 class _CalendarScreenState extends State<CalendarScreen> {
+  int _selectedButtonIndex = 0;
   late DateRangePickerController _datePickerController;
 
   bool showAvg = false;
