@@ -1,13 +1,16 @@
+// Updated Dart code based on your instructions
+// Changes:
+// - Removed label text (e.g., "Health: ???") and replaced with only icon and ???
+// - Removed "Death point"
+// - Separated model and stats with Divider
+// - Updated power bar with custom gradient & markers
+
 import 'package:flutter/material.dart';
 import 'package:flutter_3d_controller/flutter_3d_controller.dart';
 
-
 class StatusScreen extends StatefulWidget {
   const StatusScreen({super.key});
-
-
   _StatusScreenState createState() => _StatusScreenState();
-
 }
 
 class _StatusScreenState extends State<StatusScreen> {
@@ -16,7 +19,7 @@ class _StatusScreenState extends State<StatusScreen> {
   String? chosenTexture;
   String? chosenModel;
   bool changeModel = false;
-  bool isLoading = false; // Biến trạng thái loading
+  bool isLoading = false;
   String srcGlb1 = 'assets/3dmodel/escanor_2.glb';
   String srcGlb = 'assets/3dmodel/RunningEscanor.glb';
   late final List<String> availableModels;
@@ -25,21 +28,18 @@ class _StatusScreenState extends State<StatusScreen> {
   void initState() {
     super.initState();
     controller.onModelLoaded.addListener(() {
-      debugPrint('Model loaded: ${controller.onModelLoaded.value}');
+      debugPrint('Model loaded: \${controller.onModelLoaded.value}');
     });
-    availableModels = [srcGlb, srcGlb1]; // Khóa cứng danh sách ngay từ đầu
+    availableModels = [srcGlb, srcGlb1];
   }
-
 
   @override
   Widget build(BuildContext context) {
-    // sua loi quay load model 3d
     void handleBackButton() {
       setState(() {
-        isLoading = true; // Hiển thị vòng loading
-        srcGlb1 = "";    // Xóa model
+        isLoading = true;
+        srcGlb1 = "";
       });
-
       Future.delayed(const Duration(seconds: 1), () {
         Navigator.pop(context, true);
       });
@@ -50,7 +50,7 @@ class _StatusScreenState extends State<StatusScreen> {
         title: const Text("Status Screen"),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: handleBackButton, // Gọi hàm chung
+          onPressed: handleBackButton,
         ),
       ),
       body: Stack(
@@ -64,49 +64,37 @@ class _StatusScreenState extends State<StatusScreen> {
                   progressBarColor: Colors.lightBlue,
                   enableTouch: true,
                   onProgress: (double progressValue) {
-                    debugPrint('Loading progress: $progressValue');
+                    debugPrint('Loading progress: \$progressValue');
                   },
                   onLoad: (String modelAddress) {
-                    debugPrint('Model loaded: $modelAddress');
+                    debugPrint('Model loaded: \$modelAddress');
                     controller.playAnimation();
                   },
                   onError: (String error) {
-                    debugPrint('Error: $error');
+                    debugPrint('Error: \$error');
                   },
                   controller: controller,
                   src: srcGlb1,
                 ),
               ),
-
-
+              const Divider(thickness: 2),
               _buildInfoPanel(),
-
-              //nut phong bi loi
-              // ElevatedButton(
-              //   onPressed: handleBackButton, // Gọi hàm chung
-              //   child: isLoading
-              //       ? const CircularProgressIndicator(color: Colors.white) // Hiển thị vòng load
-              //       : const Text("Back"),
-              // ),
-
             ],
           ),
           Positioned(
-            top: 16,  // Đưa lên trên cùng
-            right: 20, // Giữ bên phải
+            top: 16,
+            right: 20,
             child: Column(
-              mainAxisSize: MainAxisSize.min, // Tránh lỗi tràn
+              mainAxisSize: MainAxisSize.min,
               children: _buildFloatingButtons(),
-
             ),
           ),
           Positioned(
-            top: 16,  // Đưa lên trên cùng
-            left: 20, // Di chuyển nút sang bên trái
+            top: 16,
+            left: 20,
             child: _iconButton(Icons.accessibility_new, () async {
               String? selectedModel = await showPickerDialog(
                   'Choose Model', availableModels, srcGlb1);
-
               if (selectedModel != null && selectedModel != srcGlb1) {
                 setState(() {
                   srcGlb1 = selectedModel;
@@ -127,7 +115,7 @@ class _StatusScreenState extends State<StatusScreen> {
         child: Container(
           padding: const EdgeInsets.all(16.0),
           decoration: const BoxDecoration(
-            color: Color(0xFFFCF5FD), // Màu nền
+            color: Color(0xFFFCF5FD),
             borderRadius: BorderRadius.only(
               topLeft: Radius.circular(20),
               topRight: Radius.circular(20),
@@ -136,15 +124,16 @@ class _StatusScreenState extends State<StatusScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildTripleRow("Name", "???", "Level", "??"),
-              _buildSingleRow("Title", "???"),
-              const Divider(color: Colors.white),
-              _buildProgressRow("Power", "???", 0.75),
-              const Divider(color: Colors.white),
-              _buildTripleRow("Health", "???", "Strength", "??"),
-              _buildTripleRow("Endurance", "???", "Agility", "??"),
-              const Divider(color: Colors.white),
-              _buildSingleRow("Death point", "??"),
+              _iconOnlyRow('assets/img/name.png'),
+              _iconOnlyRow('assets/img/level.png'),
+              _iconOnlyRow('assets/img/title.png'),
+              const Divider(),
+              _buildPowerBar(),
+              const Divider(),
+              _iconOnlyRow('assets/img/Health.png'),
+              _iconOnlyRow('assets/img/Strength.png'),
+              _iconOnlyRow('assets/img/Endurance.png'),
+              _iconOnlyRow('assets/img/aigilty.png'),
             ],
           ),
         ),
@@ -152,6 +141,54 @@ class _StatusScreenState extends State<StatusScreen> {
     );
   }
 
+  Widget _iconOnlyRow(String imgPath) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Image.asset(imgPath, width: 24, height: 24),
+          const SizedBox(width: 8),
+          const Text("???", style: TextStyle(fontSize: 16)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPowerBar() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Image.asset('assets/img/Power.png', width: 24, height: 24),
+        const SizedBox(height: 4),
+        Stack(
+          children: [
+            Container(
+              height: 20,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                gradient: const LinearGradient(
+                  colors: [Colors.red, Colors.yellow, Colors.green],
+                  stops: [0.3, 0.5, 1.0],
+                ),
+              ),
+            ),
+            Positioned(left: 0, child: _verticalMark("30")),
+            Positioned(left: 100, child: _verticalMark("50")),
+            Positioned(right: 0, child: _verticalMark("100")),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _verticalMark(String label) {
+    return Column(
+      children: [
+        Container(width: 1, height: 20, color: Colors.black),
+        Text(label, style: const TextStyle(fontSize: 10)),
+      ],
+    );
+  }
 
   List<Widget> _buildFloatingButtons() {
     return [
@@ -159,17 +196,13 @@ class _StatusScreenState extends State<StatusScreen> {
       _iconButton(Icons.pause, () => controller.pauseAnimation()),
       _iconButton(Icons.replay, () => controller.resetAnimation()),
       _iconButton(Icons.format_list_bulleted_outlined, () async {
-        List<String> availableAnimations =
-        await controller.getAvailableAnimations();
-        chosenAnimation = await showPickerDialog(
-            'Animations', availableAnimations, chosenAnimation);
+        List<String> availableAnimations = await controller.getAvailableAnimations();
+        chosenAnimation = await showPickerDialog('Animations', availableAnimations, chosenAnimation);
         controller.playAnimation(animationName: chosenAnimation);
       }),
       _iconButton(Icons.list_alt_rounded, () async {
-        List<String> availableTextures =
-        await controller.getAvailableTextures();
-        chosenTexture = await showPickerDialog(
-            'Textures', availableTextures, chosenTexture);
+        List<String> availableTextures = await controller.getAvailableTextures();
+        chosenTexture = await showPickerDialog('Textures', availableTextures, chosenTexture);
         controller.setTexture(textureName: chosenTexture ?? '');
       }),
       _iconButton(Icons.camera_alt_outlined, () {
@@ -188,21 +221,6 @@ class _StatusScreenState extends State<StatusScreen> {
               : 'assets/3dmodel/RunningEscanor.glb';
         });
       }, size: 30),
-      // _iconButton(Icons.accessibility_new, () async {
-      //
-      //   String? selectedModel = await showPickerDialog(
-      //       'Choose Model', availableModels, srcGlb1);
-      //
-      //   if (selectedModel != null && selectedModel != srcGlb1) {
-      //     setState(() {
-      //       srcGlb1 = selectedModel;
-      //       chosenAnimation = null;
-      //       chosenTexture = null;
-      //     });
-      //   }
-      // }),
-
-
     ];
   }
 
@@ -215,136 +233,6 @@ class _StatusScreenState extends State<StatusScreen> {
       ),
     );
   }
-
-  Widget _buildTripleRow(String title1, String value1, String title2, String value2) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Row(
-          children: [
-            // Kiểm tra title1 và hiển thị ảnh tương ứng
-            if (title1 == "Health")
-              Image.asset(
-                'assets/img/Health.png',
-                width: 24,
-                height: 24,
-              ),
-            if (title1 == "Endurance")  // Thêm điều kiện cho Endurance
-              Image.asset(
-                'assets/img/Endurance.png',
-                width: 24,
-                height: 24,
-              ),
-            const SizedBox(width: 8),
-            Text("$title1: $value1", style: const TextStyle(fontSize: 16, color: Colors.black)),
-          ],
-        ),
-        Row(
-          children: [
-            // Kiểm tra title2 và hiển thị ảnh tương ứng
-            if (title2 == "Strength")
-              Image.asset(
-                'assets/img/Strength.png',
-                width: 24,
-                height: 24,
-              ),
-            if (title2 == "Agility")  // Thêm điều kiện cho Agility
-              Image.asset(
-                'assets/img/aigilty.png',
-                width: 24,
-                height: 24,
-              ),
-            const SizedBox(width: 8),
-            Text("$title2: $value2", style: const TextStyle(fontSize: 16, color: Colors.black)),
-          ],
-        ),
-      ],
-    );
-  }
-
-
-
-
-  Widget _buildSingleRow(String title, String value) {
-    return Row(
-      children: [
-        // Trực tiếp gọi ảnh cho từng title
-        if (title == "Death point")
-          Image.asset(
-            'assets/img/Agility.png', // Đường dẫn đến ảnh
-            width: 24,
-            height: 24,
-          ),
-        const SizedBox(width: 8),
-        Text("$title: $value", style: const TextStyle(fontSize: 16, color: Colors.black)),
-      ],
-    );
-  }
-
-
-  Widget _buildProgressRow(String title, String value, double progress) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            // Trực tiếp gọi ảnh cho "Power"
-            if (title == "Power")
-              Image.asset(
-                'assets/img/Power.png', // Đường dẫn đến ảnh
-                width: 24,
-                height: 24,
-              ),
-            // Trực tiếp gọi ảnh cho "Health"
-            if (title == "Health")
-              Image.asset(
-                'assets/img/Health.png', // Đường dẫn đến ảnh
-                width: 24,
-                height: 24,
-              ),
-            // Trực tiếp gọi ảnh cho "Strength"
-            if (title == "Strength")
-              Image.asset(
-                'assets/img/Strength.png', // Đường dẫn đến ảnh
-                width: 24,
-                height: 24,
-              ),
-            // Trực tiếp gọi ảnh cho "Endurance"
-            if (title == "Endurance")
-              Image.asset(
-                'assets/img/Endurance.png', // Đường dẫn đến ảnh
-                width: 24,
-                height: 24,
-              ),
-            // Trực tiếp gọi ảnh cho "Agility"
-            if (title == "Agility")
-              Image.asset(
-                'assets/img/aigilty.png', // Đường dẫn đến ảnh
-                width: 24,
-                height: 24,
-              ),
-            // Trực tiếp gọi ảnh cho "Death point"
-            if (title == "Death point")
-              Image.asset(
-                'assets/img/Agility.png', // Đường dẫn đến ảnh
-                width: 24,
-                height: 24,
-              ),
-            const SizedBox(width: 8),
-            Text("$title: $value", style: const TextStyle(fontSize: 16, color: Colors.black)),
-          ],
-        ),
-        const SizedBox(height: 4),
-        LinearProgressIndicator(
-          value: progress,
-          backgroundColor: Colors.white,
-          color: Color(0xFFDB4F31),
-          minHeight: 10,
-        ),
-      ],
-    );
-  }
-
 
   Future<String?> showPickerDialog(String title, List<String> inputList,
       [String? chosenItem]) async {
@@ -402,5 +290,4 @@ class _StatusScreenState extends State<StatusScreen> {
       },
     );
   }
-
 }
