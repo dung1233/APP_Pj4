@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_3d_controller/flutter_3d_controller.dart';
 
-
 class StatusScreen extends StatefulWidget {
   const StatusScreen({super.key});
 
-
   _StatusScreenState createState() => _StatusScreenState();
-
 }
 
 class _StatusScreenState extends State<StatusScreen> {
@@ -30,14 +27,13 @@ class _StatusScreenState extends State<StatusScreen> {
     availableModels = [srcGlb, srcGlb1]; // Khóa cứng danh sách ngay từ đầu
   }
 
-
   @override
   Widget build(BuildContext context) {
     // sua loi quay load model 3d
     void handleBackButton() {
       setState(() {
         isLoading = true; // Hiển thị vòng loading
-        srcGlb1 = "";    // Xóa model
+        srcGlb1 = ""; // Xóa model
       });
 
       Future.delayed(const Duration(seconds: 1), () {
@@ -59,9 +55,7 @@ class _StatusScreenState extends State<StatusScreen> {
             children: [
               Expanded(
                 flex: 2,
-                child: srcGlb1 == null
-                    ? const Center(child: CircularProgressIndicator()) // Vòng load
-                : Flutter3DViewer(
+                child: Flutter3DViewer(
                   activeGestureInterceptor: true,
                   progressBarColor: Colors.lightBlue,
                   enableTouch: true,
@@ -80,7 +74,6 @@ class _StatusScreenState extends State<StatusScreen> {
                 ),
               ),
 
-
               _buildInfoPanel(),
 
               //nut phong bi loi
@@ -90,20 +83,18 @@ class _StatusScreenState extends State<StatusScreen> {
               //       ? const CircularProgressIndicator(color: Colors.white) // Hiển thị vòng load
               //       : const Text("Back"),
               // ),
-
             ],
           ),
           Positioned(
-            top: 16,  // Đưa lên trên cùng
+            top: 16, // Đưa lên trên cùng
             right: 20, // Giữ bên phải
             child: Column(
               mainAxisSize: MainAxisSize.min, // Tránh lỗi tràn
               children: _buildFloatingButtons(),
-
             ),
           ),
           Positioned(
-            top: 16,  // Đưa lên trên cùng
+            top: 16, // Đưa lên trên cùng
             left: 20, // Di chuyển nút sang bên trái
             child: _iconButton(Icons.accessibility_new, () async {
               String? selectedModel = await showPickerDialog(
@@ -154,7 +145,6 @@ class _StatusScreenState extends State<StatusScreen> {
     );
   }
 
-
   List<Widget> _buildFloatingButtons() {
     return [
       _iconButton(Icons.play_arrow, () => controller.playAnimation()),
@@ -162,14 +152,14 @@ class _StatusScreenState extends State<StatusScreen> {
       _iconButton(Icons.replay, () => controller.resetAnimation()),
       _iconButton(Icons.format_list_bulleted_outlined, () async {
         List<String> availableAnimations =
-        await controller.getAvailableAnimations();
+            await controller.getAvailableAnimations();
         chosenAnimation = await showPickerDialog(
             'Animations', availableAnimations, chosenAnimation);
         controller.playAnimation(animationName: chosenAnimation);
       }),
       _iconButton(Icons.list_alt_rounded, () async {
         List<String> availableTextures =
-        await controller.getAvailableTextures();
+            await controller.getAvailableTextures();
         chosenTexture = await showPickerDialog(
             'Textures', availableTextures, chosenTexture);
         controller.setTexture(textureName: chosenTexture ?? '');
@@ -203,12 +193,11 @@ class _StatusScreenState extends State<StatusScreen> {
       //     });
       //   }
       // }),
-
-
     ];
   }
 
-  Widget _iconButton(IconData icon, VoidCallback onPressed, {double size = 24}) {
+  Widget _iconButton(IconData icon, VoidCallback onPressed,
+      {double size = 24}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
       child: IconButton(
@@ -218,7 +207,8 @@ class _StatusScreenState extends State<StatusScreen> {
     );
   }
 
-  Widget _buildTripleRow(String title1, String value1, String title2, String value2) {
+  Widget _buildTripleRow(
+      String title1, String value1, String title2, String value2) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -231,14 +221,15 @@ class _StatusScreenState extends State<StatusScreen> {
                 width: 24,
                 height: 24,
               ),
-            if (title1 == "Endurance")  // Thêm điều kiện cho Endurance
+            if (title1 == "Endurance") // Thêm điều kiện cho Endurance
               Image.asset(
                 'assets/img/Endurance.png',
                 width: 24,
                 height: 24,
               ),
             const SizedBox(width: 8),
-            Text("$title1: $value1", style: const TextStyle(fontSize: 16, color: Colors.black)),
+            Text("$title1: $value1",
+                style: const TextStyle(fontSize: 16, color: Colors.black)),
           ],
         ),
         Row(
@@ -250,22 +241,20 @@ class _StatusScreenState extends State<StatusScreen> {
                 width: 24,
                 height: 24,
               ),
-            if (title2 == "Agility")  // Thêm điều kiện cho Agility
+            if (title2 == "Agility") // Thêm điều kiện cho Agility
               Image.asset(
                 'assets/img/aigilty.png',
                 width: 24,
                 height: 24,
               ),
             const SizedBox(width: 8),
-            Text("$title2: $value2", style: const TextStyle(fontSize: 16, color: Colors.black)),
+            Text("$title2: $value2",
+                style: const TextStyle(fontSize: 16, color: Colors.black)),
           ],
         ),
       ],
     );
   }
-
-
-
 
   Widget _buildSingleRow(String title, String value) {
     return Row(
@@ -278,11 +267,11 @@ class _StatusScreenState extends State<StatusScreen> {
             height: 24,
           ),
         const SizedBox(width: 8),
-        Text("$title: $value", style: const TextStyle(fontSize: 16, color: Colors.black)),
+        Text("$title: $value",
+            style: const TextStyle(fontSize: 16, color: Colors.black)),
       ],
     );
   }
-
 
   Widget _buildProgressRow(String title, String value, double progress) {
     return Column(
@@ -333,7 +322,8 @@ class _StatusScreenState extends State<StatusScreen> {
                 height: 24,
               ),
             const SizedBox(width: 8),
-            Text("$title: $value", style: const TextStyle(fontSize: 16, color: Colors.black)),
+            Text("$title: $value",
+                style: const TextStyle(fontSize: 16, color: Colors.black)),
           ],
         ),
         const SizedBox(height: 4),
@@ -347,7 +337,6 @@ class _StatusScreenState extends State<StatusScreen> {
     );
   }
 
-
   Future<String?> showPickerDialog(String title, List<String> inputList,
       [String? chosenItem]) async {
     String? selectedItem = chosenItem; // Lưu model được chọn
@@ -359,21 +348,26 @@ class _StatusScreenState extends State<StatusScreen> {
         return StatefulBuilder(
           builder: (context, setState) {
             return Container(
-              height: MediaQuery.of(context).size.height * 0.4, // Chiếm 40% màn hình
+              height: MediaQuery.of(context).size.height *
+                  0.4, // Chiếm 40% màn hình
               padding: const EdgeInsets.all(10),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  Text(title,
+                      style: const TextStyle(
+                          fontSize: 18, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 10),
-                  Expanded( // Ngăn lỗi RenderFlex Overflow
+                  Expanded(
+                    // Ngăn lỗi RenderFlex Overflow
                     child: ListView.separated(
                       itemCount: inputList.length,
                       itemBuilder: (ctx, index) {
                         return ListTile(
                           title: Text(
                             inputList[index],
-                            overflow: TextOverflow.ellipsis, // Tránh lỗi quá dài
+                            overflow:
+                                TextOverflow.ellipsis, // Tránh lỗi quá dài
                             maxLines: 1,
                           ),
                           leading: Text('${index + 1}'),
@@ -387,13 +381,15 @@ class _StatusScreenState extends State<StatusScreen> {
                             setState(() {
                               selectedItem = inputList[index];
                             });
-                            Future.delayed(const Duration(milliseconds: 300), () {
+                            Future.delayed(const Duration(milliseconds: 300),
+                                () {
                               Navigator.pop(context, selectedItem);
                             });
                           },
                         );
                       },
-                      separatorBuilder: (ctx, index) => const Divider(color: Colors.grey),
+                      separatorBuilder: (ctx, index) =>
+                          const Divider(color: Colors.grey),
                     ),
                   ),
                 ],
@@ -404,5 +400,4 @@ class _StatusScreenState extends State<StatusScreen> {
       },
     );
   }
-
 }

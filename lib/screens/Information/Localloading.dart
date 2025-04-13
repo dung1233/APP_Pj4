@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:training_souls/data/DatabaseHelper.dart';
 import 'package:training_souls/models/work_out.dart';
 import 'package:training_souls/screens/trainhome.dart';
@@ -28,12 +29,16 @@ class _LocalloadingState extends State<Localloading> {
         await dbHelper.getWorkouts(); // 📦 Lấy dữ liệu từ SQLite
 
     if (allWorkouts.isEmpty) {
-      print("⚠️ Không có dữ liệu trong SQLite.");
+      if (kDebugMode) {
+        print("⚠️ Không có dữ liệu trong SQLite.");
+      }
       setState(() => _isLoading = false); // ✅ Tắt loading nếu không có dữ liệu
       return;
     }
 
-    print("✅ Đã tải ${allWorkouts.length} bài tập từ SQLite!");
+    if (kDebugMode) {
+      print("✅ Đã tải ${allWorkouts.length} bài tập từ SQLite!");
+    }
 
     if (mounted) {
       Navigator.pushReplacement(

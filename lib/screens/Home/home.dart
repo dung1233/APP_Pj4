@@ -64,7 +64,7 @@ class _HomePageState extends State<HomePage> {
 
             // Dòng mô tả
             Text(
-              "Let train your souls",
+              "Let's train your souls",
               style: TextStyle(
                 fontSize: 16,
                 color: Colors.grey[600],
