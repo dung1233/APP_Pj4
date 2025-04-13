@@ -1,5 +1,7 @@
 import 'package:training_souls/screens/TEST/pushup_detector_view.dart';
 import 'package:training_souls/screens/TEST/squat_detector_view.dart';
+import 'package:training_souls/screens/UI/Beginer/run.dart';
+import 'package:training_souls/screens/UI/Beginer/situp.dart';
 
 import 'package:flutter/material.dart';
 
@@ -107,7 +109,13 @@ class _MyWidgetState extends State<AIMyWidget> {
                           description:
                               "Enhance strength and \nbuild endurance!",
                           imagePath: "assets/img/run.jpg",
-                          onPressd: () {},
+                          onPressd: () {
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (BuildContext context) =>
+                                        RunningTracker()));
+                          },
                         ),
                       ],
                     ),
@@ -130,7 +138,15 @@ class _MyWidgetState extends State<AIMyWidget> {
                           description:
                               "Enhance strength and \nbuild endurance!",
                           imagePath: "assets/img/gapbung.jpg",
-                          onPressd: () {},
+                          onPressd: () async {
+                            await initializeCameras();
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (BuildContext context) =>
+                                      const SitUpDetectorPage()),
+                            );
+                          },
                         ),
                       ],
                     ),

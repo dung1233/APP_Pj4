@@ -1,14 +1,14 @@
 import 'package:training_souls/data/DatabaseHelper.dart';
 import 'package:training_souls/models/work_out.dart';
 import 'package:training_souls/screens/Test.dart';
-import 'package:training_souls/screens/UI/Beginer/trainbeginer.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class BeginerScrenn extends StatefulWidget {
-  const BeginerScrenn({Key? key}) : super(key: key);
+  const BeginerScrenn({super.key});
 
   @override
+  // ignore: library_private_types_in_public_api
   _BeginerScrennState createState() => _BeginerScrennState();
 }
 
@@ -51,20 +51,21 @@ class _BeginerScrennState extends State<BeginerScrenn> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: MediaQuery.of(context).size.width * 0.8,
-      height: 200,
+      width: MediaQuery.of(context).size.width * 0.9,
+      height: 250,
       padding: const EdgeInsets.only(left: 25, top: 10),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20), // 🔥 Tăng độ bo góc
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(color: Colors.black26, offset: Offset(0, 4), blurRadius: 8),
         ],
         image: DecorationImage(
-          image: AssetImage("assets/img/situp.jpg"),
+          image: AssetImage("assets/img/run.jpg"),
           fit: BoxFit.cover,
           colorFilter: ColorFilter.mode(
             const Color.fromARGB(255, 0, 0, 0)
+                // ignore: deprecated_member_use
                 .withOpacity(0.5), // 🔥 Overlay màu cam nhẹ
             BlendMode.multiply,
           ),
@@ -73,6 +74,7 @@ class _BeginerScrennState extends State<BeginerScrenn> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const SizedBox(height: 25),
           Text(
             "Day 3",
             style: TextStyle(
@@ -95,7 +97,7 @@ class _BeginerScrennState extends State<BeginerScrenn> {
           Spacer(),
           OutlinedButton(
             style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 30),
               side: BorderSide(color: Colors.white, width: 1), // Viền trắng
               backgroundColor: Color.fromARGB(255, 255, 255, 255), // 🔥 Nền cam
               shape: RoundedRectangleBorder(

@@ -12,8 +12,10 @@ class PushUpDetectorView extends StatefulWidget {
 }
 
 class _PushUpDetectorViewState extends State<PushUpDetectorView> {
-  final PoseDetector _poseDetector = PoseDetector(options: PoseDetectorOptions());
-  final PoseClassifierProcessor _poseClassifierProcessor = PoseClassifierProcessor(isStreamMode: true);
+  final PoseDetector _poseDetector =
+      PoseDetector(options: PoseDetectorOptions());
+  final PoseClassifierProcessor _poseClassifierProcessor =
+      PoseClassifierProcessor(isStreamMode: true);
 
   bool _canProcess = true;
   bool _isBusy = false;
@@ -43,7 +45,8 @@ class _PushUpDetectorViewState extends State<PushUpDetectorView> {
           onCameraLensDirectionChanged: (value) {
             setState(() {
               _cameraLensDirection = value;
-              _previousPose = null; // ✅ Reset khi đổi camera để tránh lỗi so sánh tọa độ
+              _previousPose =
+                  null; // ✅ Reset khi đổi camera để tránh lỗi so sánh tọa độ
             });
           },
         ),
@@ -53,9 +56,12 @@ class _PushUpDetectorViewState extends State<PushUpDetectorView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text("Bạn đang tập bài Pushup", style: TextStyle(fontSize: 18, color: Colors.white)),
-              Text("Bài tập: $_exerciseText", style: TextStyle(fontSize: 18, color: Colors.white)),
-              Text("Số lần: $_repCount", style: TextStyle(fontSize: 18, color: Colors.white)),
+              Text("Bạn đang tập bài Pushup",
+                  style: TextStyle(fontSize: 18, color: Colors.white)),
+              Text("Bài tập: $_exerciseText",
+                  style: TextStyle(fontSize: 18, color: Colors.white)),
+              Text("Số lần: $_repCount",
+                  style: TextStyle(fontSize: 18, color: Colors.white)),
             ],
           ),
         ),
@@ -75,7 +81,8 @@ class _PushUpDetectorViewState extends State<PushUpDetectorView> {
       } else if (!_isSignificantMovement(poses.first)) {
         print("[DEBUG] ❌ Chuyển động quá nhỏ, không tính.");
       } else {
-        List<String> classificationResult = _poseClassifierProcessor.getPoseResult(poses.first);
+        List<String> classificationResult =
+            _poseClassifierProcessor.getPoseResult(poses.first);
 
         if (classificationResult.isNotEmpty) {
           setState(() {
@@ -111,9 +118,12 @@ class _PushUpDetectorViewState extends State<PushUpDetectorView> {
   }
 
   void _updateCanvas(List<Pose> poses, InputImage inputImage) {
-    if (poses.isNotEmpty && inputImage.metadata?.size != null && inputImage.metadata?.rotation != null) {
+    if (poses.isNotEmpty &&
+        inputImage.metadata?.size != null &&
+        inputImage.metadata?.rotation != null) {
       _customPaint = CustomPaint(
-        painter: PosePainter(poses, inputImage.metadata!.size, inputImage.metadata!.rotation, _cameraLensDirection),
+        painter: PosePainter(poses, inputImage.metadata!.size,
+            inputImage.metadata!.rotation, _cameraLensDirection),
       );
     } else {
       _customPaint = null;
@@ -168,7 +178,8 @@ class _PushUpDetectorViewState extends State<PushUpDetectorView> {
     double totalMovementY = 0;
 
     for (var keypoint in keypointsToCheckPushUps) {
-      if (currentPose.landmarks.containsKey(keypoint) && _previousPose!.landmarks.containsKey(keypoint)) {
+      if (currentPose.landmarks.containsKey(keypoint) &&
+          _previousPose!.landmarks.containsKey(keypoint)) {
         final newPos = currentPose.landmarks[keypoint]!;
         final oldPos = _previousPose!.landmarks[keypoint]!;
 
@@ -179,7 +190,8 @@ class _PushUpDetectorViewState extends State<PushUpDetectorView> {
       }
     }
 
-    print("[DEBUG] ✅ totalMovementZ: $totalMovementZ | totalMovementY: $totalMovementY");
+    print(
+        "[DEBUG] ✅ totalMovementZ: $totalMovementZ | totalMovementY: $totalMovementY");
 
     if (_cameraLensDirection == CameraLensDirection.front) {
       bool isMoving = totalMovementZ > 15 || totalMovementY > 15;

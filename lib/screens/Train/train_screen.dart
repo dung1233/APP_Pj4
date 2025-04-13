@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:showcaseview/showcaseview.dart';
 import 'package:training_souls/screens/Train/beginer_screnn.dart';
-
 import 'package:training_souls/screens/Train/wellcome.dart';
 
 class TrainScreen extends StatefulWidget {
@@ -88,9 +87,7 @@ class _TrainScreenState extends State<TrainScreen> {
                     child:
                         BeginerScrenn(), // 🔥 Truyền userData vào BeginnerScreen
                   ),
-
                   _buildSection("Beginer Section", BeginnerDataWidget()),
-
                   // _buildSection("Medium Section", MediumDataWidget())
                 ],
               ),

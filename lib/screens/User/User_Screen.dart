@@ -14,13 +14,14 @@ class _UserScreenState extends State<UserProfilePage> {
   Future<void> navigateToStatusScreen() async {
     final result = await Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const StatusScreen()),
+      MaterialPageRoute(builder: (context) => StatusScreen()),
     );
 
     if (result == true) {
       setState(() {}); // Cập nhật UI để đảm bảo model bị hủy ngay lập tức
     }
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
