@@ -1,9 +1,8 @@
 // Updated Dart code based on your instructions
 // Changes:
-// - Removed label text (e.g., "Health: ???") and replaced with only icon and ???
-// - Removed "Death point"
-// - Separated model and stats with Divider
-// - Updated power bar with custom gradient & markers
+// - Updated name + level on same row without icon
+// - Title shown as plain text (no icon)
+// - Other stats grouped in rows: Health + Strength, Endurance + Agility
 
 import 'package:flutter/material.dart';
 import 'package:flutter_3d_controller/flutter_3d_controller.dart';
@@ -124,16 +123,20 @@ class _StatusScreenState extends State<StatusScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _iconOnlyRow('assets/img/name.png'),
-              _iconOnlyRow('assets/img/level.png'),
-              _iconOnlyRow('assets/img/title.png'),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: const [
+                  Text("Tên người dùng", style: TextStyle(fontSize: 16)),
+                  Text("Level ??", style: TextStyle(fontSize: 16)),
+                ],
+              ),
+              const SizedBox(height: 6),
+              const Text("Thành tựu: ???", style: TextStyle(fontSize: 16)),
               const Divider(),
               _buildPowerBar(),
               const Divider(),
-              _iconOnlyRow('assets/img/Health.png'),
-              _iconOnlyRow('assets/img/Strength.png'),
-              _iconOnlyRow('assets/img/Endurance.png'),
-              _iconOnlyRow('assets/img/aigilty.png'),
+              _buildStatRow('assets/img/Health.png', 'assets/img/Strength.png'),
+              _buildStatRow('assets/img/Endurance.png', 'assets/img/aigilty.png'),
             ],
           ),
         ),
@@ -141,14 +144,22 @@ class _StatusScreenState extends State<StatusScreen> {
     );
   }
 
-  Widget _iconOnlyRow(String imgPath) {
+  Widget _buildStatRow(String leftIcon, String rightIcon) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Image.asset(imgPath, width: 24, height: 24),
-          const SizedBox(width: 8),
-          const Text("???", style: TextStyle(fontSize: 16)),
+          Row(children: [
+            Image.asset(leftIcon, width: 24, height: 24),
+            const SizedBox(width: 8),
+            const Text("???", style: TextStyle(fontSize: 16)),
+          ]),
+          Row(children: [
+            Image.asset(rightIcon, width: 24, height: 24),
+            const SizedBox(width: 8),
+            const Text("???", style: TextStyle(fontSize: 16)),
+          ]),
         ],
       ),
     );
@@ -236,56 +247,50 @@ class _StatusScreenState extends State<StatusScreen> {
 
   Future<String?> showPickerDialog(String title, List<String> inputList,
       [String? chosenItem]) async {
-    String? selectedItem = chosenItem; // Lưu model được chọn
-
     return await showModalBottomSheet<String>(
       context: context,
-      isScrollControlled: true, // Cho phép kéo dài modal nếu cần
       builder: (ctx) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return Container(
-              height: MediaQuery.of(context).size.height * 0.4, // Chiếm 40% màn hình
-              padding: const EdgeInsets.all(10),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 10),
-                  Expanded( // Ngăn lỗi RenderFlex Overflow
-                    child: ListView.separated(
-                      itemCount: inputList.length,
-                      itemBuilder: (ctx, index) {
-                        return ListTile(
-                          title: Text(
-                            inputList[index],
-                            overflow: TextOverflow.ellipsis, // Tránh lỗi quá dài
-                            maxLines: 1,
-                          ),
-                          leading: Text('${index + 1}'),
-                          trailing: Icon(
-                            selectedItem == inputList[index]
-                                ? Icons.check_box
-                                : Icons.check_box_outline_blank,
-                            color: Colors.blue,
-                          ),
-                          onTap: () {
-                            setState(() {
-                              selectedItem = inputList[index];
-                            });
-                            Future.delayed(const Duration(milliseconds: 300), () {
-                              Navigator.pop(context, selectedItem);
-                            });
-                          },
-                        );
-                      },
-                      separatorBuilder: (ctx, index) => const Divider(color: Colors.grey),
-                    ),
+        return SizedBox(
+          height: 250,
+          child: inputList.isEmpty
+              ? Center(
+            child: Text('$title list is empty'),
+          )
+              : ListView.separated(
+            itemCount: inputList.length,
+            padding: const EdgeInsets.only(top: 16),
+            itemBuilder: (ctx, index) {
+              return InkWell(
+                onTap: () {
+                  Navigator.pop(context, inputList[index]);
+                },
+                child: Container(
+                  height: 50,
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('${index + 1}'),
+                      Text(inputList[index]),
+                      Icon(
+                        chosenItem == inputList[index]
+                            ? Icons.check_box
+                            : Icons.check_box_outline_blank,
+                      )
+                    ],
                   ),
-                ],
-              ),
-            );
-          },
+                ),
+              );
+            },
+            separatorBuilder: (ctx, index) {
+              return const Divider(
+                color: Colors.grey,
+                thickness: 0.6,
+                indent: 10,
+                endIndent: 10,
+              );
+            },
+          ),
         );
       },
     );
