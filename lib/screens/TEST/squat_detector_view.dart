@@ -2,11 +2,15 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
 
+import '../../data/DatabaseHelper.dart';
+import '../../models/work_out.dart';
 import 'detector_view.dart';
 import 'painters/pose_painter.dart';
 import 'pose_classifier_processor.dart';
 
 class SquatDetectorView extends StatefulWidget {
+  final List<Workout> dayWorkouts;
+  const SquatDetectorView({super.key, required this.dayWorkouts});
   @override
   State<StatefulWidget> createState() => _SquatDetectorViewState();
 }
@@ -14,7 +18,7 @@ class SquatDetectorView extends StatefulWidget {
 class _SquatDetectorViewState extends State<SquatDetectorView> {
   final PoseDetector _poseDetector = PoseDetector(options: PoseDetectorOptions());
   final PoseClassifierProcessor _poseClassifierProcessor = PoseClassifierProcessor(isStreamMode: true);
-
+  final dbHelper = DatabaseHelper();
   bool _canProcess = true;
   bool _isBusy = false;
   CustomPaint? _customPaint;
@@ -22,7 +26,15 @@ class _SquatDetectorViewState extends State<SquatDetectorView> {
   int _repCount = 0;
   Pose? _previousPose;
   var _cameraLensDirection = CameraLensDirection.back;
-
+  late final Workout squatWorkout;
+  @override
+  void initState() {
+    super.initState();
+    squatWorkout = widget.dayWorkouts.firstWhere(
+          (w) => w.exerciseName?.toLowerCase() == "squat" || w.exerciseName?.toLowerCase() == "squat",
+      orElse: () => Workout(sets: 0, reps: 0),
+    );
+  }
   @override
   void dispose() {
     _canProcess = false;
@@ -32,6 +44,8 @@ class _SquatDetectorViewState extends State<SquatDetectorView> {
 
   @override
   Widget build(BuildContext context) {
+    final totalTarget = (squatWorkout.sets ?? 0) * (squatWorkout.reps ?? 0);
+
     return Stack(
       children: [
         DetectorView(
@@ -50,12 +64,50 @@ class _SquatDetectorViewState extends State<SquatDetectorView> {
             children: [
               Text("Bạn đang tập bài Squats", style: TextStyle(fontSize: 18, color: Colors.white)),
               Text("Bài tập: $_exerciseText", style: TextStyle(fontSize: 18, color: Colors.white)),
-              Text("Số lần: $_repCount", style: TextStyle(fontSize: 18, color: Colors.white)),
+              Text(
+                "${squatWorkout.sets} sets × ${squatWorkout.reps} reps = = $totalTarget",
+                style: TextStyle(fontSize: 18, color: Colors.white),
+              ),
             ],
+          ),
+        ),
+        Positioned(
+          bottom: 8,
+          right: 8,
+          child: SizedBox(
+            width: 50,
+            height: 50,
+            child: FloatingActionButton(
+              heroTag: 'next_button',
+              backgroundColor: Colors.orange[800],
+              onPressed: _handleNext,
+              child: const Icon(Icons.arrow_forward, color: Colors.white, size: 24),
+            ),
           ),
         ),
       ],
     );
+  }
+  void _handleNext() async {
+    final sets = squatWorkout.sets ?? 0;
+    final reps = squatWorkout.reps ?? 0;
+    final target = sets * reps;
+
+    final RegExp regex = RegExp(r":\s*(\d+)\s*reps");
+    final match = regex.firstMatch(_exerciseText);
+    final detectedReps = match != null ? int.tryParse(match.group(1) ?? '0') ?? 0 : 0;
+
+    if (detectedReps >= target && squatWorkout.exerciseName != null) {
+      await dbHelper.insertWorkoutResult(
+        dayNumber: squatWorkout.day ?? 0,
+        exerciseName: squatWorkout.exerciseName ?? '',
+        setsCompleted: sets,
+        repsCompleted: reps,
+        distanceCompleted: 0.0,
+        durationCompleted: 0,
+      );
+      print("✅ Đã lưu vào local: ${squatWorkout.exerciseName}");
+    }
   }
 
   Future<void> _processImage(InputImage inputImage) async {

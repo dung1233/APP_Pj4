@@ -1,8 +1,10 @@
 import 'package:training_souls/data/DatabaseHelper.dart';
 import 'package:training_souls/models/work_out.dart';
+import 'package:training_souls/screens/TEST/pushup_detector_view.dart';
 import 'package:training_souls/screens/Test.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:training_souls/screens/UI/Beginer/situp.dart';
 
 class BeginerScrenn extends StatefulWidget {
   const BeginerScrenn({super.key});
@@ -103,9 +105,10 @@ class _BeginerScrennState extends State<BeginerScrenn> {
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(30)), // 🔥 Bo góc
             ),
+            //chưa làm được vì thiếu thời gian
             onPressed: () {
-              Navigator.push(
-                  context, MaterialPageRoute(builder: (context) => Test()));
+              // Navigator.push(
+              //     context, MaterialPageRoute(builder: (context) => SitUpDetectorPage()));
             },
             child: Text(
               "Start",

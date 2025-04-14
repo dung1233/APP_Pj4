@@ -4,7 +4,12 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 
+import '../../../models/work_out.dart';
+
 class RunningTracker extends StatefulWidget {
+  final List<Workout> dayWorkouts;
+  const RunningTracker({super.key, required this.dayWorkouts});
+
   @override
   _RunningTrackerState createState() => _RunningTrackerState();
 }

@@ -8,22 +8,26 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
-late List<CameraDescription> cameras;
-
-Future<void> initializeCameras() async {
-  cameras = await availableCameras();
-}
+import '../../../models/work_out.dart';
 
 class SitUpDetectorPage extends StatefulWidget {
-  const SitUpDetectorPage({super.key});
+  final List<Workout> dayWorkouts;
+  const SitUpDetectorPage({super.key, required this.dayWorkouts});
 
   @override
   State<SitUpDetectorPage> createState() => _SitUpDetectorPageState();
 }
 
 class _SitUpDetectorPageState extends State<SitUpDetectorPage> {
+  late List<CameraDescription> cameras;
+
+  Future<void> initializeCameras() async {
+    cameras = await availableCameras();
+  }
+
   late CameraController _cameraController;
-  final PoseDetector _poseDetector = PoseDetector(options: PoseDetectorOptions());
+  final PoseDetector _poseDetector =
+  PoseDetector(options: PoseDetectorOptions());
   bool _isDetecting = false;
   int _counter = 0;
   String _position = 'down';
@@ -39,11 +43,24 @@ class _SitUpDetectorPageState extends State<SitUpDetectorPage> {
   void initState() {
     super.initState();
     _init();
+    _initCameraFlow();
+  }
+
+  Future<void> _initCameraFlow() async {
+    cameras = await availableCameras();
+    _cameraController = CameraController(cameras[0], ResolutionPreset.medium);
+
+    await _cameraController.initialize();
+
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   Future<void> _init() async {
     await Permission.camera.request();
-    final selectedCamera = cameras.firstWhere((c) => c.lensDirection == _currentDirection);
+    final selectedCamera =
+    cameras.firstWhere((c) => c.lensDirection == _currentDirection);
     _cameraController = CameraController(selectedCamera, ResolutionPreset.high);
     await _cameraController.initialize();
     _cameraController.startImageStream(_processCameraImage);
@@ -55,8 +72,9 @@ class _SitUpDetectorPageState extends State<SitUpDetectorPage> {
     await _cameraController.dispose();
 
     setState(() {
-      _currentDirection =
-      _currentDirection == CameraLensDirection.back ? CameraLensDirection.front : CameraLensDirection.back;
+      _currentDirection = _currentDirection == CameraLensDirection.back
+          ? CameraLensDirection.front
+          : CameraLensDirection.back;
     });
 
     await _init();
@@ -111,9 +129,12 @@ class _SitUpDetectorPageState extends State<SitUpDetectorPage> {
       final rightHip = pose.landmarks[PoseLandmarkType.rightHip];
       final rightKnee = pose.landmarks[PoseLandmarkType.rightKnee];
 
-      if (leftShoulder != null && leftHip != null && leftKnee != null &&
-          rightShoulder != null && rightHip != null && rightKnee != null) {
-
+      if (leftShoulder != null &&
+          leftHip != null &&
+          leftKnee != null &&
+          rightShoulder != null &&
+          rightHip != null &&
+          rightKnee != null) {
         final leftAngle = _calculateAngle(
           Offset(leftShoulder.x, leftShoulder.y),
           Offset(leftHip.x, leftHip.y),
@@ -176,22 +197,29 @@ class _SitUpDetectorPageState extends State<SitUpDetectorPage> {
         children: [
           CameraPreview(_cameraController),
           CustomPaint(
-            painter: PosePainter(_landmarks, _imageSize, MediaQuery.of(context).size),
+            painter: PosePainter(
+                _landmarks, _imageSize, MediaQuery.of(context).size),
           ),
           Positioned(
             top: 40,
             left: 20,
             child: Text(
               'Sit-Ups: $_counter',
-              style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
+              style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white),
             ),
           ),
           Positioned(
             top: 80,
             left: 20,
             child: Text(
-              'Angle: ${_latestAngle.toStringAsFixed(1)}°',
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w500, color: Colors.yellow),
+              'Angle: ${_latestAngle.toStringAsFixed(1)}Â°',
+              style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.yellow),
             ),
           ),
           Positioned(
@@ -238,8 +266,12 @@ class PosePainter extends CustomPainter {
     }
 
     void drawLine(PoseLandmarkType a, PoseLandmarkType b) {
-      final lmA = landmarks.cast<PoseLandmark?>().firstWhere((l) => l?.type == a, orElse: () => null);
-      final lmB = landmarks.cast<PoseLandmark?>().firstWhere((l) => l?.type == b, orElse: () => null);
+      final lmA = landmarks
+          .cast<PoseLandmark?>()
+          .firstWhere((l) => l?.type == a, orElse: () => null);
+      final lmB = landmarks
+          .cast<PoseLandmark?>()
+          .firstWhere((l) => l?.type == b, orElse: () => null);
       if (lmA != null && lmB != null) {
         canvas.drawLine(scaleOffset(lmA), scaleOffset(lmB), linePaint);
       }

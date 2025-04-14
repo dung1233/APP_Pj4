@@ -31,7 +31,7 @@ class _SquatState extends State<Squat> {
           SizedBox(
             width: 400,
             height: 450,
-            child: SquatDetectorView(),
+            // child: SquatDetectorView(),
           ),
           const SizedBox(height: 20),
           // Các thông tin khác

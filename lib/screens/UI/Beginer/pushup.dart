@@ -28,11 +28,11 @@ class _PushupState extends State<Pushup> {
         children: [
           // Placeholder cho camera
           // Thay thế Placeholder bằng PushupDetectorView
-          SizedBox(
-            width: 400,
-            height: 450,
-            child: PushUpDetectorView(),
-          ),
+          // SizedBox(
+          //   width: 400,
+          //   height: 450,
+          //   child: PushUpDetectorView(),
+          // ),
           const SizedBox(height: 20),
           // Các thông tin khác
           const Padding(

@@ -1,4 +1,6 @@
+import 'package:training_souls/screens/TEST/pushup_detector_view.dart';
 import 'package:training_souls/screens/Test.dart';
+import 'package:training_souls/screens/Train/train_screen.dart';
 import 'package:training_souls/screens/ol.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -164,7 +166,8 @@ class ExploreScreen extends StatelessWidget {
                   fontWeight: FontWeight.bold), // title style
               const TextStyle(
                   color: Colors.white, fontSize: 14), // subtitle style
-              () => const Test(),
+              () => TrainScreen(),
+              // không có giao diện đề dùng vì cái na làm méo có người làm và không gắn
             ),
             _buildCard(
               context,

@@ -6,6 +6,8 @@ import 'package:training_souls/screens/User/user_screen.dart';
 import 'package:training_souls/screens/Shop/shop_screen.dart'; // Import ShopScreen
 import 'package:flutter/material.dart';
 
+import 'User/test3.dart';
+
 class Trainhome extends StatefulWidget {
 // Thêm trường dữ liệu
 
@@ -31,7 +33,8 @@ class _TrainhomeState extends State<Trainhome> {
       ExploreScreen(),
       ReportScreen(),
       ShopScreen(),
-      UserProfilePage(),
+      // UserProfilePage(),
+      WorkoutLocalResultScreen(),
     ];
   }
 

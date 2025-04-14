@@ -2,11 +2,17 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
 
+import '../../data/DatabaseHelper.dart';
+import '../../models/work_out.dart';
 import 'detector_view.dart';
 import 'painters/pose_painter.dart';
 import 'pose_classifier_processor.dart';
 
 class PushUpDetectorView extends StatefulWidget {
+  final List<Workout> dayWorkouts;
+
+  const PushUpDetectorView({super.key, required this.dayWorkouts});
+
   @override
   State<StatefulWidget> createState() => _PushUpDetectorViewState();
 }
@@ -16,7 +22,7 @@ class _PushUpDetectorViewState extends State<PushUpDetectorView> {
       PoseDetector(options: PoseDetectorOptions());
   final PoseClassifierProcessor _poseClassifierProcessor =
       PoseClassifierProcessor(isStreamMode: true);
-
+  final dbHelper = DatabaseHelper();
   bool _canProcess = true;
   bool _isBusy = false;
   CustomPaint? _customPaint;
@@ -24,7 +30,15 @@ class _PushUpDetectorViewState extends State<PushUpDetectorView> {
   int _repCount = 0;
   Pose? _previousPose;
   var _cameraLensDirection = CameraLensDirection.back;
-
+  late final Workout pushUpWorkout;
+  @override
+  void initState() {
+    super.initState();
+    pushUpWorkout = widget.dayWorkouts.firstWhere(
+          (w) => w.exerciseName?.toLowerCase() == "push-up" || w.exerciseName?.toLowerCase() == "hít đất",
+      orElse: () => Workout(sets: 0, reps: 0),
+    );
+  }
   @override
   void dispose() {
     _canProcess = false;
@@ -34,6 +48,8 @@ class _PushUpDetectorViewState extends State<PushUpDetectorView> {
 
   @override
   Widget build(BuildContext context) {
+
+    final totalTarget = (pushUpWorkout.sets ?? 0) * (pushUpWorkout.reps ?? 0);
     return Stack(
       children: [
         DetectorView(
@@ -60,14 +76,57 @@ class _PushUpDetectorViewState extends State<PushUpDetectorView> {
                   style: TextStyle(fontSize: 18, color: Colors.white)),
               Text("Bài tập: $_exerciseText",
                   style: TextStyle(fontSize: 18, color: Colors.white)),
-              Text("Số lần: $_repCount",
-                  style: TextStyle(fontSize: 18, color: Colors.white)),
+              Text(
+                "${pushUpWorkout.sets} sets × ${pushUpWorkout.reps} reps = = $totalTarget",
+                style: TextStyle(fontSize: 18, color: Colors.white),
+              ),
+
+
             ],
           ),
         ),
+        Positioned(
+          bottom: 8,
+          right: 8,
+          child: SizedBox(
+            width: 50,
+            height: 50,
+            child: FloatingActionButton(
+              heroTag: 'next_button',
+              backgroundColor: Colors.orange[800],
+              onPressed: _handleNext,
+              child: const Icon(Icons.arrow_forward, color: Colors.white, size: 24),
+            ),
+          ),
+        ),
+
+
       ],
     );
   }
+  void _handleNext() async {
+    final sets = pushUpWorkout.sets ?? 0;
+    final reps = pushUpWorkout.reps ?? 0;
+    final target = sets * reps;
+
+    final RegExp regex = RegExp(r":\s*(\d+)\s*reps");
+    final match = regex.firstMatch(_exerciseText);
+    final detectedReps = match != null ? int.tryParse(match.group(1) ?? '0') ?? 0 : 0;
+
+    if (detectedReps >= target && pushUpWorkout.exerciseName != null) {
+      await dbHelper.insertWorkoutResult(
+        dayNumber: pushUpWorkout.day ?? 0,
+        exerciseName: pushUpWorkout.exerciseName ?? '',
+        setsCompleted: sets,
+        repsCompleted: reps,
+        distanceCompleted: 0.0,
+        durationCompleted: 0,
+      );
+      print("✅ Đã lưu vào local: ${pushUpWorkout.exerciseName}");
+    }
+  }
+
+
 
   Future<void> _processImage(InputImage inputImage) async {
     if (!_canProcess || _isBusy) return;

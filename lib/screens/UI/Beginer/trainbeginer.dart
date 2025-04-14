@@ -51,13 +51,13 @@ class _MyWidgetState extends State<AIMyWidget> {
                           title: "BEGINER\n Push-Up",
                           description: "Enhance strength and build endurance!",
                           imagePath: "assets/img/pushup.jpg",
-                          onPressd: () {
-                            Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (BuildContext context) =>
-                                        PushUpDetectorView()));
-                          },
+                          // onPressd: () {
+                          //   Navigator.push(
+                          //       context,
+                          //       MaterialPageRoute(
+                          //           builder: (BuildContext context) =>
+                          //               PushUpDetectorView()));
+                          // },
                         ),
                       ],
                     ),
@@ -80,13 +80,13 @@ class _MyWidgetState extends State<AIMyWidget> {
                           description:
                               "Enhance strength and \nbuild endurance!",
                           imagePath: "assets/img/squat.jpg",
-                          onPressd: () {
-                            Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (BuildContext context) =>
-                                        SquatDetectorView()));
-                          },
+                          // onPressd: () {
+                          //   Navigator.push(
+                          //       context,
+                          //       MaterialPageRoute(
+                          //           builder: (BuildContext context) =>
+                          //               SquatDetectorView()));
+                          // },
                         ),
                       ],
                     ),
@@ -109,13 +109,13 @@ class _MyWidgetState extends State<AIMyWidget> {
                           description:
                               "Enhance strength and \nbuild endurance!",
                           imagePath: "assets/img/run.jpg",
-                          onPressd: () {
-                            Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (BuildContext context) =>
-                                        RunningTracker()));
-                          },
+                          // onPressd: () {
+                          //   Navigator.push(
+                          //       context,
+                          //       MaterialPageRoute(
+                          //           builder: (BuildContext context) =>
+                          //               RunningTracker()));
+                          // },
                         ),
                       ],
                     ),
@@ -138,15 +138,14 @@ class _MyWidgetState extends State<AIMyWidget> {
                           description:
                               "Enhance strength and \nbuild endurance!",
                           imagePath: "assets/img/gapbung.jpg",
-                          onPressd: () async {
-                            await initializeCameras();
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (BuildContext context) =>
-                                      const SitUpDetectorPage()),
-                            );
-                          },
+                          // onPressd: () async {
+                          //   Navigator.push(
+                          //     context,
+                          //     MaterialPageRoute(
+                          //         builder: (BuildContext context) =>
+                          //            SitUpDetectorPage()),
+                          //   );
+                          // },
                         ),
                       ],
                     ),

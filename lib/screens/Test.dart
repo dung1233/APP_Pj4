@@ -3,10 +3,16 @@ import 'package:training_souls/screens/TEST/pushup_detector_view.dart';
 import 'package:training_souls/work.dart';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
+import '../models/work_out.dart';
+import 'TEST/squat_detector_view.dart';
+import 'UI/Beginer/run.dart';
+import 'UI/Beginer/situp.dart';
 
 class Test extends StatefulWidget {
-  const Test({super.key});
 
+  final int day;
+  final List<Workout> dayWorkouts;
+  const Test({super.key, required this.day, required this.dayWorkouts});
   @override
   // ignore: library_private_types_in_public_api
   _TestState createState() => _TestState();
@@ -20,33 +26,67 @@ class _TestState extends State<Test> {
   double getheightPercentage(BuildContext context, double percentage) {
     return MediaQuery.of(context).size.height * percentage;
   }
+// sửa cho lấy được dữ liệu
+  List<Map<String, dynamic>> get workouts {
+    return widget.dayWorkouts.map((w) {
+      String animationPath = "assets/img/Animation - 1743427831861.json"; // default
 
-  final List<Map<String, dynamic>> workouts = [
-    {
-      "animation": "assets/img/Animation - 1743427831861.json",
-      "name": "Squat",
-      "sets": 4,
-      "reps": 10,
-    },
-    {
-      "animation": "assets/img/Animation - 1742982248147.json",
-      "name": "Push-Up",
-      "sets": 4,
-      "reps": 10,
-    },
-    {
-      "animation": "assets/img/Animation - 1743004318512.json",
-      "name": "Sit-Up",
-      "sets": 3,
-      "reps": 12,
-    },
-    {
-      "animation": "assets/img/Animation - 1743005455297.json",
-      "name": "Runner",
-      "sets": 3,
-      "reps": 20,
-    },
-  ];
+      switch (w.exerciseName?.toLowerCase()) {
+        case "squat":
+          animationPath = "assets/img/Animation - 1743427831861.json";
+          break;
+        case "gập bụng":
+        case "sit-up":
+          animationPath = "assets/img/Animation - 1743004318512.json";
+          break;
+        case "hít đất":
+        case "push-up":
+          animationPath = "assets/img/Animation - 1742982248147.json";
+          break;
+        case "chạy bộ":
+        case "runner":
+          animationPath = "assets/img/Animation - 1743005455297.json";
+          break;
+      }
+
+      return {
+        "animation": animationPath,
+        "name": w.exerciseName ?? "Không tên",
+        "sets": w.sets,
+        "reps": w.reps,
+      };
+    }).toList();
+  }
+  void _startFirstWorkout() {
+    final firstWorkout = widget.dayWorkouts.first;
+    final name = firstWorkout.exerciseName?.toLowerCase() ?? "";
+
+    Widget destination;
+    switch (name) {
+      case "push-up":
+      case "hít đất":
+        destination = PushUpDetectorView(dayWorkouts: widget.dayWorkouts);
+        break;
+      case "squat":
+        destination = SquatDetectorView(dayWorkouts: widget.dayWorkouts);
+        break;
+      case "runner":
+      case "chạy bộ":
+        destination = RunningTracker(dayWorkouts: widget.dayWorkouts);
+        break;
+      case "sit-up":
+      case "gập bụng":
+        destination = SitUpDetectorPage(dayWorkouts: widget.dayWorkouts);
+        break;
+      default:
+        destination = PushUpDetectorView(dayWorkouts: widget.dayWorkouts);
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => destination),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -86,7 +126,7 @@ class _TestState extends State<Test> {
                 children: [
                   const SizedBox(height: 20),
                   Text(
-                    "Day 3",
+                    "Ngày ${widget.day}",
                     style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -94,7 +134,7 @@ class _TestState extends State<Test> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    " Sức mạnh",
+                    "Bài tập trong ngày",
                     style: TextStyle(
                         fontSize: 18,
                         color: Colors.white,
@@ -102,7 +142,7 @@ class _TestState extends State<Test> {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    "18 phut - 10 bai tap",
+                    "${workouts.length} bài tập",
                     style: TextStyle(fontSize: 18, color: Colors.white),
                   ),
                 ],
@@ -150,14 +190,7 @@ class _TestState extends State<Test> {
                   ),
                 ),
                 ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                        // ignore: use_build_context_synchronously
-                        context,
-                        MaterialPageRoute(
-                            builder: (BuildContext context) =>
-                                PushUpDetectorView()));
-                  },
+                  onPressed: _startFirstWorkout,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Color(0xFFFF6F00), // Màu nút
                     padding:

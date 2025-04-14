@@ -2,6 +2,7 @@ import 'package:training_souls/data/DatabaseHelper.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:training_souls/models/work_out.dart';
+import 'package:training_souls/screens/Test.dart';
 
 class BeginnerDataWidget extends StatefulWidget {
   const BeginnerDataWidget({super.key});
@@ -203,7 +204,7 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
                                               children: dayWorkouts
                                                   .map((workout) =>
                                                       _buildWorkoutItem(
-                                                          workout))
+                                                          workout, dayWorkouts, day))
                                                   .toList(),
                                             ),
                                           ),
@@ -221,7 +222,7 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
     );
   }
 
-  Widget _buildWorkoutItem(Workout workout) {
+  Widget _buildWorkoutItem(Workout workout, List<Workout> dayWorkouts, int day) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
       child: Container(
@@ -285,6 +286,14 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
             ),
             onPressed: () => _toggleWorkoutStatus(workout),
           ),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => Test(day: day, dayWorkouts: dayWorkouts),
+              ),
+            );
+          },
         ),
       ),
     );
