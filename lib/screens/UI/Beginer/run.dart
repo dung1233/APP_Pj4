@@ -60,7 +60,8 @@ class _RunningTrackerState extends State<RunningTracker> {
   }
 
   void _startTracking() {
-    _positionStreamSubscription = Geolocator.getPositionStream().listen((Position position) {
+    _positionStreamSubscription =
+        Geolocator.getPositionStream().listen((Position position) {
       LatLng newPoint = LatLng(position.latitude, position.longitude);
       setState(() {
         if (_lastPosition != null) {
@@ -174,52 +175,60 @@ class _RunningTrackerState extends State<RunningTracker> {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(20),
-                child: _isLoading
-                    ? Center(child: CircularProgressIndicator(color: Colors.orange[900]))
+                child: _isLoading || (_route.isEmpty && _lastPosition == null)
+                    ? Center(
+                        child: CircularProgressIndicator(
+                            color: Colors.orange[900]))
                     : FlutterMap(
-                  mapController: _mapController,
-                  options: MapOptions(
-                    initialCenter: _route.isNotEmpty ? _route.first : LatLng(51.5, -0.09),
-                    initialZoom: 15.0,
-                  ),
-                  children: [
-                    TileLayer(
-                      urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                      subdomains: ['a', 'b', 'c'],
-                    ),
-                    PolylineLayer(
-                      polylines: [
-                        Polyline(points: _route, color: Colors.blue, strokeWidth: 5.0),
-                      ],
-                    ),
-                    MarkerLayer(
-                      markers: [
-                        if (_route.isNotEmpty)
-                          Marker(
-                            point: _route.first,
-                            width: 40,
-                            height: 40,
-                            child: Icon(
-                              Icons.location_on,
-                              color: Colors.green,
-                              size: 40,
-                            ),
+                        mapController: _mapController,
+                        options: MapOptions(
+                          initialCenter: _route.isNotEmpty
+                              ? _route.first
+                              : const LatLng(0.0, 0.0), // fallback location
+                          initialZoom: 15.0,
+                        ),
+                        children: [
+                          TileLayer(
+                            urlTemplate:
+                                "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                            subdomains: ['a', 'b', 'c'],
                           ),
-                        if (_lastPosition != null)
-                          Marker(
-                            point: _lastPosition!,
-                            width: 40,
-                            height: 40,
-                            child: Icon(
-                              Icons.location_on,
-                              color: Colors.red,
-                              size: 40,
-                            ),
+                          PolylineLayer(
+                            polylines: [
+                              Polyline(
+                                  points: _route,
+                                  color: Colors.blue,
+                                  strokeWidth: 5.0),
+                            ],
                           ),
-                      ],
-                    ),
-                  ],
-                ),
+                          MarkerLayer(
+                            markers: [
+                              if (_route.isNotEmpty)
+                                Marker(
+                                  point: _route.first,
+                                  width: 40,
+                                  height: 40,
+                                  child: Icon(
+                                    Icons.location_on,
+                                    color: Colors.green,
+                                    size: 40,
+                                  ),
+                                ),
+                              if (_lastPosition != null)
+                                Marker(
+                                  point: _lastPosition!,
+                                  width: 40,
+                                  height: 40,
+                                  child: Icon(
+                                    Icons.location_on,
+                                    color: Colors.red,
+                                    size: 40,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ],
+                      ),
               ),
             ),
           ),
@@ -230,11 +239,15 @@ class _RunningTrackerState extends State<RunningTracker> {
               child: Container(
                 width: 80,
                 height: 80,
-                decoration: BoxDecoration(color: Colors.orange[900], shape: BoxShape.circle),
+                decoration: BoxDecoration(
+                    color: Colors.orange[900], shape: BoxShape.circle),
                 child: Center(
                   child: Text(
                     _isTracking ? "STOP" : "GO",
-                    style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold),
                   ),
                 ),
               ),

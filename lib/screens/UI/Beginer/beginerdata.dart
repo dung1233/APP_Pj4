@@ -222,6 +222,9 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
   }
 
   Widget _buildWorkoutItem(Workout workout) {
+    final isRestDay =
+        workout.exerciseName?.toLowerCase().contains("nghỉ ngơi") ?? false;
+    final displayStatus = isRestDay ? "NOT_STARTED" : workout.status;
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
       child: Container(
@@ -277,13 +280,15 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
           ),
           trailing: IconButton(
             icon: Icon(
-              workout.status == "COMPLETED"
+              displayStatus == "COMPLETED"
                   ? Icons.check_circle
                   : Icons.radio_button_unchecked,
-              color: workout.status == "COMPLETED" ? Colors.green : Colors.grey,
+              color: displayStatus == "COMPLETED"
+                  ? const Color.fromARGB(255, 14, 228, 50)
+                  : Colors.grey,
               size: 28,
             ),
-            onPressed: () => _toggleWorkoutStatus(workout),
+            onPressed: isRestDay ? null : () => _toggleWorkoutStatus(workout),
           ),
         ),
       ),

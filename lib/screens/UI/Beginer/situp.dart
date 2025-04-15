@@ -7,12 +7,7 @@ import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-
-late List<CameraDescription> cameras;
-
-Future<void> initializeCameras() async {
-  cameras = await availableCameras();
-}
+import 'package:training_souls/screens/TEST/painters/completionScreenc.dart';
 
 class SitUpDetectorPage extends StatefulWidget {
   const SitUpDetectorPage({super.key});
@@ -22,8 +17,15 @@ class SitUpDetectorPage extends StatefulWidget {
 }
 
 class _SitUpDetectorPageState extends State<SitUpDetectorPage> {
+  late List<CameraDescription> cameras;
+
+  Future<void> initializeCameras() async {
+    cameras = await availableCameras();
+  }
+
   late CameraController _cameraController;
-  final PoseDetector _poseDetector = PoseDetector(options: PoseDetectorOptions());
+  final PoseDetector _poseDetector =
+      PoseDetector(options: PoseDetectorOptions());
   bool _isDetecting = false;
   int _counter = 0;
   String _position = 'down';
@@ -39,11 +41,43 @@ class _SitUpDetectorPageState extends State<SitUpDetectorPage> {
   void initState() {
     super.initState();
     _init();
+    _initCameraFlow();
+    Future.delayed(const Duration(seconds: 15), () {
+      if (mounted) {
+        _onPushupCompleted(); // Gọi hàm chuyển trang
+      }
+    });
+  }
+
+  void _onPushupCompleted() {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CompletionScreenc(
+          message: "Bạn đã hoàn thành 2/2 toàn bộ bài gap bung!",
+          onContinue: () {
+            Navigator.of(context).pop(); // Quay lại màn hình trước đó
+          },
+        ),
+      ),
+    );
+  }
+
+  Future<void> _initCameraFlow() async {
+    cameras = await availableCameras();
+    _cameraController = CameraController(cameras[0], ResolutionPreset.medium);
+
+    await _cameraController.initialize();
+
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   Future<void> _init() async {
     await Permission.camera.request();
-    final selectedCamera = cameras.firstWhere((c) => c.lensDirection == _currentDirection);
+    final selectedCamera =
+        cameras.firstWhere((c) => c.lensDirection == _currentDirection);
     _cameraController = CameraController(selectedCamera, ResolutionPreset.high);
     await _cameraController.initialize();
     _cameraController.startImageStream(_processCameraImage);
@@ -55,8 +89,9 @@ class _SitUpDetectorPageState extends State<SitUpDetectorPage> {
     await _cameraController.dispose();
 
     setState(() {
-      _currentDirection =
-      _currentDirection == CameraLensDirection.back ? CameraLensDirection.front : CameraLensDirection.back;
+      _currentDirection = _currentDirection == CameraLensDirection.back
+          ? CameraLensDirection.front
+          : CameraLensDirection.back;
     });
 
     await _init();
@@ -111,9 +146,12 @@ class _SitUpDetectorPageState extends State<SitUpDetectorPage> {
       final rightHip = pose.landmarks[PoseLandmarkType.rightHip];
       final rightKnee = pose.landmarks[PoseLandmarkType.rightKnee];
 
-      if (leftShoulder != null && leftHip != null && leftKnee != null &&
-          rightShoulder != null && rightHip != null && rightKnee != null) {
-
+      if (leftShoulder != null &&
+          leftHip != null &&
+          leftKnee != null &&
+          rightShoulder != null &&
+          rightHip != null &&
+          rightKnee != null) {
         final leftAngle = _calculateAngle(
           Offset(leftShoulder.x, leftShoulder.y),
           Offset(leftHip.x, leftHip.y),
@@ -172,38 +210,45 @@ class _SitUpDetectorPageState extends State<SitUpDetectorPage> {
     return Scaffold(
       body: _cameraController.value.isInitialized
           ? Stack(
-        fit: StackFit.expand,
-        children: [
-          CameraPreview(_cameraController),
-          CustomPaint(
-            painter: PosePainter(_landmarks, _imageSize, MediaQuery.of(context).size),
-          ),
-          Positioned(
-            top: 40,
-            left: 20,
-            child: Text(
-              'Sit-Ups: $_counter',
-              style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
-            ),
-          ),
-          Positioned(
-            top: 80,
-            left: 20,
-            child: Text(
-              'Angle: ${_latestAngle.toStringAsFixed(1)}°',
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w500, color: Colors.yellow),
-            ),
-          ),
-          Positioned(
-            bottom: 30,
-            right: 20,
-            child: FloatingActionButton(
-              onPressed: _switchCamera,
-              child: const Icon(Icons.cameraswitch),
-            ),
-          )
-        ],
-      )
+              fit: StackFit.expand,
+              children: [
+                CameraPreview(_cameraController),
+                CustomPaint(
+                  painter: PosePainter(
+                      _landmarks, _imageSize, MediaQuery.of(context).size),
+                ),
+                Positioned(
+                  top: 40,
+                  left: 20,
+                  child: Text(
+                    'Sit-Ups: $_counter',
+                    style: const TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white),
+                  ),
+                ),
+                Positioned(
+                  top: 80,
+                  left: 20,
+                  child: Text(
+                    'Angle: ${_latestAngle.toStringAsFixed(1)}°',
+                    style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.yellow),
+                  ),
+                ),
+                Positioned(
+                  bottom: 30,
+                  right: 20,
+                  child: FloatingActionButton(
+                    onPressed: _switchCamera,
+                    child: const Icon(Icons.cameraswitch),
+                  ),
+                )
+              ],
+            )
           : const Center(child: CircularProgressIndicator()),
     );
   }
@@ -238,8 +283,12 @@ class PosePainter extends CustomPainter {
     }
 
     void drawLine(PoseLandmarkType a, PoseLandmarkType b) {
-      final lmA = landmarks.cast<PoseLandmark?>().firstWhere((l) => l?.type == a, orElse: () => null);
-      final lmB = landmarks.cast<PoseLandmark?>().firstWhere((l) => l?.type == b, orElse: () => null);
+      final lmA = landmarks
+          .cast<PoseLandmark?>()
+          .firstWhere((l) => l?.type == a, orElse: () => null);
+      final lmB = landmarks
+          .cast<PoseLandmark?>()
+          .firstWhere((l) => l?.type == b, orElse: () => null);
       if (lmA != null && lmB != null) {
         canvas.drawLine(scaleOffset(lmA), scaleOffset(lmB), linePaint);
       }

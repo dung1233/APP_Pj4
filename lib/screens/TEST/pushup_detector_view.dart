@@ -1,12 +1,22 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
+import 'package:training_souls/data/DatabaseHelper.dart';
+import 'package:training_souls/screens/TEST/painters/completionScreen.dart';
+import 'package:training_souls/screens/TEST/squat_detector_view.dart';
 
 import 'detector_view.dart';
 import 'painters/pose_painter.dart';
 import 'pose_classifier_processor.dart';
 
 class PushUpDetectorView extends StatefulWidget {
+  final int day; // Chỉ cần truyền ngày tập
+
+  const PushUpDetectorView({
+    super.key,
+    required this.day,
+  });
+
   @override
   State<StatefulWidget> createState() => _PushUpDetectorViewState();
 }
@@ -17,19 +27,51 @@ class _PushUpDetectorViewState extends State<PushUpDetectorView> {
   final PoseClassifierProcessor _poseClassifierProcessor =
       PoseClassifierProcessor(isStreamMode: true);
 
+  // Thêm các biến quản lý dữ liệu từ database
+  int _totalRequiredReps = 0;
+  int _totalSets = 0;
+  int _currentSet = 1;
   bool _canProcess = true;
   bool _isBusy = false;
+  bool _isLoading = true; // Thêm trạng thái loading
   CustomPaint? _customPaint;
   String _exerciseText = "Chưa nhận diện";
   int _repCount = 0;
   Pose? _previousPose;
   var _cameraLensDirection = CameraLensDirection.back;
 
+  int get _repsPerSet => _totalRequiredReps ~/ _totalSets;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadWorkoutData();
+    // Tải dữ liệu khi khởi tạo
+  }
+
   @override
   void dispose() {
     _canProcess = false;
+
     _poseDetector.close();
     super.dispose();
+  }
+
+  // Hàm mới: Lấy dữ liệu từ SQLite
+  Future<void> _loadWorkoutData() async {
+    final dbHelper = DatabaseHelper();
+    final allWorkouts = await dbHelper.getWorkouts(); // Dùng phương thức có sẵn
+
+    final pushupWorkouts = allWorkouts
+        .where((w) => w.day == widget.day && w.exerciseName == "Hít đất")
+        .toList();
+
+    setState(() {
+      _totalRequiredReps = pushupWorkouts.fold(
+          0, (sum, w) => sum + (w.sets ?? 0) * (w.reps ?? 0));
+      _totalSets = pushupWorkouts.fold(0, (sum, w) => sum + (w.sets ?? 0));
+      _isLoading = false;
+    });
   }
 
   @override
@@ -56,12 +98,14 @@ class _PushUpDetectorViewState extends State<PushUpDetectorView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text("Bạn đang tập bài Pushup",
+              Text("Bài tập: Hít đất",
                   style: TextStyle(fontSize: 18, color: Colors.white)),
-              Text("Bài tập: $_exerciseText",
-                  style: TextStyle(fontSize: 18, color: Colors.white)),
-              Text("Số lần: $_repCount",
-                  style: TextStyle(fontSize: 18, color: Colors.white)),
+              Text("Trạng thái: $_exerciseText",
+                  style: TextStyle(fontSize: 16, color: Colors.white)),
+              Text("Hiệp $_currentSet/$_totalSets",
+                  style: TextStyle(fontSize: 16, color: Colors.white)),
+              Text("Số lần: $_exerciseText/$_repsPerSet",
+                  style: TextStyle(fontSize: 16, color: Colors.white)),
             ],
           ),
         ),

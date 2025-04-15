@@ -21,6 +21,7 @@ abstract class ApiService {
 
   @GET("/items")
   Future<List<Item>> getItems();
+
   @POST("/purchase/{itemId}")
   Future<void> purchaseItem(
     @Path("itemId") int itemId,

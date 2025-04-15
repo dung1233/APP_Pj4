@@ -9,23 +9,23 @@ class BeginerScrenn extends StatefulWidget {
 
   @override
   // ignore: library_private_types_in_public_api
-  _BeginerScrennState createState() => _BeginerScrennState();
+  _BeginnerScreenState createState() => _BeginnerScreenState();
 }
 
-class _BeginerScrennState extends State<BeginerScrenn> {
-  List<List<Workout>> weeks = []; // ✅ Dữ liệu từ Hive
-  bool isLoading = true; // ✅ Trạng thái tải dữ liệu
+class _BeginnerScreenState extends State<BeginerScrenn> {
+  List<List<Workout>> weeks = [];
+  bool isLoading = true;
+  Workout? nextWorkout; // Bài tập tiếp theo cần thực hiện
+
   @override
   void initState() {
     super.initState();
-    _loadWorkoutsFromSQLite(); // ✅ Tải dữ liệu từ Hive khi widget khởi tạo
+    _loadWorkoutsFromSQLite();
   }
 
   Future<void> _loadWorkoutsFromSQLite() async {
-    final dbHelper =
-        DatabaseHelper(); // 🛠 Sử dụng DatabaseHelper để truy cập SQLite
-    final List<Workout> allWorkouts =
-        await dbHelper.getWorkouts(); // 📦 Lấy dữ liệu từ SQLite
+    final dbHelper = DatabaseHelper();
+    final List<Workout> allWorkouts = await dbHelper.getWorkouts();
 
     if (allWorkouts.isEmpty) {
       if (kDebugMode) {
@@ -35,28 +35,46 @@ class _BeginerScrennState extends State<BeginerScrenn> {
       return;
     }
 
-    // ✅ Chia bài tập thành danh sách tuần
-    List<List<Workout>> groupedWeeks = [];
-    for (var i = 0; i < allWorkouts.length; i += 7) {
-      groupedWeeks.add(allWorkouts.sublist(
-          i, (i + 7) > allWorkouts.length ? allWorkouts.length : (i + 7)));
+    // ✅ Sắp xếp theo ngày
+    allWorkouts.sort((a, b) => (a.day ?? 0).compareTo(b.day ?? 0));
+
+    // ✅ Debug: in danh sách tất cả bài tập
+    for (var w in allWorkouts) {
+      print("📆 Ngày ${w.day}, ${w.exerciseName}, trạng thái: ${w.status}");
     }
 
+    // ✅ Lọc bài đầu tiên chưa bắt đầu
+    final notStartedWorkout = allWorkouts.firstWhere(
+      (workout) => workout.status == "NOT_COMPLETED",
+      orElse: () => allWorkouts.first,
+    );
+
+    print(
+        "👉 Chọn bài: ngày ${notStartedWorkout.day}, ${notStartedWorkout.exerciseName}");
+
     setState(() {
-      weeks = groupedWeeks; // 🛠 Cập nhật UI với dữ liệu từ SQLite
+      nextWorkout = notStartedWorkout;
       isLoading = false;
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    if (isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (nextWorkout == null) {
+      return const Center(child: Text("Không có bài tập nào"));
+    }
+
     return Container(
       width: MediaQuery.of(context).size.width * 0.9,
       height: 250,
       padding: const EdgeInsets.only(left: 25, top: 10),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20), // 🔥 Tăng độ bo góc
+        borderRadius: BorderRadius.circular(20),
         boxShadow: const [
           BoxShadow(color: Colors.black26, offset: Offset(0, 4), blurRadius: 8),
         ],
@@ -64,9 +82,7 @@ class _BeginerScrennState extends State<BeginerScrenn> {
           image: AssetImage("assets/img/run.jpg"),
           fit: BoxFit.cover,
           colorFilter: ColorFilter.mode(
-            const Color.fromARGB(255, 0, 0, 0)
-                // ignore: deprecated_member_use
-                .withOpacity(0.5), // 🔥 Overlay màu cam nhẹ
+            Colors.black.withOpacity(0.5),
             BlendMode.multiply,
           ),
         ),
@@ -76,14 +92,14 @@ class _BeginerScrennState extends State<BeginerScrenn> {
         children: [
           const SizedBox(height: 25),
           Text(
-            "Day 3",
-            style: TextStyle(
+            "Ngày ${nextWorkout!.day ?? '1'}",
+            style: const TextStyle(
                 fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
           ),
           const SizedBox(height: 8),
           Text(
-            "Squat & Sit-up",
-            style: TextStyle(
+            nextWorkout!.exerciseName ?? "Bài tập không tên",
+            style: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w600,
               color: Colors.orange,
@@ -91,33 +107,42 @@ class _BeginerScrennState extends State<BeginerScrenn> {
           ),
           const SizedBox(height: 5),
           Text(
-            "Khởi động sức mạnh",
-            style: TextStyle(fontSize: 18, color: Colors.white),
+            _getWorkoutDescription(nextWorkout!),
+            style: const TextStyle(fontSize: 18, color: Colors.white),
           ),
-          Spacer(),
+          const Spacer(),
           OutlinedButton(
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 30),
-              side: BorderSide(color: Colors.white, width: 1), // Viền trắng
-              backgroundColor: Color.fromARGB(255, 255, 255, 255), // 🔥 Nền cam
+              side: const BorderSide(color: Colors.white, width: 1),
+              backgroundColor: Colors.white,
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30)), // 🔥 Bo góc
+                  borderRadius: BorderRadius.circular(30)),
             ),
             onPressed: () {
               Navigator.push(
                   context, MaterialPageRoute(builder: (context) => Test()));
             },
-            child: Text(
-              "Start",
+            child: const Text(
+              "Bắt đầu",
               style: TextStyle(
                   color: Colors.black,
                   fontSize: 18,
                   fontWeight: FontWeight.bold),
             ),
           ),
-          Spacer(),
+          const Spacer(),
         ],
       ),
     );
+  }
+
+  String _getWorkoutDescription(Workout workout) {
+    if (workout.sets! > 0 && workout.reps! > 0) {
+      return "${workout.sets} hiệp × ${workout.reps} lần";
+    } else if (workout.duration! > 0) {
+      return "${workout.duration} phút${workout.distance! > 0 ? ' - ${workout.distance}km' : ''}";
+    }
+    return "Khởi động sức mạnh"; // Mặc định
   }
 }

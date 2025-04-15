@@ -1,6 +1,7 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
+import 'package:training_souls/screens/TEST/painters/completionScreena.dart';
 
 import 'detector_view.dart';
 import 'painters/pose_painter.dart';
@@ -12,16 +13,24 @@ class SquatDetectorView extends StatefulWidget {
 }
 
 class _SquatDetectorViewState extends State<SquatDetectorView> {
-  final PoseDetector _poseDetector = PoseDetector(options: PoseDetectorOptions());
-  final PoseClassifierProcessor _poseClassifierProcessor = PoseClassifierProcessor(isStreamMode: true);
+  final PoseDetector _poseDetector =
+      PoseDetector(options: PoseDetectorOptions());
+  final PoseClassifierProcessor _poseClassifierProcessor =
+      PoseClassifierProcessor(isStreamMode: true);
 
   bool _canProcess = true;
   bool _isBusy = false;
   CustomPaint? _customPaint;
   String _exerciseText = "Chưa nhận diện";
-  int _repCount = 0;
+  int _repCount = 2;
   Pose? _previousPose;
   var _cameraLensDirection = CameraLensDirection.back;
+
+  @override
+  void initState() {
+    super.initState();
+    // Tự động chuyển trang sau 5 giây
+  }
 
   @override
   void dispose() {
@@ -48,9 +57,12 @@ class _SquatDetectorViewState extends State<SquatDetectorView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text("Bạn đang tập bài Squats", style: TextStyle(fontSize: 18, color: Colors.white)),
-              Text("Bài tập: $_exerciseText", style: TextStyle(fontSize: 18, color: Colors.white)),
-              Text("Số lần: $_repCount", style: TextStyle(fontSize: 18, color: Colors.white)),
+              Text("Bạn đang tập bài Squats",
+                  style: TextStyle(fontSize: 18, color: Colors.white)),
+              Text("Bài tập: $_exerciseText",
+                  style: TextStyle(fontSize: 18, color: Colors.white)),
+              Text("Số lần:  $_exerciseText/$_repCount",
+                  style: TextStyle(fontSize: 18, color: Colors.white)),
             ],
           ),
         ),
@@ -65,9 +77,11 @@ class _SquatDetectorViewState extends State<SquatDetectorView> {
     final poses = await _poseDetector.processImage(inputImage);
 
     if (poses.isNotEmpty && _isValidPose(poses.first)) {
-      List<String> classificationResult = _poseClassifierProcessor.getPoseResult(poses.first);
+      List<String> classificationResult =
+          _poseClassifierProcessor.getPoseResult(poses.first);
 
-      if (classificationResult.isNotEmpty && _isSignificantMovement(poses.first)) {
+      if (classificationResult.isNotEmpty &&
+          _isSignificantMovement(poses.first)) {
         setState(() {
           String detectedExercise = classificationResult[0];
           if (detectedExercise.contains("squats")) {
@@ -97,9 +111,12 @@ class _SquatDetectorViewState extends State<SquatDetectorView> {
   }
 
   void _updateCanvas(List<Pose> poses, InputImage inputImage) {
-    if (poses.isNotEmpty && inputImage.metadata?.size != null && inputImage.metadata?.rotation != null) {
+    if (poses.isNotEmpty &&
+        inputImage.metadata?.size != null &&
+        inputImage.metadata?.rotation != null) {
       _customPaint = CustomPaint(
-        painter: PosePainter(poses, inputImage.metadata!.size, inputImage.metadata!.rotation, _cameraLensDirection),
+        painter: PosePainter(poses, inputImage.metadata!.size,
+            inputImage.metadata!.rotation, _cameraLensDirection),
       );
     } else {
       _customPaint = null;
@@ -127,11 +144,11 @@ class _SquatDetectorViewState extends State<SquatDetectorView> {
     int validKeypoints = 0;
     for (var keypoint in requiredKeypoints) {
       if (pose.landmarks.containsKey(keypoint)) {
-        validKeypoints++;  // Đếm số keypoints hợp lệ
+        validKeypoints++; // Đếm số keypoints hợp lệ
       }
     }
 
-    return validKeypoints >= 6;  // Cần ít nhất 6 điểm để tránh lỗi nhận diện
+    return validKeypoints >= 6; // Cần ít nhất 6 điểm để tránh lỗi nhận diện
   }
 
   bool _isSignificantMovement(Pose currentPose) {
@@ -146,7 +163,8 @@ class _SquatDetectorViewState extends State<SquatDetectorView> {
 
     double totalMovement = 0;
     for (var keypoint in keypointsToCheck) {
-      if (currentPose.landmarks.containsKey(keypoint) && _previousPose!.landmarks.containsKey(keypoint)) {
+      if (currentPose.landmarks.containsKey(keypoint) &&
+          _previousPose!.landmarks.containsKey(keypoint)) {
         final newPos = currentPose.landmarks[keypoint]!;
         final oldPos = _previousPose!.landmarks[keypoint]!;
 
