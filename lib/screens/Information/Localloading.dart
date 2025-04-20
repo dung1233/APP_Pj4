@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
+import 'package:hive/hive.dart';
 import 'package:training_souls/data/DatabaseHelper.dart';
+
 import 'package:training_souls/models/work_out.dart';
 import 'package:training_souls/screens/trainhome.dart';
 
