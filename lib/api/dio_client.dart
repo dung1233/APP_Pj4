@@ -44,4 +44,16 @@ class DioClient {
     );
 
   static Dio get dio => _dio;
+  static Dio dioWithToken(String token) {
+    final dioWithToken = Dio(
+      BaseOptions(
+        baseUrl: "http://54.251.220.228:8080/trainingSouls",
+        headers: {
+          "Authorization": "Bearer $token",
+          "Content-Type": "application/json",
+        },
+      ),
+    );
+    return dioWithToken;
+  }
 }

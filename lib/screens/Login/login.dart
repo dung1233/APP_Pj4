@@ -40,7 +40,7 @@ class _LoginScreenState extends State<LoginScreen> {
         listen: false); // 👈 Thêm UserProvider
 
     try {
-      // ignore: unused_local_variable
+      // Thực hiện đăng nhập
       final success = await authProvider.login(
         _emailController.text,
         _passwordController.text,
@@ -48,11 +48,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
       print("✅ Đăng nhập thành công, token: ${authProvider.token}");
 
-      // 👉 Kiểm tra xem người dùng đã có dữ liệu cá nhân chưa
+      // Kiểm tra xem người dùng có dữ liệu cá nhân chưa
       final hasUserData = await userProvider.checkUserData(authProvider.token!);
 
       if (!hasUserData) {
-        // 👉 Nếu chưa có dữ liệu, chuyển hướng đến DataScreen
+        // Nếu chưa có dữ liệu, chuyển hướng đến DataScreen
         if (mounted) {
           Navigator.pushReplacement(
             context,
@@ -60,7 +60,7 @@ class _LoginScreenState extends State<LoginScreen> {
           );
         }
       } else {
-        // ✅ Nếu đã có dữ liệu, lấy danh sách bài tập
+        // Nếu đã có dữ liệu, lấy danh sách bài tập
         await workoutProvider.fetchAndSaveWorkouts(authProvider.token!);
 
         if (mounted) {
