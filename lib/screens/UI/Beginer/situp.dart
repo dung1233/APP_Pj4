@@ -5,7 +5,6 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 late List<CameraDescription> cameras;
@@ -22,7 +21,7 @@ class SitUpDetectorPage extends StatefulWidget {
 }
 
 class _SitUpDetectorPageState extends State<SitUpDetectorPage> {
-  late CameraController _cameraController;
+  CameraController? _cameraController;
   final PoseDetector _poseDetector = PoseDetector(options: PoseDetectorOptions());
   bool _isDetecting = false;
   int _counter = 0;
@@ -44,19 +43,30 @@ class _SitUpDetectorPageState extends State<SitUpDetectorPage> {
   Future<void> _init() async {
     await Permission.camera.request();
     final selectedCamera = cameras.firstWhere((c) => c.lensDirection == _currentDirection);
-    _cameraController = CameraController(selectedCamera, ResolutionPreset.high);
-    await _cameraController.initialize();
-    _cameraController.startImageStream(_processCameraImage);
-    setState(() {});
+    final controller = CameraController(selectedCamera, ResolutionPreset.high);
+    await controller.initialize();
+    await controller.startImageStream(_processCameraImage);
+    if (!mounted) return;
+    setState(() {
+      _cameraController = controller;
+    });
   }
 
   Future<void> _switchCamera() async {
-    _cameraController.stopImageStream();
-    await _cameraController.dispose();
+    final oldController = _cameraController;
+    _cameraController = null;
+    if (mounted) {
+      setState(() {});
+      final completer = Completer<void>();
+      WidgetsBinding.instance.addPostFrameCallback((_) => completer.complete());
+      await completer.future;
+    }
+    await oldController?.dispose();
 
     setState(() {
-      _currentDirection =
-      _currentDirection == CameraLensDirection.back ? CameraLensDirection.front : CameraLensDirection.back;
+      _currentDirection = _currentDirection == CameraLensDirection.back
+          ? CameraLensDirection.front
+          : CameraLensDirection.back;
     });
 
     await _init();
@@ -74,7 +84,7 @@ class _SitUpDetectorPageState extends State<SitUpDetectorPage> {
   }
 
   void _processCameraImage(CameraImage image) async {
-    if (_isDetecting) return;
+    if (_isDetecting || _cameraController == null) return;
     _isDetecting = true;
 
     final WriteBuffer allBytes = WriteBuffer();
@@ -162,19 +172,31 @@ class _SitUpDetectorPageState extends State<SitUpDetectorPage> {
 
   @override
   void dispose() {
-    _cameraController.dispose();
+    _cameraController?.dispose();
     _poseDetector.close();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_cameraController?.value.isInitialized != true) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
-      body: _cameraController.value.isInitialized
-          ? Stack(
+      body: Stack(
         fit: StackFit.expand,
         children: [
-          CameraPreview(_cameraController),
+          FittedBox(
+            fit: BoxFit.cover,
+            child: SizedBox(
+              width: _cameraController!.value.previewSize!.height,
+              height: _cameraController!.value.previewSize!.width,
+              child: CameraPreview(_cameraController!),
+            ),
+          ),
           CustomPaint(
             painter: PosePainter(_landmarks, _imageSize, MediaQuery.of(context).size),
           ),
@@ -203,8 +225,7 @@ class _SitUpDetectorPageState extends State<SitUpDetectorPage> {
             ),
           )
         ],
-      )
-          : const Center(child: CircularProgressIndicator()),
+      ),
     );
   }
 }
