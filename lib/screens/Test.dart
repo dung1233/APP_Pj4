@@ -57,7 +57,7 @@ class _TestState extends State<Test> {
       };
     }).toList();
   }
-  void _startFirstWorkout() {
+  Future<void> _startFirstWorkout() async {
     final firstWorkout = widget.dayWorkouts.first;
     final name = firstWorkout.exerciseName?.toLowerCase() ?? "";
 
@@ -65,8 +65,18 @@ class _TestState extends State<Test> {
     switch (name) {
       case "push-up":
       case "hít đất":
-        destination = PushUpDetectorView(dayWorkouts: widget.dayWorkouts);
-        break;
+      destination = PushUpDetectorView(
+        dayWorkouts: widget.dayWorkouts.map((w) => Workout(
+          day: widget.day, // GÁN day ở đây
+          exerciseName: w.exerciseName,
+          sets: w.sets,
+          reps: w.reps,
+          duration: w.duration,
+          distance: w.distance,
+        )).toList(),
+      );
+
+      break;
       case "squat":
         destination = SquatDetectorView(dayWorkouts: widget.dayWorkouts);
         break;
@@ -81,7 +91,7 @@ class _TestState extends State<Test> {
       default:
         destination = PushUpDetectorView(dayWorkouts: widget.dayWorkouts);
     }
-
+    await initializeCameras();
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => destination),

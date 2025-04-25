@@ -5,10 +5,14 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-
 import '../../../models/work_out.dart';
+
+late List<CameraDescription> cameras;
+
+Future<void> initializeCameras() async {
+  cameras = await availableCameras();
+}
 
 class SitUpDetectorPage extends StatefulWidget {
   final List<Workout> dayWorkouts;
@@ -19,15 +23,8 @@ class SitUpDetectorPage extends StatefulWidget {
 }
 
 class _SitUpDetectorPageState extends State<SitUpDetectorPage> {
-  late List<CameraDescription> cameras;
-
-  Future<void> initializeCameras() async {
-    cameras = await availableCameras();
-  }
-
-  late CameraController _cameraController;
-  final PoseDetector _poseDetector =
-  PoseDetector(options: PoseDetectorOptions());
+  CameraController? _cameraController;
+  final PoseDetector _poseDetector = PoseDetector(options: PoseDetectorOptions());
   bool _isDetecting = false;
   int _counter = 0;
   String _position = 'down';
@@ -43,33 +40,30 @@ class _SitUpDetectorPageState extends State<SitUpDetectorPage> {
   void initState() {
     super.initState();
     _init();
-    _initCameraFlow();
-  }
-
-  Future<void> _initCameraFlow() async {
-    cameras = await availableCameras();
-    _cameraController = CameraController(cameras[0], ResolutionPreset.medium);
-
-    await _cameraController.initialize();
-
-    if (mounted) {
-      setState(() {});
-    }
   }
 
   Future<void> _init() async {
     await Permission.camera.request();
-    final selectedCamera =
-    cameras.firstWhere((c) => c.lensDirection == _currentDirection);
-    _cameraController = CameraController(selectedCamera, ResolutionPreset.high);
-    await _cameraController.initialize();
-    _cameraController.startImageStream(_processCameraImage);
-    setState(() {});
+    final selectedCamera = cameras.firstWhere((c) => c.lensDirection == _currentDirection);
+    final controller = CameraController(selectedCamera, ResolutionPreset.high);
+    await controller.initialize();
+    await controller.startImageStream(_processCameraImage);
+    if (!mounted) return;
+    setState(() {
+      _cameraController = controller;
+    });
   }
 
   Future<void> _switchCamera() async {
-    _cameraController.stopImageStream();
-    await _cameraController.dispose();
+    final oldController = _cameraController;
+    _cameraController = null;
+    if (mounted) {
+      setState(() {});
+      final completer = Completer<void>();
+      WidgetsBinding.instance.addPostFrameCallback((_) => completer.complete());
+      await completer.future;
+    }
+    await oldController?.dispose();
 
     setState(() {
       _currentDirection = _currentDirection == CameraLensDirection.back
@@ -92,7 +86,7 @@ class _SitUpDetectorPageState extends State<SitUpDetectorPage> {
   }
 
   void _processCameraImage(CameraImage image) async {
-    if (_isDetecting) return;
+    if (_isDetecting || _cameraController == null) return;
     _isDetecting = true;
 
     final WriteBuffer allBytes = WriteBuffer();
@@ -129,12 +123,9 @@ class _SitUpDetectorPageState extends State<SitUpDetectorPage> {
       final rightHip = pose.landmarks[PoseLandmarkType.rightHip];
       final rightKnee = pose.landmarks[PoseLandmarkType.rightKnee];
 
-      if (leftShoulder != null &&
-          leftHip != null &&
-          leftKnee != null &&
-          rightShoulder != null &&
-          rightHip != null &&
-          rightKnee != null) {
+      if (leftShoulder != null && leftHip != null && leftKnee != null &&
+          rightShoulder != null && rightHip != null && rightKnee != null) {
+
         final leftAngle = _calculateAngle(
           Offset(leftShoulder.x, leftShoulder.y),
           Offset(leftHip.x, leftHip.y),
@@ -183,32 +174,40 @@ class _SitUpDetectorPageState extends State<SitUpDetectorPage> {
 
   @override
   void dispose() {
-    _cameraController.dispose();
+    _cameraController?.dispose();
     _poseDetector.close();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_cameraController?.value.isInitialized != true) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
-      body: _cameraController.value.isInitialized
-          ? Stack(
+      body: Stack(
         fit: StackFit.expand,
         children: [
-          CameraPreview(_cameraController),
+          FittedBox(
+            fit: BoxFit.cover,
+            child: SizedBox(
+              width: _cameraController!.value.previewSize!.height,
+              height: _cameraController!.value.previewSize!.width,
+              child: CameraPreview(_cameraController!),
+            ),
+          ),
           CustomPaint(
-            painter: PosePainter(
-                _landmarks, _imageSize, MediaQuery.of(context).size),
+            painter: PosePainter(_landmarks, _imageSize, MediaQuery.of(context).size),
           ),
           Positioned(
             top: 40,
             left: 20,
             child: Text(
               'Sit-Ups: $_counter',
-              style: const TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white),
+              style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
             ),
           ),
           Positioned(
@@ -216,10 +215,7 @@ class _SitUpDetectorPageState extends State<SitUpDetectorPage> {
             left: 20,
             child: Text(
               'Angle: ${_latestAngle.toStringAsFixed(1)}Â°',
-              style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.yellow),
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w500, color: Colors.yellow),
             ),
           ),
           Positioned(
@@ -231,8 +227,7 @@ class _SitUpDetectorPageState extends State<SitUpDetectorPage> {
             ),
           )
         ],
-      )
-          : const Center(child: CircularProgressIndicator()),
+      ),
     );
   }
 }
@@ -266,12 +261,8 @@ class PosePainter extends CustomPainter {
     }
 
     void drawLine(PoseLandmarkType a, PoseLandmarkType b) {
-      final lmA = landmarks
-          .cast<PoseLandmark?>()
-          .firstWhere((l) => l?.type == a, orElse: () => null);
-      final lmB = landmarks
-          .cast<PoseLandmark?>()
-          .firstWhere((l) => l?.type == b, orElse: () => null);
+      final lmA = landmarks.cast<PoseLandmark?>().firstWhere((l) => l?.type == a, orElse: () => null);
+      final lmB = landmarks.cast<PoseLandmark?>().firstWhere((l) => l?.type == b, orElse: () => null);
       if (lmA != null && lmB != null) {
         canvas.drawLine(scaleOffset(lmA), scaleOffset(lmB), linePaint);
       }

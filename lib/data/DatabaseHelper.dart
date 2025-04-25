@@ -19,19 +19,21 @@ class DatabaseHelper {
     String path = join(await getDatabasesPath(), 'workout_database.db');
     return await openDatabase(
       path,
-      version: 4, // ⬆️ Tăng version để kích hoạt onUpgrade()
+      version: 4,
       onCreate: _onCreate,
-      onUpgrade: _onUpgrade, // ✅ Thêm xử lý nâng cấp
+      onUpgrade: _onUpgrade,
     );
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 4) {
       await db.execute(
-          'ALTER TABLE workouts ADD COLUMN status TEXT DEFAULT "NOT_STARTED"');
+          'ALTER TABLE workouts ADD COLUMN status TEXT DEFAULT "NOT_STARTED"'
+      );
       await db.execute(_createWorkoutResultsTable);
     }
   }
+
   static const String _createWorkoutResultsTable = '''
     CREATE TABLE workout_results (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -44,7 +46,7 @@ class DatabaseHelper {
     )
   ''';
 
-  Future<void> insertWorkoutResult({
+  Future<void> insertOrUpdateWorkoutResult({
     required int dayNumber,
     required String exerciseName,
     int setsCompleted = 0,
@@ -53,19 +55,43 @@ class DatabaseHelper {
     int durationCompleted = 0,
   }) async {
     final db = await database;
-    await db.insert(
+    final List<Map<String, dynamic>> existing = await db.query(
       'workout_results',
-      {
-        'dayNumber': dayNumber,
-        'exerciseName': exerciseName,
-        'setsCompleted': setsCompleted,
-        'repsCompleted': repsCompleted,
-        'distanceCompleted': distanceCompleted,
-        'durationCompleted': durationCompleted,
-      },
-      conflictAlgorithm: ConflictAlgorithm.replace,
+      where: 'dayNumber = ? AND exerciseName = ?',
+      whereArgs: [dayNumber, exerciseName],
     );
+
+    if (existing.isNotEmpty) {
+      final existingReps = existing.first['repsCompleted'] ?? 0;
+      if (repsCompleted > existingReps) {
+        await db.update(
+          'workout_results',
+          {
+            'setsCompleted': setsCompleted,
+            'repsCompleted': repsCompleted,
+            'distanceCompleted': distanceCompleted,
+            'durationCompleted': durationCompleted,
+          },
+          where: 'dayNumber = ? AND exerciseName = ?',
+          whereArgs: [dayNumber, exerciseName],
+        );
+      }
+    } else {
+      await db.insert(
+        'workout_results',
+        {
+          'dayNumber': dayNumber,
+          'exerciseName': exerciseName,
+          'setsCompleted': setsCompleted,
+          'repsCompleted': repsCompleted,
+          'distanceCompleted': distanceCompleted,
+          'durationCompleted': durationCompleted,
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
   }
+
   Future<List<Map<String, dynamic>>> getResultsByDay(int dayNumber) async {
     final db = await database;
     return await db.query(
@@ -74,6 +100,7 @@ class DatabaseHelper {
       whereArgs: [dayNumber],
     );
   }
+
   Future<void> clearWorkoutResults() async {
     final db = await database;
     await db.delete('workout_results');
@@ -105,28 +132,26 @@ class DatabaseHelper {
       duration INTEGER,
       restDay INTEGER,
       distance REAL,
-      status TEXT DEFAULT 'NOT_STARTED'  -- ✅ Đã sửa lỗi dấu phẩy
+      status TEXT DEFAULT 'NOT_STARTED'
     )
   ''');
+    await db.execute(_createWorkoutResultsTable);
   }
 
-  // Thêm bài tập vào database
   Future<void> insertWorkout(Workout workout) async {
     final db = await database;
     await db.insert('workouts', workout.toMap(),
         conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
-  // Lấy tất cả bài tập từ database
   Future<List<Workout>> getWorkouts() async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('workouts');
     return List.generate(maps.length, (i) {
-      return Workout.fromMap(maps[i]); // Chuyển đổi từ Map sang Workout
+      return Workout.fromMap(maps[i]);
     });
   }
 
-  // Xóa tất cả bài tập trong database
   Future<void> clearWorkouts() async {
     final db = await database;
     await db.delete('workouts');

@@ -9,7 +9,6 @@ import '../../../models/work_out.dart';
 class RunningTracker extends StatefulWidget {
   final List<Workout> dayWorkouts;
   const RunningTracker({super.key, required this.dayWorkouts});
-
   @override
   _RunningTrackerState createState() => _RunningTrackerState();
 }
@@ -179,12 +178,14 @@ class _RunningTrackerState extends State<RunningTracker> {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(20),
-                child: _isLoading
+                child: _isLoading || (_route.isEmpty && _lastPosition == null)
                     ? Center(child: CircularProgressIndicator(color: Colors.orange[900]))
                     : FlutterMap(
                   mapController: _mapController,
                   options: MapOptions(
-                    initialCenter: _route.isNotEmpty ? _route.first : LatLng(51.5, -0.09),
+                    initialCenter: _route.isNotEmpty
+                        ? _route.first
+                        : const LatLng(0.0, 0.0), // fallback location
                     initialZoom: 15.0,
                   ),
                   children: [

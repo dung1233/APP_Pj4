@@ -7,6 +7,7 @@ import '../../models/work_out.dart';
 import 'detector_view.dart';
 import 'painters/pose_painter.dart';
 import 'pose_classifier_processor.dart';
+import '../User/test3.dart';
 
 class SquatDetectorView extends StatefulWidget {
   final List<Workout> dayWorkouts;
@@ -80,7 +81,21 @@ class _SquatDetectorViewState extends State<SquatDetectorView> {
             child: FloatingActionButton(
               heroTag: 'next_button',
               backgroundColor: Colors.orange[800],
-              onPressed: _handleNext,
+              onPressed: () async {
+                final saved = await _handleNext();
+                if (saved && mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("✅ Đã lưu kết quả bài tập!")),
+                  );
+                  Navigator.push(context, MaterialPageRoute(
+                    builder: (_) => WorkoutLocalResultScreen(), // 👉 trang kết quả
+                  ));
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("❌ Không thể lưu bài tập.")),
+                  );
+                }
+              },
               child: const Icon(Icons.arrow_forward, color: Colors.white, size: 24),
             ),
           ),
@@ -88,26 +103,28 @@ class _SquatDetectorViewState extends State<SquatDetectorView> {
       ],
     );
   }
-  void _handleNext() async {
+  Future<bool> _handleNext() async {
     final sets = squatWorkout.sets ?? 0;
     final reps = squatWorkout.reps ?? 0;
-    final target = sets * reps;
+    final repFromText = int.tryParse(
+      _exerciseText.split(":").last.trim().split(" ").first,
+    ) ?? 0;
 
-    final RegExp regex = RegExp(r":\s*(\d+)\s*reps");
-    final match = regex.firstMatch(_exerciseText);
-    final detectedReps = match != null ? int.tryParse(match.group(1) ?? '0') ?? 0 : 0;
+    final estimatedSets = reps > 0 ? (repFromText ~/ reps) : 0;
 
-    if (detectedReps >= target && squatWorkout.exerciseName != null) {
-      await dbHelper.insertWorkoutResult(
+    if (squatWorkout.exerciseName != null) {
+      await dbHelper.insertOrUpdateWorkoutResult(
         dayNumber: squatWorkout.day ?? 0,
         exerciseName: squatWorkout.exerciseName ?? '',
-        setsCompleted: sets,
-        repsCompleted: reps,
+        setsCompleted: estimatedSets,
+        repsCompleted: repFromText,
         distanceCompleted: 0.0,
         durationCompleted: 0,
       );
-      print("✅ Đã lưu vào local: ${squatWorkout.exerciseName}");
+      print("✅ Đã lưu/ghi đè vào local: ${squatWorkout.exerciseName} - $repFromText reps");
+      return true;
     }
+    return false;
   }
 
   Future<void> _processImage(InputImage inputImage) async {
