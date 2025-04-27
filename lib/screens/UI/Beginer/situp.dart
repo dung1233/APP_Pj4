@@ -6,7 +6,10 @@ import 'package:flutter/material.dart';
 import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/services.dart';
+
+import '../../../data/DatabaseHelper.dart';
 import '../../../models/work_out.dart';
+import '../../User/test3.dart';
 
 late List<CameraDescription> cameras;
 
@@ -32,14 +35,19 @@ class _SitUpDetectorPageState extends State<SitUpDetectorPage> {
   int _upFrames = 0;
   int _downFrames = 0;
   final int _thresholdFrames = 5;
-  List<PoseLandmark> _landmarks = [];
   Size _imageSize = Size.zero;
   CameraLensDirection _currentDirection = CameraLensDirection.back;
+  final dbHelper = DatabaseHelper();
+  late final Workout sitUpWorkout;
 
   @override
   void initState() {
     super.initState();
     _init();
+    sitUpWorkout = widget.dayWorkouts.firstWhere(
+          (w) => w.exerciseName?.toLowerCase() == "sit-up" || w.exerciseName?.toLowerCase() == "gập bụng",
+      orElse: () => Workout(sets: 0, reps: 0),
+    );
   }
 
   Future<void> _init() async {
@@ -114,7 +122,6 @@ class _SitUpDetectorPageState extends State<SitUpDetectorPage> {
 
     if (poses.isNotEmpty) {
       final Pose pose = poses.first;
-      _landmarks = pose.landmarks.values.toList();
 
       final leftShoulder = pose.landmarks[PoseLandmarkType.leftShoulder];
       final leftHip = pose.landmarks[PoseLandmarkType.leftHip];
@@ -178,9 +185,29 @@ class _SitUpDetectorPageState extends State<SitUpDetectorPage> {
     _poseDetector.close();
     super.dispose();
   }
+  Future<bool> _handleNext() async {
+    final sets = sitUpWorkout.sets ?? 0;
+    final reps = sitUpWorkout.reps ?? 0;
+    final estimatedSets = reps > 0 ? (_counter ~/ reps) : 0;
+
+    if (sitUpWorkout.exerciseName != null) {
+      await dbHelper.insertOrUpdateWorkoutResult(
+        dayNumber: sitUpWorkout.day ?? 0,
+        exerciseName: sitUpWorkout.exerciseName ?? '',
+        setsCompleted: estimatedSets,
+        repsCompleted: _counter,
+        distanceCompleted: 0.0,
+        durationCompleted: 0,
+      );
+      print("✅ Đã lưu/ghi đè vào local: ${sitUpWorkout.exerciseName} - $_counter reps");
+      return true;
+    }
+    return false;
+  }
 
   @override
   Widget build(BuildContext context) {
+    final totalTarget = (sitUpWorkout.sets ?? 0) * (sitUpWorkout.reps ?? 0);
     if (_cameraController?.value.isInitialized != true) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
@@ -199,33 +226,50 @@ class _SitUpDetectorPageState extends State<SitUpDetectorPage> {
               child: CameraPreview(_cameraController!),
             ),
           ),
-          CustomPaint(
-            painter: PosePainter(_landmarks, _imageSize, MediaQuery.of(context).size),
-          ),
           Positioned(
             top: 40,
             left: 20,
             child: Text(
-              'Sit-Ups: $_counter',
+              "Sit-Ups: $_counter/$totalTarget",
               style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
             ),
           ),
           Positioned(
-            top: 80,
-            left: 20,
-            child: Text(
-              'Angle: ${_latestAngle.toStringAsFixed(1)}Â°',
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w500, color: Colors.yellow),
-            ),
-          ),
-          Positioned(
             bottom: 30,
-            right: 20,
+            left: 20,
             child: FloatingActionButton(
               onPressed: _switchCamera,
               child: const Icon(Icons.cameraswitch),
             ),
-          )
+          ),
+          Positioned(
+            bottom: 8,
+            right: 8,
+            child: SizedBox(
+              width: 50,
+              height: 50,
+              child: FloatingActionButton(
+                heroTag: 'next_button',
+                backgroundColor: Colors.orange[800],
+                onPressed: () async {
+                  final saved = await _handleNext();
+                  if (saved && mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("✅ Đã lưu kết quả bài tập!")),
+                    );
+                    Navigator.push(context, MaterialPageRoute(
+                      builder: (_) => WorkoutLocalResultScreen(), // 👉 trang kết quả
+                    ));
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("❌ Không thể lưu bài tập.")),
+                    );
+                  }
+                },
+                child: const Icon(Icons.arrow_forward, color: Colors.white, size: 24),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -240,40 +284,7 @@ class PosePainter extends CustomPainter {
   PosePainter(this.landmarks, this.imageSize, this.canvasSize);
 
   @override
-  void paint(Canvas canvas, Size size) {
-    final pointPaint = Paint()
-      ..color = Colors.green
-      ..strokeWidth = 4
-      ..style = PaintingStyle.fill;
-
-    final linePaint = Paint()
-      ..color = Colors.red
-      ..strokeWidth = 2;
-
-    Offset scaleOffset(PoseLandmark lm) {
-      final dx = lm.x * canvasSize.width / imageSize.width;
-      final dy = lm.y * canvasSize.height / imageSize.height;
-      return Offset(dx, dy);
-    }
-
-    for (final landmark in landmarks) {
-      canvas.drawCircle(scaleOffset(landmark), 6, pointPaint);
-    }
-
-    void drawLine(PoseLandmarkType a, PoseLandmarkType b) {
-      final lmA = landmarks.cast<PoseLandmark?>().firstWhere((l) => l?.type == a, orElse: () => null);
-      final lmB = landmarks.cast<PoseLandmark?>().firstWhere((l) => l?.type == b, orElse: () => null);
-      if (lmA != null && lmB != null) {
-        canvas.drawLine(scaleOffset(lmA), scaleOffset(lmB), linePaint);
-      }
-    }
-
-    drawLine(PoseLandmarkType.leftShoulder, PoseLandmarkType.leftElbow);
-    drawLine(PoseLandmarkType.leftElbow, PoseLandmarkType.leftWrist);
-    drawLine(PoseLandmarkType.leftShoulder, PoseLandmarkType.leftHip);
-    drawLine(PoseLandmarkType.leftHip, PoseLandmarkType.leftKnee);
-    drawLine(PoseLandmarkType.leftKnee, PoseLandmarkType.leftAnkle);
-  }
+  void paint(Canvas canvas, Size size) {}
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;

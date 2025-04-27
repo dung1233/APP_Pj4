@@ -64,7 +64,8 @@ class _SquatDetectorViewState extends State<SquatDetectorView> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text("Bạn đang tập bài Squats", style: TextStyle(fontSize: 18, color: Colors.white)),
-              Text("Bài tập: $_exerciseText", style: TextStyle(fontSize: 18, color: Colors.white)),
+              Text("$_exerciseText/$totalTarget",
+                  style: TextStyle(fontSize: 18, color: Colors.white)),
               Text(
                 "${squatWorkout.sets} sets × ${squatWorkout.reps} reps = = $totalTarget",
                 style: TextStyle(fontSize: 18, color: Colors.white),
@@ -143,7 +144,7 @@ class _SquatDetectorViewState extends State<SquatDetectorView> {
             _exerciseText = detectedExercise;
             _updateRepCount(classificationResult);
           } else {
-            _exerciseText = "Bạn đang thực hiện sai tư thế!";
+            _exerciseText = "Sai tư thế!";
           }
         });
       }

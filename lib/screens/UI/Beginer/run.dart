@@ -5,6 +5,8 @@ import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 
 import '../../../models/work_out.dart';
+import '../../../data/DatabaseHelper.dart';
+import '../../User/test3.dart';
 
 class RunningTracker extends StatefulWidget {
   final List<Workout> dayWorkouts;
@@ -23,11 +25,20 @@ class _RunningTrackerState extends State<RunningTracker> {
   Timer? _timer;
   int _secondsElapsed = 0;
   StreamSubscription<Position>? _positionStreamSubscription;
+  late double targetDistance;
+  final dbHelper = DatabaseHelper();
 
   @override
   void initState() {
     super.initState();
     _determinePosition();
+    // 🔥 Lấy thông tin bài chạy bộ trong dayWorkouts
+    final runWorkout = widget.dayWorkouts.firstWhere(
+          (w) => (w.exerciseName?.toLowerCase().contains("chạy") ?? false),
+      orElse: () => Workout(distance: 0.0),
+    );
+    // 🔥 CHỈNH CHUẨN: chuyển từ km sang mét
+    targetDistance = (runWorkout.distance ?? 0.0) * 1000;
   }
 
   Future<void> _determinePosition() async {
@@ -82,7 +93,7 @@ class _RunningTrackerState extends State<RunningTracker> {
     });
   }
 
-  void _toggleTracking() {
+  Future<void> _toggleTracking() async {
     setState(() {
       if (_isTracking) {
         _stopTimer();
@@ -102,6 +113,22 @@ class _RunningTrackerState extends State<RunningTracker> {
       }
       _isTracking = !_isTracking;
     });
+    // 🔥 Nếu vừa STOP thì lưu dữ liệu
+    if (!_isTracking) {
+      final saved = await _handleSaveRun();
+      if (saved && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("✅ Đã lưu kết quả chạy bộ!")),
+          );
+          Navigator.push(context, MaterialPageRoute(
+            builder: (_) => WorkoutLocalResultScreen(), // 👉 trang kết quả
+        ));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("❌ Không thể lưu kết quả chạy bộ.")),
+        );
+      }
+    }
   }
 
   void _startTimer() {
@@ -124,6 +151,31 @@ class _RunningTrackerState extends State<RunningTracker> {
     int secs = seconds % 60;
     return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
   }
+
+  Future<bool> _handleSaveRun() async {
+    final runWorkout = widget.dayWorkouts.firstWhere(
+          (w) => (w.exerciseName?.toLowerCase().contains("chạy") ?? false),
+      orElse: () => Workout(distance: 0.0),
+    );
+
+    if (runWorkout.exerciseName != null) {
+      final distanceKm = (_distance / 1000).toStringAsFixed(3);
+      double distanceInKm =  double.parse(distanceKm);
+
+      await dbHelper.insertOrUpdateWorkoutResult(
+        dayNumber: runWorkout.day ?? 0,
+        exerciseName: runWorkout.exerciseName ?? '',
+        setsCompleted: 0,
+        repsCompleted: 0,
+        distanceCompleted: distanceInKm,  // 🔥 Ghi km vào DB
+        durationCompleted: (_secondsElapsed / 60).ceil(),
+      );
+      print("✅ Đã lưu/ghi đè bài chạy bộ: ${runWorkout.exerciseName} - $distanceInKm km trong $_secondsElapsed giây");
+      return true;
+    }
+    return false;
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -149,7 +201,7 @@ class _RunningTrackerState extends State<RunningTracker> {
                   children: [
                     Text("Distance", style: TextStyle(color: Colors.white)),
                     Text(
-                      "${_distance.toStringAsFixed(1)} m",
+                      "${_distance.toStringAsFixed(1)}/${targetDistance.toStringAsFixed(0)} m",
                       style: TextStyle(color: Colors.white, fontSize: 32),
                     ),
                   ],

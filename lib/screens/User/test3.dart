@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../data/DatabaseHelper.dart';
+import '../trainhome.dart';
 
 class WorkoutLocalResultScreen extends StatefulWidget {
   @override
@@ -102,6 +103,20 @@ class _WorkoutLocalResultScreenState extends State<WorkoutLocalResultScreen> {
             }).toList(),
           );
         },
+      ),
+      floatingActionButton: Align(
+        alignment: Alignment.bottomRight,
+        child: FloatingActionButton(
+          heroTag: 'next_button',
+          backgroundColor: Colors.orange[800],
+          onPressed: () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => Trainhome()),
+            );
+          },
+          child: const Icon(Icons.arrow_forward, color: Colors.white, size: 24),
+        ),
       ),
     );
   }

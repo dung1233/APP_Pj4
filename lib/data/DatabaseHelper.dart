@@ -62,8 +62,12 @@ class DatabaseHelper {
     );
 
     if (existing.isNotEmpty) {
-      final existingReps = existing.first['repsCompleted'] ?? 0;
-      if (repsCompleted > existingReps) {
+      final old = existing.first;
+      final oldReps = old['repsCompleted'] ?? 0;
+      final oldDistance = old['distanceCompleted'] ?? 0.0;
+
+      if (repsCompleted > oldReps || distanceCompleted > oldDistance) {
+        // 🔥 Nếu lần mới reps nhiều hơn hoặc distance xa hơn thì update
         await db.update(
           'workout_results',
           {

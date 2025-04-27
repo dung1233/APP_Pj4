@@ -75,7 +75,7 @@ class _PushUpDetectorViewState extends State<PushUpDetectorView> {
             children: [
               Text("Bạn đang tập bài Pushup",
                   style: TextStyle(fontSize: 18, color: Colors.white)),
-              Text("Bài tập: $_exerciseText",
+              Text("$_exerciseText/$totalTarget",
                   style: TextStyle(fontSize: 18, color: Colors.white)),
               Text(
                 "${pushUpWorkout.sets} sets × ${pushUpWorkout.reps} reps = = $totalTarget",
@@ -170,7 +170,7 @@ class _PushUpDetectorViewState extends State<PushUpDetectorView> {
               _exerciseText = detectedExercise;
               _updateRepCount(classificationResult);
             } else {
-              _exerciseText = "Bạn đang thực hiện sai tư thế!";
+              _exerciseText = "Sai tư thế!";
               print("[DEBUG] ❌ Bài tập nhận diện không phải chống đẩy!");
             }
           });
