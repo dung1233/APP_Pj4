@@ -4,6 +4,7 @@ import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
 import 'package:training_souls/data/DatabaseHelper.dart';
 
 import 'package:training_souls/screens/Train/rest.dart';
+import 'package:training_souls/screens/Train/restb.dart';
 import 'package:training_souls/screens/ol.dart';
 
 import 'detector_view.dart';
@@ -121,7 +122,7 @@ class _SquatDetectorViewState extends State<SquatDetectorView> {
       if (mounted) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => Ol()),
+          MaterialPageRoute(builder: (_) => Restb(day: widget.day)),
         );
       }
     });
@@ -225,7 +226,7 @@ class _SquatDetectorViewState extends State<SquatDetectorView> {
     );
   }
 
-  Future<void> _processImage(InputImage inputImage) async {
+  Future _processImage(InputImage inputImage) async {
     if (!_canProcess || _isBusy) return;
     _isBusy = true;
 
@@ -233,22 +234,31 @@ class _SquatDetectorViewState extends State<SquatDetectorView> {
 
     if (poses.isNotEmpty) {
       if (!_isValidPose(poses.first)) {
+        // Log thông báo khi pose không hợp lệ
         print("[DEBUG] ❌ Pose không hợp lệ (không đủ keypoints)");
       } else if (!_isSignificantMovement(poses.first)) {
+        // Log thông báo khi chuyển động quá nhỏ
         print("[DEBUG] ❌ Chuyển động quá nhỏ, không tính.");
       } else {
-        List<String> classificationResult =
+        List classificationResult =
             _poseClassifierProcessor.getPoseResult(poses.first);
 
         if (classificationResult.isNotEmpty) {
           setState(() {
-            _exerciseText = classificationResult[0];
+            String detectedExercise = classificationResult[0];
+            // Kiểm tra và cập nhật kết quả tập luyện nếu có
+            if (detectedExercise.contains("squats")) {
+              _exerciseText = detectedExercise;
+            } else {
+              _exerciseText = "Sai tư thế!";
+            }
           });
 
           _checkWorkoutProgress();
         }
       }
     } else {
+      // Log khi không phát hiện được pose nào
       print("[DEBUG] ❌ Không phát hiện pose nào!");
     }
 

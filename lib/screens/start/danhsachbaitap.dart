@@ -4,6 +4,7 @@ import 'package:training_souls/data/DatabaseHelper.dart';
 import 'package:training_souls/models/work_out.dart';
 import 'package:training_souls/screens/TEST/pushup_detector_view.dart';
 import 'package:training_souls/screens/TEST/squat_detector_view.dart';
+import 'package:training_souls/screens/UI/Beginer/run.dart';
 import 'package:training_souls/screens/UI/Beginer/situp.dart';
 import 'package:training_souls/screens/start/Test.dart';
 
@@ -99,10 +100,19 @@ class _DanhsachbaitapState extends State<Danhsachbaitap> {
         true) {
       Navigator.push(context,
           MaterialPageRoute(builder: (context) => SquatDetectorView(day: day)));
-    } else if (nextWorkout.exerciseName?.toLowerCase().contains("chạy bộ") ==
+    } else if (nextWorkout.exerciseName?.toLowerCase().contains("gập bụng") ==
         true) {
+      await initializeCameras();
       Navigator.push(context,
           MaterialPageRoute(builder: (context) => SitUpDetectorPage(day: day)));
+    } else if (nextWorkout.exerciseName?.toLowerCase().contains("chạy bộ") ==
+        true) {
+      Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (context) => RunningTracker(
+                    day: day,
+                  )));
     } else {
       // Chuyển đến bài tập khác hoặc màn hình mặc định
       print(

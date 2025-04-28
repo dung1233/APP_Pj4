@@ -10,6 +10,11 @@ import 'package:flutter/services.dart';
 import 'package:training_souls/data/DatabaseHelper.dart';
 import 'package:training_souls/screens/Train/restb.dart';
 
+late List<CameraDescription> cameras;
+Future<void> initializeCameras() async {
+  cameras = await availableCameras();
+}
+
 class SitUpDetectorPage extends StatefulWidget {
   final int day; // Chỉ cần truyền ngày tập
 
@@ -23,12 +28,6 @@ class SitUpDetectorPage extends StatefulWidget {
 }
 
 class _SitUpDetectorPageState extends State<SitUpDetectorPage> {
-  late List<CameraDescription> cameras;
-
-  Future<void> initializeCameras() async {
-    cameras = await availableCameras();
-  }
-
   late CameraController _cameraController;
   final PoseDetector _poseDetector =
       PoseDetector(options: PoseDetectorOptions());
@@ -51,7 +50,7 @@ class _SitUpDetectorPageState extends State<SitUpDetectorPage> {
   void initState() {
     super.initState();
     _init();
-    _initCameraFlow();
+
     _loadWorkoutData();
   }
 
@@ -69,17 +68,6 @@ class _SitUpDetectorPageState extends State<SitUpDetectorPage> {
       _totalSets = pushupWorkouts.fold(0, (sum, w) => sum + (w.sets ?? 0));
       _isLoading = false;
     });
-  }
-
-  Future<void> _initCameraFlow() async {
-    cameras = await availableCameras();
-    _cameraController = CameraController(cameras[0], ResolutionPreset.medium);
-
-    await _cameraController.initialize();
-
-    if (mounted) {
-      setState(() {});
-    }
   }
 
   Future<void> _saveWorkoutResult() async {

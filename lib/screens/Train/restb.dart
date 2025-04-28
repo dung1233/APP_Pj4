@@ -6,6 +6,7 @@ import 'package:lottie/lottie.dart';
 import 'package:training_souls/data/DatabaseHelper.dart';
 import 'package:training_souls/screens/TEST/squat_detector_view.dart';
 import 'package:training_souls/screens/UI/Beginer/run.dart';
+import 'package:training_souls/screens/UI/Beginer/situp.dart';
 
 class Restb extends StatefulWidget {
   final int day;
@@ -67,7 +68,7 @@ class _RestState extends State<Restb> {
     Navigator.push(
         context,
         MaterialPageRoute(
-            builder: (context) => RunningTracker(day: widget.day)));
+            builder: (context) => SitUpDetectorPage(day: widget.day)));
   }
 
   @override
