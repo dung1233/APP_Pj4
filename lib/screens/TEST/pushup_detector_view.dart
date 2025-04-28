@@ -2,9 +2,8 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
 import 'package:training_souls/data/DatabaseHelper.dart';
-import 'package:training_souls/screens/TEST/painters/completionScreen.dart';
-import 'package:training_souls/screens/TEST/squat_detector_view.dart';
-
+import 'package:training_souls/screens/Train/rest.dart';
+import 'package:training_souls/screens/ol.dart';
 import 'detector_view.dart';
 import 'painters/pose_painter.dart';
 import 'pose_classifier_processor.dart';
@@ -36,7 +35,7 @@ class _PushUpDetectorViewState extends State<PushUpDetectorView> {
   bool _isLoading = true; // Thêm trạng thái loading
   CustomPaint? _customPaint;
   String _exerciseText = "Chưa nhận diện";
-  int _repCount = 0;
+
   Pose? _previousPose;
   var _cameraLensDirection = CameraLensDirection.back;
 
@@ -57,6 +56,109 @@ class _PushUpDetectorViewState extends State<PushUpDetectorView> {
     super.dispose();
   }
 
+  // Thêm các biến này vào phần khai báo biến
+
+  void _checkWorkoutProgress() {
+    int repsSoFar = _extractRepCount();
+    int oldSet = _currentSet;
+
+    print(
+        "[DEBUG] 🔄 Kiểm tra tiến độ: $repsSoFar/$_totalRequiredReps reps | _repsPerSet=$_repsPerSet | _totalSets=$_totalSets");
+
+    if (repsSoFar >= _totalRequiredReps) {
+      print("[DEBUG] ✅ Đã đủ số lần! Chuyển trang...");
+      // Đã hoàn thành toàn bộ bài tập
+      _goToNextPage();
+    } else {
+      setState(() {
+        int newSet = (repsSoFar ~/ _repsPerSet) + 1;
+        print(
+            "[DEBUG] 📊 Set mới tính được: $newSet (từ $repsSoFar ~/ $_repsPerSet + 1)");
+        _currentSet = newSet;
+
+        // Nếu chuyển sang set mới
+        if (_currentSet > oldSet) {
+          // Reset _exerciseText để đếm lại từ đầu
+          _exerciseText = "Chưa nhận diện";
+          print(
+              "[DEBUG] 🔄 Reset counter khi chuyển sang set mới: $_currentSet");
+
+          // Thông báo
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                  "Hoàn thành set $oldSet! Chuẩn bị cho set $_currentSet."),
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+      });
+    }
+  }
+
+  Future<void> _saveWorkoutResult() async {
+    try {
+      final dbHelper = DatabaseHelper();
+
+      // Tạo đối tượng kết quả bài tập theo định dạng API của bạn
+      final workoutResult = {
+        "exerciseName": "Hít đất",
+        "setsCompleted": _currentSet,
+        "repsCompleted": _extractRepCount(),
+        "distanceCompleted": 0.0,
+        "durationCompleted": 0
+      };
+
+      // Lưu vào cơ sở dữ liệu
+      await dbHelper.saveExerciseResult(widget.day, workoutResult);
+
+      print("[DEBUG] ✅ Đã lưu kết quả tập luyện: ${workoutResult.toString()}");
+    } catch (e) {
+      print("[DEBUG] ❌ Lỗi khi lưu kết quả: $e");
+    }
+  }
+
+  void _goToNextPage() async {
+    print("[DEBUG] 💾 Đang lưu kết quả tập luyện...");
+
+    // Hiển thị loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+
+    // Lưu kết quả tập luyện
+    await _saveWorkoutResult();
+
+    // Đóng loading dialog
+    if (mounted && Navigator.canPop(context)) {
+      Navigator.pop(context);
+    }
+
+    // Hiển thị thông báo
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("Đã lưu kết quả tập luyện!"),
+        backgroundColor: Colors.green,
+        duration: Duration(seconds: 2),
+      ),
+    );
+
+    print("[DEBUG] 🚀 Đang chuyển sang trang tiếp theo...");
+    // Chuyển trang sau khi đã lưu kết quả
+    Future.delayed(Duration(milliseconds: 500), () {
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => Rest(day: widget.day)),
+        );
+      }
+    });
+  }
+
   // Hàm mới: Lấy dữ liệu từ SQLite
   Future<void> _loadWorkoutData() async {
     final dbHelper = DatabaseHelper();
@@ -72,6 +174,23 @@ class _PushUpDetectorViewState extends State<PushUpDetectorView> {
       _totalSets = pushupWorkouts.fold(0, (sum, w) => sum + (w.sets ?? 0));
       _isLoading = false;
     });
+  }
+
+  int _extractRepCount() {
+    try {
+      // Tìm số trong chuỗi _exerciseText
+      RegExp regExp = RegExp(r'(\d+)');
+      var matches = regExp.allMatches(_exerciseText);
+
+      if (matches.isNotEmpty) {
+        return int.parse(matches.first.group(0)!);
+      }
+    } catch (e) {
+      print("[DEBUG] ❌ Lỗi khi trích xuất số từ _exerciseText: $e");
+    }
+
+    // Trả về 0 nếu không tìm thấy số
+    return 0;
   }
 
   @override
@@ -104,7 +223,8 @@ class _PushUpDetectorViewState extends State<PushUpDetectorView> {
                   style: TextStyle(fontSize: 16, color: Colors.white)),
               Text("Hiệp $_currentSet/$_totalSets",
                   style: TextStyle(fontSize: 16, color: Colors.white)),
-              Text("Số lần: $_exerciseText/$_repsPerSet",
+              // Trong widget build
+              Text("Số lần: ${_extractRepCount()}/$_totalRequiredReps",
                   style: TextStyle(fontSize: 16, color: Colors.white)),
             ],
           ),
@@ -130,15 +250,10 @@ class _PushUpDetectorViewState extends State<PushUpDetectorView> {
 
         if (classificationResult.isNotEmpty) {
           setState(() {
-            String detectedExercise = classificationResult[0];
-            if (detectedExercise.contains("pushups")) {
-              _exerciseText = detectedExercise;
-              _updateRepCount(classificationResult);
-            } else {
-              _exerciseText = "Bạn đang thực hiện sai tư thế!";
-              print("[DEBUG] ❌ Bài tập nhận diện không phải chống đẩy!");
-            }
+            _exerciseText = classificationResult[0];
           });
+
+          _checkWorkoutProgress();
         }
       }
     } else {
@@ -146,19 +261,6 @@ class _PushUpDetectorViewState extends State<PushUpDetectorView> {
     }
 
     _updateCanvas(poses, inputImage);
-  }
-
-  void _updateRepCount(List<String> classificationResult) {
-    if (classificationResult.length > 1) {
-      List<String> parts = classificationResult[1].split(" ");
-      if (parts.length > 2) {
-        int newRepCount = int.tryParse(parts[2]) ?? _repCount;
-        if (newRepCount > _repCount) {
-          _repCount = newRepCount;
-          print("[DEBUG] ✅ Đếm push-ups: $_repCount");
-        }
-      }
-    }
   }
 
   void _updateCanvas(List<Pose> poses, InputImage inputImage) {

@@ -17,7 +17,58 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
   @override
   void initState() {
     super.initState();
-    _loadWorkoutsFromSQLite(); // ✅ Tải dữ liệu từ Hive khi widget khởi tạo
+    _loadWorkoutsFromSQLite();
+    // ✅ Tải dữ liệu từ Hive khi widget khởi tạo
+  }
+
+  Future<bool> checkExerciseCompletion(int day, String exerciseName) async {
+    final dbHelper = DatabaseHelper();
+    final results = await dbHelper.getExerciseResults(day);
+
+    // Kiểm tra xem bài tập có trong kết quả không
+    for (var result in results) {
+      if (result['exercise_name'] == exerciseName) {
+        // Thay đổi từ exerciseName thành exercise_name
+        return true; // Đã hoàn thành
+      }
+    }
+
+    return false; // Chưa hoàn thành
+  }
+
+  Future<void> _updateCompletionStatus() async {
+    final dbHelper = DatabaseHelper();
+
+    bool anyChange = false; // 🆕 Thêm flag xem có gì thay đổi không
+
+    for (var weekWorkouts in weeks) {
+      for (var workout in weekWorkouts) {
+        if (workout.day != null && workout.exerciseName != null) {
+          bool isCompleted = await checkExerciseCompletion(
+              workout.day!, workout.exerciseName!);
+
+          if (isCompleted && workout.status != "COMPLETED") {
+            await dbHelper.updateWorkoutStatus(workout.id!, "COMPLETED");
+            workout.status = "COMPLETED";
+            anyChange = true; // Có thay đổi
+          }
+        }
+      }
+    }
+
+    if (mounted && anyChange)
+      setState(() {}); // 🆕 Chỉ setState nếu có thay đổi
+  }
+
+  Future<void> saveExerciseResult(int day, String exerciseName) async {
+    final dbHelper = DatabaseHelper();
+    await dbHelper.insertExerciseResult(day, exerciseName);
+
+    // Sau khi lưu xong, cập nhật trạng thái bài tập
+    await _updateCompletionStatus();
+
+    // Nếu muốn chắc chắn hơn nữa (nếu dữ liệu bài tập thay đổi nhiều), thay bằng:
+    // await _loadWorkoutsFromSQLite();
   }
 
   /// ✅ Hàm này lấy dữ liệu từ Hive và nhóm theo tuần
@@ -62,6 +113,7 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
       weeks = groupedWeeks;
       isLoading = false;
     });
+    _updateCompletionStatus();
   }
 
   @override

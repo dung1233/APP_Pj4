@@ -19,7 +19,7 @@ class DatabaseHelper {
     String path = join(await getDatabasesPath(), 'workout_database.db');
     return await openDatabase(
       path,
-      version: 5, // Thay đổi từ 4 lên 5
+      version: 6, // Tăng version lên 6
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -74,6 +74,21 @@ class DatabaseHelper {
         )
       ''');
     }
+    if (oldVersion < 6) {
+      // Thêm bảng workout_results trong version 6
+      await db.execute('''
+        CREATE TABLE workout_results(
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          day_number INTEGER,
+          exercise_name TEXT,
+          sets_completed INTEGER,
+          reps_completed INTEGER,
+          distance_completed REAL,
+          duration_completed INTEGER,
+          completed_date TEXT
+        )
+      ''');
+    }
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -105,13 +120,41 @@ class DatabaseHelper {
         status TEXT DEFAULT 'NOT_STARTED'
       )
     ''');
+    await db.execute('''
+      CREATE TABLE workout_results(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        day_number INTEGER,
+        exercise_name TEXT,
+        sets_completed INTEGER,
+        reps_completed INTEGER,
+        distance_completed REAL,
+        duration_completed INTEGER,
+        completed_date TEXT
+      )
+    ''');
   }
 
   Future<void> checkAndCreateTables() async {
     final db = await database;
-
-    // Kiểm tra bảng user_profile
     var tables = await db.rawQuery(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='workout_results'");
+    if (tables.isEmpty) {
+      await db.execute('''
+      CREATE TABLE workout_results(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        day_number INTEGER,
+        exercise_name TEXT,
+        sets_completed INTEGER,
+        reps_completed INTEGER,
+        distance_completed REAL,
+        duration_completed INTEGER,
+        completed_date TEXT
+      )
+      ''');
+      print("[DEBUG] ✅ Đã tạo bảng workout_results");
+    }
+    // Kiểm tra bảng user_profile
+    tables = await db.rawQuery(
         "SELECT name FROM sqlite_master WHERE type='table' AND name='user_profile'");
     if (tables.isEmpty) {
       await db.execute('''
@@ -137,36 +180,123 @@ class DatabaseHelper {
     ''');
     }
 
-    // Kiểm tra bảng roles
-    tables = await db.rawQuery(
-        "SELECT name FROM sqlite_master WHERE type='table' AND name='roles'");
-    if (tables.isEmpty) {
-      await db.execute('''
-      CREATE TABLE roles (
-        roleID INTEGER PRIMARY KEY AUTOINCREMENT,
-        userID INTEGER,
-        name TEXT,
-        description TEXT,
-        FOREIGN KEY(userID) REFERENCES user_info(userID)
-      )
-    ''');
-    }
+    // // Kiểm tra bảng roles
+    // tables = await db.rawQuery(
+    //     "SELECT name FROM sqlite_master WHERE type='table' AND name='roles'");
+    // if (tables.isEmpty) {
+    //   await db.execute('''
+    //   CREATE TABLE roles (
+    //     roleID INTEGER PRIMARY KEY AUTOINCREMENT,
+    //     userID INTEGER,
+    //     name TEXT,
+    //     description TEXT,
+    //     FOREIGN KEY(userID) REFERENCES user_info(userID)
+    //   )
+    // ''');
+    // }
 
-    // Kiểm tra bảng permissions
-    tables = await db.rawQuery(
-        "SELECT name FROM sqlite_master WHERE type='table' AND name='permissions'");
-    if (tables.isEmpty) {
-      await db.execute('''
-      CREATE TABLE permissions (
-        permissionID INTEGER PRIMARY KEY AUTOINCREMENT,
-        roleID INTEGER,
-        name TEXT,
-        description TEXT,
-        FOREIGN KEY(roleID) REFERENCES roles(roleID)
-      )
-    ''');
+    // // Kiểm tra bảng permissions
+    // tables = await db.rawQuery(
+    //     "SELECT name FROM sqlite_master WHERE type='table' AND name='permissions'");
+    // if (tables.isEmpty) {
+    //   await db.execute('''
+    //   CREATE TABLE permissions (
+    //     permissionID INTEGER PRIMARY KEY AUTOINCREMENT,
+    //     roleID INTEGER,
+    //     name TEXT,
+    //     description TEXT,
+    //     FOREIGN KEY(roleID) REFERENCES roles(roleID)
+    //   )
+    // ''');
+    // }
+  }
+
+  Future<void> saveExerciseResult(
+      int dayNumber, Map<String, dynamic> exerciseResult) async {
+    final db = await database;
+
+    try {
+      // Kiểm tra xem bảng workout_results có tồn tại không
+      var tables = await db.rawQuery(
+          "SELECT name FROM sqlite_master WHERE type='table' AND name='workout_results'");
+      if (tables.isEmpty) {
+        // Tạo bảng nếu chưa có
+        await db.execute('''
+        CREATE TABLE workout_results(
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          day_number INTEGER,
+          exercise_name TEXT,
+          sets_completed INTEGER,
+          reps_completed INTEGER,
+          distance_completed REAL,
+          duration_completed INTEGER,
+          completed_date TEXT
+        )
+        ''');
+        print("[DEBUG] ✅ Đã tạo bảng workout_results");
+      }
+
+      // Kiểm tra xem đã có kết quả cho ngày và bài tập này chưa
+      final List<Map<String, dynamic>> existingResults = await db.query(
+          'workout_results',
+          where: 'day_number = ? AND exercise_name = ?',
+          whereArgs: [dayNumber, exerciseResult['exerciseName']]);
+
+      if (existingResults.isNotEmpty) {
+        // Cập nhật kết quả hiện có
+        await db.update(
+            'workout_results',
+            {
+              'sets_completed': exerciseResult['setsCompleted'],
+              'reps_completed': exerciseResult['repsCompleted'],
+              'distance_completed': exerciseResult['distanceCompleted'],
+              'duration_completed': exerciseResult['durationCompleted'],
+              'completed_date': DateTime.now().toIso8601String()
+            },
+            where: 'day_number = ? AND exercise_name = ?',
+            whereArgs: [dayNumber, exerciseResult['exerciseName']]);
+        print("[DEBUG] ✏️ Đã cập nhật kết quả có sẵn");
+      } else {
+        // Thêm mới kết quả
+        await db.insert('workout_results', {
+          'day_number': dayNumber,
+          'exercise_name': exerciseResult['exerciseName'],
+          'sets_completed': exerciseResult['setsCompleted'],
+          'reps_completed': exerciseResult['repsCompleted'],
+          'distance_completed': exerciseResult['distanceCompleted'],
+          'duration_completed': exerciseResult['durationCompleted'],
+          'completed_date': DateTime.now().toIso8601String()
+        });
+        print("[DEBUG] ➕ Đã thêm kết quả mới");
+      }
+    } catch (e) {
+      print("[DEBUG] ❌ Lỗi database: $e");
+      throw e;
     }
   }
+
+  // Lấy tất cả kết quả từ bảng workout_results
+  Future<List<Map<String, dynamic>>> getAllWorkoutResults() async {
+    final db = await database;
+    final List<Map<String, dynamic>> results =
+        await db.query('workout_results');
+    print("[DEBUG] 📊 Đã lấy ${results.length} kết quả từ workout_results");
+    return results;
+  }
+
+  // Phương thức lấy tất cả kết quả cho một ngày cụ thể
+  Future<Map<String, dynamic>> getDayResults(int dayNumber) async {
+    final db = await database;
+
+    final resultsList = await db.query('workout_results',
+        where: 'day_number = ?', whereArgs: [dayNumber]);
+
+    final formattedResults = {"dayNumber": dayNumber, "results": resultsList};
+
+    return formattedResults;
+  }
+
+  // Các phương thức khác giữ nguyên
 
   // Thêm bài tập vào database
   Future<void> insertWorkout(Workout workout) async {
@@ -265,5 +395,29 @@ class DatabaseHelper {
       'roles': roles,
       'user_profile': userProfile,
     };
+  }
+
+  // Phương thức lấy kết quả cho một ngày cụ thể và tên bài tập
+  Future<List<Map<String, dynamic>>> getExerciseResults(int day) async {
+    final db = await database;
+    final List<Map<String, dynamic>> results = await db.query(
+      'workout_results',
+      where: 'day_number = ?',
+      whereArgs: [day],
+    );
+    return results;
+  }
+
+  Future<void> insertExerciseResult(int day, String exerciseName) async {
+    final db = await database;
+
+    await db.insert(
+      'exercise_results', // 👉 Tên bảng lưu kết quả, sửa đúng tên bảng của em nhé
+      {
+        'day': day,
+        'exercise_name': exerciseName,
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace, // Nếu trùng thì thay
+    );
   }
 }

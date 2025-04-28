@@ -1,7 +1,7 @@
-import 'package:training_souls/screens/Test.dart';
 import 'package:training_souls/screens/ol.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:training_souls/screens/start/Test.dart';
 
 class ExploreScreen extends StatelessWidget {
   const ExploreScreen({super.key});

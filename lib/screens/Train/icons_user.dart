@@ -84,28 +84,28 @@ class _IconsUserState extends State<IconsUser> {
           });
         }
 
-        // Lưu thông tin roles và permissions
-        if (user.roles != null && user.roles.isNotEmpty) {
-          for (var role in user.roles) {
-            // Lưu role
-            int roleID = await dbHelper.insertRole({
-              'userID': user.userID,
-              'name': role.name,
-              'description': role.description,
-            });
+        // // Lưu thông tin roles và permissions
+        // if (user.roles != null && user.roles.isNotEmpty) {
+        //   for (var role in user.roles) {
+        //     // Lưu role
+        //     int roleID = await dbHelper.insertRole({
+        //       'userID': user.userID,
+        //       'name': role.name,
+        //       'description': role.description,
+        //     });
 
-            // Lưu permissions của role
-            if (role.permissions != null && role.permissions.isNotEmpty) {
-              for (var permission in role.permissions) {
-                await dbHelper.insertPermission({
-                  'roleID': roleID,
-                  'name': permission.name,
-                  'description': permission.description,
-                });
-              }
-            }
-          }
-        }
+        //     // Lưu permissions của role
+        //     if (role.permissions != null && role.permissions.isNotEmpty) {
+        //       for (var permission in role.permissions) {
+        //         await dbHelper.insertPermission({
+        //           'roleID': roleID,
+        //           'name': permission.name,
+        //           'description': permission.description,
+        //         });
+        //       }
+        //     }
+        //   }
+        // }
 
         // Kiểm tra dữ liệu đã lưu bằng cách truy vấn từ database và print ra console
         _printDatabaseContent(dbHelper);

@@ -5,6 +5,11 @@ import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 
 class RunningTracker extends StatefulWidget {
+  final int day;
+  const RunningTracker({
+    super.key,
+    required this.day,
+  });
   @override
   _RunningTrackerState createState() => _RunningTrackerState();
 }

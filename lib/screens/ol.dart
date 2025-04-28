@@ -1,9 +1,43 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:training_souls/data/DatabaseHelper.dart';
 
-class Ol extends StatelessWidget {
+class Ol extends StatefulWidget {
   const Ol({super.key});
+
+  @override
+  State<StatefulWidget> createState() => _OlViewState();
+}
+
+class _OlViewState extends State<Ol> {
+  @override
+  void initState() {
+    super.initState();
+    displayWorkoutResults();
+  }
+
+  // Trong màn hình hoặc widget muốn hiển thị kết quả
+  void displayWorkoutResults() async {
+    final dbHelper = DatabaseHelper();
+    final results = await dbHelper.getAllWorkoutResults();
+
+    // In kết quả để debug
+    print("Tất cả kết quả workout: $results");
+
+    // Xử lý và hiển thị kết quả
+    for (var result in results) {
+      print("ID: ${result['id']}");
+      print("Ngày: ${result['day_number']}");
+      print("Tên bài tập: ${result['exercise_name']}");
+      print("Sets hoàn thành: ${result['sets_completed']}");
+      print("Reps hoàn thành: ${result['reps_completed']}");
+      print("Khoảng cách hoàn thành: ${result['distance_completed']}");
+      print("Thời gian hoàn thành: ${result['duration_completed']}");
+      print("Ngày hoàn thành: ${result['completed_date']}");
+      print("-----------------------");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

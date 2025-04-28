@@ -7,10 +7,16 @@ import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:training_souls/screens/TEST/painters/completionScreenc.dart';
+import 'package:training_souls/data/DatabaseHelper.dart';
+import 'package:training_souls/screens/Train/restb.dart';
 
 class SitUpDetectorPage extends StatefulWidget {
-  const SitUpDetectorPage({super.key});
+  final int day; // Chỉ cần truyền ngày tập
+
+  const SitUpDetectorPage({
+    super.key,
+    required this.day,
+  });
 
   @override
   State<SitUpDetectorPage> createState() => _SitUpDetectorPageState();
@@ -26,6 +32,10 @@ class _SitUpDetectorPageState extends State<SitUpDetectorPage> {
   late CameraController _cameraController;
   final PoseDetector _poseDetector =
       PoseDetector(options: PoseDetectorOptions());
+  int _totalRequiredReps = 0;
+  int _totalSets = 0;
+  int _currentSet = 1;
+  bool _isLoading = true;
   bool _isDetecting = false;
   int _counter = 0;
   String _position = 'down';
@@ -42,25 +52,23 @@ class _SitUpDetectorPageState extends State<SitUpDetectorPage> {
     super.initState();
     _init();
     _initCameraFlow();
-    Future.delayed(const Duration(seconds: 15), () {
-      if (mounted) {
-        _onPushupCompleted(); // Gọi hàm chuyển trang
-      }
-    });
+    _loadWorkoutData();
   }
 
-  void _onPushupCompleted() {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => CompletionScreenc(
-          message: "Bạn đã hoàn thành 2/2 toàn bộ bài gap bung!",
-          onContinue: () {
-            Navigator.of(context).pop(); // Quay lại màn hình trước đó
-          },
-        ),
-      ),
-    );
+  Future<void> _loadWorkoutData() async {
+    final dbHelper = DatabaseHelper();
+    final allWorkouts = await dbHelper.getWorkouts(); // Dùng phương thức có sẵn
+
+    final pushupWorkouts = allWorkouts
+        .where((w) => w.day == widget.day && w.exerciseName == "Hít đất")
+        .toList();
+
+    setState(() {
+      _totalRequiredReps = pushupWorkouts.fold(
+          0, (sum, w) => sum + (w.sets ?? 0) * (w.reps ?? 0));
+      _totalSets = pushupWorkouts.fold(0, (sum, w) => sum + (w.sets ?? 0));
+      _isLoading = false;
+    });
   }
 
   Future<void> _initCameraFlow() async {
@@ -71,6 +79,105 @@ class _SitUpDetectorPageState extends State<SitUpDetectorPage> {
 
     if (mounted) {
       setState(() {});
+    }
+  }
+
+  Future<void> _saveWorkoutResult() async {
+    try {
+      final dbHelper = DatabaseHelper();
+
+      // Tạo đối tượng kết quả bài tập theo định dạng API của bạn
+      final workoutResult = {
+        "exerciseName": "Gập bụng", // Changed from "Hít đất" to "Gập bụng"
+        "setsCompleted": _currentSet,
+        "repsCompleted": _counter,
+        "distanceCompleted": 0.0,
+        "durationCompleted": 0
+      };
+
+      // Lưu vào cơ sở dữ liệu
+      await dbHelper.saveExerciseResult(widget.day, workoutResult);
+
+      print("[DEBUG] ✅ Đã lưu kết quả tập luyện: ${workoutResult.toString()}");
+    } catch (e) {
+      print("[DEBUG] ❌ Lỗi khi lưu kết quả: $e");
+    }
+  }
+
+  void _goToNextPage() async {
+    print("[DEBUG] 💾 Đang lưu kết quả tập luyện...");
+
+    // Hiển thị loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+
+    // Lưu kết quả tập luyện
+    await _saveWorkoutResult();
+
+    // Đóng loading dialog
+    if (mounted && Navigator.canPop(context)) {
+      Navigator.pop(context);
+    }
+
+    // Hiển thị thông báo
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("Đã lưu kết quả tập luyện!"),
+        backgroundColor: Colors.green,
+        duration: Duration(seconds: 2),
+      ),
+    );
+
+    print("[DEBUG] 🚀 Đang chuyển sang trang tiếp theo...");
+    // Chuyển trang sau khi đã lưu kết quả
+    Future.delayed(Duration(milliseconds: 500), () {
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => Restb(day: widget.day)),
+        );
+      }
+    });
+  }
+
+  void _checkWorkoutProgress() {
+    int repsSoFar = _counter;
+    int oldSet = _currentSet;
+
+    print(
+        "[DEBUG] 🔄 Kiểm tra tiến độ: $repsSoFar/$_totalRequiredReps reps | Set: $_currentSet/$_totalSets");
+
+    if (repsSoFar >= _totalRequiredReps) {
+      print("[DEBUG] ✅ Đã đủ số lần! Chuyển trang...");
+      // Đã hoàn thành toàn bộ bài tập
+      _saveWorkoutResult().then((_) => _goToNextPage());
+    } else {
+      setState(() {
+        int repsPerSet = _totalRequiredReps ~/ _totalSets;
+        int newSet = (repsSoFar ~/ repsPerSet) + 1;
+        print(
+            "[DEBUG] 📊 Set mới tính được: $newSet (từ $repsSoFar ~/ $repsPerSet + 1)");
+        _currentSet = newSet;
+
+        // Nếu chuyển sang set mới
+        if (_currentSet > oldSet) {
+          print("[DEBUG] 🔄 Chuyển sang set mới: $_currentSet");
+
+          // Thông báo
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                  "Hoàn thành set $oldSet! Chuẩn bị cho set $_currentSet."),
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+      });
     }
   }
 
@@ -187,6 +294,7 @@ class _SitUpDetectorPageState extends State<SitUpDetectorPage> {
               _position = 'down';
               _counter++;
               _downFrames = 0;
+              _checkWorkoutProgress();
             }
           } else {
             _downFrames = 0;
@@ -221,7 +329,7 @@ class _SitUpDetectorPageState extends State<SitUpDetectorPage> {
                   top: 40,
                   left: 20,
                   child: Text(
-                    'Sit-Ups: $_counter',
+                    'Sit-Ups: $_counter' '/' '$_totalRequiredReps',
                     style: const TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
@@ -230,6 +338,12 @@ class _SitUpDetectorPageState extends State<SitUpDetectorPage> {
                 ),
                 Positioned(
                   top: 80,
+                  left: 20,
+                  child: Text("Hiệp $_currentSet/$_totalSets",
+                      style: TextStyle(fontSize: 16, color: Colors.white)),
+                ),
+                Positioned(
+                  top: 120,
                   left: 20,
                   child: Text(
                     'Angle: ${_latestAngle.toStringAsFixed(1)}°',
