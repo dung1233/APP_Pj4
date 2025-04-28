@@ -3,17 +3,19 @@ import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'package:training_souls/data/DatabaseHelper.dart';
 import 'package:training_souls/screens/TEST/squat_detector_view.dart';
+import 'package:training_souls/screens/UI/Beginer/run.dart';
+import 'package:training_souls/screens/UI/Beginer/situp.dart';
 
-class Rest extends StatefulWidget {
+class Restc extends StatefulWidget {
   final int day;
 
-  const Rest({Key? key, required this.day}) : super(key: key);
+  const Restc({Key? key, required this.day}) : super(key: key);
 
   @override
-  State<Rest> createState() => _RestState();
+  State<Restc> createState() => _RestState();
 }
 
-class _RestState extends State<Rest> {
+class _RestState extends State<Restc> {
   int seconds = 30;
   Timer? timer;
   bool _isLoading = false; // Thêm biến kiểm soát trạng thái loading
@@ -73,12 +75,11 @@ class _RestState extends State<Rest> {
 
     if (!mounted) return;
 
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => SquatDetectorView(day: widget.day),
-      ),
-    );
+    await initializeCameras();
+    Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (context) => RunningTracker(day: widget.day)));
   }
 
   @override

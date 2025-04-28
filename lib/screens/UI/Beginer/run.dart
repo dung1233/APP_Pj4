@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:training_souls/data/DatabaseHelper.dart';
+import 'package:training_souls/screens/ol.dart';
+import 'package:training_souls/screens/trainhome.dart';
 
 class RunningTracker extends StatefulWidget {
   final int day;
@@ -24,11 +27,91 @@ class _RunningTrackerState extends State<RunningTracker> {
   Timer? _timer;
   int _secondsElapsed = 0;
   StreamSubscription<Position>? _positionStreamSubscription;
-
+  double _totalDistance = 0;
   @override
   void initState() {
     super.initState();
     _determinePosition();
+    _loadWorkoutData();
+  }
+
+  void _stopTracking() {
+    setState(() {
+      _isTracking = false;
+    });
+    _stopTimer();
+    _positionStreamSubscription?.cancel();
+    _positionStreamSubscription = null;
+  }
+
+  void _checkGoalAchieved() {
+    if (_distance >= _totalDistance * 1000) {
+      _stopTracking(); // Dừng theo dõi
+      _saveWorkoutData(); // Lưu dữ liệu
+      Navigator.pop(context); // Hoặc chuyển đến trang bạn muốn
+    }
+  }
+
+  Future<void> _saveWorkoutData() async {
+    try {
+      final dbHelper = DatabaseHelper();
+
+      // Tạo đối tượng kết quả bài tập chạy bộ
+      final workoutResult = {
+        "exerciseName": "Chạy bộ", // Tên bài tập
+        "setsCompleted": 0, // Có thể set mặc định là 1 cho bài chạy
+        "repsCompleted": 0, // Số lần lặp không áp dụng cho chạy bộ
+        "distanceCompleted": _distance / 1000, // Chuyển từ mét sang km
+        "durationCompleted": _secondsElapsed / 60 // Thời gian tính bằng giây
+      };
+
+      // Lưu vào cơ sở dữ liệu
+      await dbHelper.saveExerciseResult(widget.day, workoutResult);
+
+      print("[DEBUG] ✅ Đã lưu kết quả chạy bộ: ${workoutResult.toString()}");
+
+      // Hiển thị thông báo thành công (tuỳ chọn)
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Đã lưu kết quả chạy bộ")),
+      );
+
+      // Chuyển trang sau khi lưu (tuỳ chọn)
+      Future.delayed(Duration(milliseconds: 100), () {
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => Trainhome()),
+          );
+        }
+      });
+    } catch (e) {
+      print("[DEBUG] ❌ Lỗi khi lưu kết quả chạy bộ: $e");
+
+      // Hiển thị thông báo lỗi (tuỳ chọn)
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Lỗi khi lưu kết quả: $e")),
+      );
+    }
+  }
+
+  // Hàm mới: Lấy dữ liệu từ SQLite
+  Future<void> _loadWorkoutData() async {
+    final dbHelper = DatabaseHelper();
+    final allWorkouts = await dbHelper.getWorkouts();
+    final runningWorkouts = allWorkouts
+        .where((w) => w.day == widget.day && w.exerciseName == "Chạy bộ")
+        .toList();
+
+    // Kiểm tra trường đúng tên trong lớp Workout
+    double firstDistance = runningWorkouts.isNotEmpty
+        ? runningWorkouts[0].distance ??
+            0.0 // Giả sử là 'distance', kiểm tra lại tên trường
+        : 0.0;
+
+    setState(() {
+      _totalDistance = firstDistance; // Đảm bảo _totalDistance là double
+      _isLoading = false;
+    });
   }
 
   Future<void> _determinePosition() async {
@@ -81,6 +164,7 @@ class _RunningTrackerState extends State<RunningTracker> {
         _route.add(newPoint);
       });
       _mapController.move(newPoint, 15.0);
+      _checkGoalAchieved();
     });
   }
 
@@ -151,7 +235,9 @@ class _RunningTrackerState extends State<RunningTracker> {
                   children: [
                     Text("Distance", style: TextStyle(color: Colors.white)),
                     Text(
-                      "${_distance.toStringAsFixed(1)} m",
+                      "${_distance.toStringAsFixed(1)} m"
+                      '/'
+                      '${(_totalDistance * 1000).toStringAsFixed(0)} m', // _totalDistance chuyển từ km sang mét
                       style: TextStyle(color: Colors.white, fontSize: 32),
                     ),
                   ],

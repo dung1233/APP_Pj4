@@ -90,42 +90,41 @@ class _SquatDetectorViewState extends State<SquatDetectorView> {
   void _goToNextPage() async {
     print("[DEBUG] 💾 Đang lưu kết quả tập luyện...");
 
-    // Hiển thị loading indicator
+    // Đảm bảo widget vẫn mounted trước khi showDialog
+    if (!mounted) return;
+
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => Center(
-        child: CircularProgressIndicator(),
+      // ignore: deprecated_member_use
+      builder: (context) => WillPopScope(
+        onWillPop: () async => false, // Ngăn người dùng đóng dialog
+        child: Center(child: CircularProgressIndicator()),
       ),
     );
 
-    // Lưu kết quả tập luyện
-    await _saveWorkoutResult();
+    try {
+      await _saveWorkoutResult();
 
-    // Đóng loading dialog
-    if (mounted && Navigator.canPop(context)) {
-      Navigator.pop(context);
+      if (!mounted) return;
+
+      // Đóng dialog loading trước khi chuyển trang
+      Navigator.of(context, rootNavigator: true).pop();
+
+      // Chuyển trang với Navigator.pushReplacement
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => Restb(day: widget.day),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.of(context).pop(); // Đóng dialog nếu có lỗi
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Lỗi: $e")),
+      );
     }
-
-    // Hiển thị thông báo
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text("Đã lưu kết quả tập luyện!"),
-        backgroundColor: Colors.green,
-        duration: Duration(seconds: 2),
-      ),
-    );
-
-    print("[DEBUG] 🚀 Đang chuyển sang trang tiếp theo...");
-    // Chuyển trang sau khi đã lưu kết quả
-    Future.delayed(Duration(milliseconds: 500), () {
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => Restb(day: widget.day)),
-        );
-      }
-    });
   }
 
   Future<void> _saveWorkoutResult() async {

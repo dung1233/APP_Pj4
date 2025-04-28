@@ -1,11 +1,8 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:lottie/lottie.dart';
 import 'package:training_souls/data/DatabaseHelper.dart';
 import 'package:training_souls/screens/TEST/squat_detector_view.dart';
-import 'package:training_souls/screens/UI/Beginer/run.dart';
 import 'package:training_souls/screens/UI/Beginer/situp.dart';
 
 class Restb extends StatefulWidget {
@@ -20,51 +17,64 @@ class Restb extends StatefulWidget {
 class _RestState extends State<Restb> {
   int seconds = 30;
   Timer? timer;
+  bool _isLoading = false; // Thêm biến kiểm soát trạng thái loading
 
   @override
   void initState() {
     super.initState();
     startTimer();
-    displayWorkoutResults();
+    _loadWorkoutData();
   }
 
-  // Trong màn hình hoặc widget muốn hiển thị kết quả
-  void displayWorkoutResults() async {
-    final dbHelper = DatabaseHelper();
-    final results = await dbHelper.getAllWorkoutResults();
+  Future<void> _loadWorkoutData() async {
+    if (mounted) {
+      setState(() => _isLoading = true);
+    }
 
-    // In kết quả để debug
-    print("Tất cả kết quả workout: $results");
+    try {
+      final dbHelper = DatabaseHelper();
+      final results = await dbHelper.getAllWorkoutResults();
 
-    // Xử lý và hiển thị kết quả
-    for (var result in results) {
-      print("ID: ${result['id']}");
-      print("Ngày: ${result['day_number']}");
-      print("Tên bài tập: ${result['exercise_name']}");
-      print("Sets hoàn thành: ${result['sets_completed']}");
-      print("Reps hoàn thành: ${result['reps_completed']}");
-      print("Khoảng cách hoàn thành: ${result['distance_completed']}");
-      print("Thời gian hoàn thành: ${result['duration_completed']}");
-      print("Ngày hoàn thành: ${result['completed_date']}");
-      print("-----------------------");
+      // Debug log
+      debugPrint("Workout results: $results");
+    } catch (e) {
+      debugPrint("Error loading workout data: $e");
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
   void startTimer() {
     timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+
       setState(() {
         if (seconds > 0) {
           seconds--;
         } else {
           timer.cancel();
-          goToNextScreen();
+          _goToNextScreen();
         }
       });
     });
   }
 
-  // Trong Rest
-  void goToNextScreen() {
+  Future<void> _goToNextScreen() async {
+    if (_isLoading) return; // Ngăn chặn chuyển trang khi đang loading
+
+    if (!mounted) return;
+
+    // Thêm delay nhỏ để đảm bảo animation hoàn tất
+    await Future.delayed(const Duration(milliseconds: 300));
+
+    if (!mounted) return;
+
+    await initializeCameras();
     Navigator.push(
         context,
         MaterialPageRoute(
@@ -85,6 +95,12 @@ class _RestState extends State<Restb> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       body: Column(
         children: [
@@ -94,12 +110,12 @@ class _RestState extends State<Restb> {
               child: Center(
                 child: Padding(
                   padding: const EdgeInsets.all(20.0),
-                  // Thay CustomPainter bằng hình ảnh
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(20),
                     child: Lottie.asset(
                       'assets/img/Animation - 1743427831861.json',
                       fit: BoxFit.contain,
+                      frameRate: FrameRate(60), // Thêm frame rate cố định
                     ),
                   ),
                 ),
@@ -111,7 +127,6 @@ class _RestState extends State<Restb> {
             color: Colors.blue,
             child: Column(
               children: [
-                // Tiến trình bài tập
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Row(
@@ -171,7 +186,6 @@ class _RestState extends State<Restb> {
                   ),
                 ),
                 const SizedBox(height: 30),
-                // Thời gian nghỉ
                 const Text(
                   'NGHỈ NGƠI',
                   style: TextStyle(
@@ -185,27 +199,25 @@ class _RestState extends State<Restb> {
                   timerText,
                   style: const TextStyle(
                     color: Colors.white,
-                    fontFamily: 'RobotoMono', // thêm font nếu cần
+                    fontFamily: 'RobotoMono',
                     fontWeight: FontWeight.bold,
                     fontSize: 60,
                   ),
                 ),
-
                 const SizedBox(height: 30),
-                // Nút thêm thời gian
                 OutlinedButton(
                   style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: Colors.white),
-                    minimumSize: Size(300, 50),
+                    side: const BorderSide(color: Colors.white),
+                    minimumSize: const Size(300, 50),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(25)),
                   ),
                   onPressed: () {
-                    setState(() {
-                      seconds += 20;
-                    });
+                    if (mounted) {
+                      setState(() => seconds += 20);
+                    }
                   },
-                  child: Text(
+                  child: const Text(
                     '+20s',
                     style: TextStyle(
                       color: Colors.white,
@@ -214,21 +226,19 @@ class _RestState extends State<Restb> {
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 15),
-                // Nút bỏ qua
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.lightBlueAccent,
-                    minimumSize: Size(300, 50),
+                    minimumSize: const Size(300, 50),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(25)),
                   ),
                   onPressed: () {
                     timer?.cancel();
-                    goToNextScreen();
+                    _goToNextScreen();
                   },
-                  child: Text(
+                  child: const Text(
                     'BỎ QUA',
                     style: TextStyle(
                       color: Colors.white,

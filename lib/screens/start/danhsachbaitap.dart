@@ -107,12 +107,8 @@ class _DanhsachbaitapState extends State<Danhsachbaitap> {
           MaterialPageRoute(builder: (context) => SitUpDetectorPage(day: day)));
     } else if (nextWorkout.exerciseName?.toLowerCase().contains("chạy bộ") ==
         true) {
-      Navigator.push(
-          context,
-          MaterialPageRoute(
-              builder: (context) => RunningTracker(
-                    day: day,
-                  )));
+      Navigator.push(context,
+          MaterialPageRoute(builder: (context) => RunningTracker(day: day)));
     } else {
       // Chuyển đến bài tập khác hoặc màn hình mặc định
       print(
