@@ -127,6 +127,10 @@ class _PushUpDetectorViewState extends State<PushUpDetectorView> {
     ) ?? 0;
 
     final estimatedSets = reps > 0 ? (repFromText ~/ reps) : 0;
+    //kiểm tra xem tập đủ chưa để chọn trạng thái
+    final totalTarget = (pushUpWorkout.sets ?? 0) * (pushUpWorkout.reps ?? 0);
+    String status = (repFromText >= totalTarget) ? "COMPLETED" : "IN_PROGRESS";
+
 
     if (pushUpWorkout.exerciseName != null) {
       await dbHelper.insertOrUpdateWorkoutResult(
@@ -137,6 +141,12 @@ class _PushUpDetectorViewState extends State<PushUpDetectorView> {
         distanceCompleted: 0.0,
         durationCompleted: 0,
       );
+      await dbHelper.updateWorkoutStatusByDayAndExercise(
+        dayNumber: pushUpWorkout.day ?? 0,
+        exerciseName: pushUpWorkout.exerciseName ?? '',
+        newStatus: status,
+      );
+
       print("✅ Đã lưu/ghi đè vào local: ${pushUpWorkout.exerciseName} - $repFromText reps");
       return true;
     }

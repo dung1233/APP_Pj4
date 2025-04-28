@@ -93,7 +93,7 @@ class _WorkoutLocalResultScreenState extends State<WorkoutLocalResultScreen> {
                       title: Text(name),
                       subtitle: Text(
                         isRun
-                            ? 'Distance: ${r['distanceCompleted']}m | Time: ${r['durationCompleted']}p'
+                            ? 'Distance: ${r['distanceCompleted']}Km | Time: ${r['durationCompleted']}p'
                             : 'Set: ${r['setsCompleted']} × Rep: ${r['repsCompleted']}',
                       ),
                     );

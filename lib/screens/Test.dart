@@ -58,8 +58,22 @@ class _TestState extends State<Test> {
     }).toList();
   }
   Future<void> _startFirstWorkout() async {
-    final firstWorkout = widget.dayWorkouts.first;
-    final name = firstWorkout.exerciseName?.toLowerCase() ?? "";
+    // 🔥 Tìm bài tập chưa hoàn thành
+    final nextWorkout = widget.dayWorkouts.firstWhere(
+          (w) => w.status != "COMPLETED",
+      orElse: () => Workout(exerciseName: ""),
+    );
+
+    if (nextWorkout.exerciseName == "") {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("🎉 Bạn đã hoàn thành hết bài tập hôm nay!")),
+      );
+      return;
+    }
+
+    // 🔥 Xác định widget cần mở
+
+    final name = nextWorkout.exerciseName?.toLowerCase() ?? "";
 
     Widget destination;
     switch (name) {

@@ -170,4 +170,18 @@ class DatabaseHelper {
       whereArgs: [id],
     );
   }
+  Future<void> updateWorkoutStatusByDayAndExercise({
+    required int dayNumber,
+    required String exerciseName,
+    required String newStatus,
+  }) async {
+    final db = await database;
+    await db.update(
+      'workouts',
+      {'status': newStatus},
+      where: 'day = ? AND exerciseName = ?',
+      whereArgs: [dayNumber, exerciseName],
+    );
+  }
+
 }

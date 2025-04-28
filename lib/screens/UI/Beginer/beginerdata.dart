@@ -292,7 +292,9 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
               MaterialPageRoute(
                 builder: (_) => Test(day: day, dayWorkouts: dayWorkouts),
               ),
-            );
+            ).then((value) {
+              _loadWorkoutsFromSQLite(); // 🔥 Load lại dữ liệu sau khi quay về
+            });
           },
         ),
       ),
@@ -303,6 +305,8 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
     switch (status) {
       case "COMPLETED":
         return "Đã hoàn thành";
+      case "IN_PROGRESS":
+        return "Đang tập";
       case "MISSED":
         return "Đã bỏ lỡ";
       case "NOT_STARTED":
@@ -316,8 +320,10 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
     switch (status) {
       case "COMPLETED":
         return Colors.green;
-      case "MISSED":
+      case "IN_PROGRESS":
         return Colors.orange;
+      case "MISSED":
+        return Colors.red;
       case "NOT_STARTED":
         return Colors.grey;
       default:

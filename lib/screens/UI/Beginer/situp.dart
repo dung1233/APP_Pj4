@@ -190,6 +190,10 @@ class _SitUpDetectorPageState extends State<SitUpDetectorPage> {
     final reps = sitUpWorkout.reps ?? 0;
     final estimatedSets = reps > 0 ? (_counter ~/ reps) : 0;
 
+    //kiểm tra xem tập đủ chưa để chọn trạng thái
+    final totalTarget = (sitUpWorkout.sets ?? 0) * (sitUpWorkout.reps ?? 0);
+    String status = (_counter >= totalTarget) ? "COMPLETED" : "IN_PROGRESS";
+
     if (sitUpWorkout.exerciseName != null) {
       await dbHelper.insertOrUpdateWorkoutResult(
         dayNumber: sitUpWorkout.day ?? 0,
@@ -199,6 +203,12 @@ class _SitUpDetectorPageState extends State<SitUpDetectorPage> {
         distanceCompleted: 0.0,
         durationCompleted: 0,
       );
+      await dbHelper.updateWorkoutStatusByDayAndExercise(
+        dayNumber: sitUpWorkout.day ?? 0,
+        exerciseName: sitUpWorkout.exerciseName ?? '',
+        newStatus: status,
+      );
+
       print("✅ Đã lưu/ghi đè vào local: ${sitUpWorkout.exerciseName} - $_counter reps");
       return true;
     }

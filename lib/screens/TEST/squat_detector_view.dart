@@ -113,6 +113,10 @@ class _SquatDetectorViewState extends State<SquatDetectorView> {
 
     final estimatedSets = reps > 0 ? (repFromText ~/ reps) : 0;
 
+    //kiểm tra xem tập đủ chưa để chọn trạng thái
+    final totalTarget = (squatWorkout.sets ?? 0) * (squatWorkout.reps ?? 0);
+    String status = (repFromText >= totalTarget) ? "COMPLETED" : "IN_PROGRESS";
+
     if (squatWorkout.exerciseName != null) {
       await dbHelper.insertOrUpdateWorkoutResult(
         dayNumber: squatWorkout.day ?? 0,
@@ -122,6 +126,12 @@ class _SquatDetectorViewState extends State<SquatDetectorView> {
         distanceCompleted: 0.0,
         durationCompleted: 0,
       );
+      await dbHelper.updateWorkoutStatusByDayAndExercise(
+        dayNumber: squatWorkout.day ?? 0,
+        exerciseName: squatWorkout.exerciseName ?? '',
+        newStatus: status,
+      );
+
       print("✅ Đã lưu/ghi đè vào local: ${squatWorkout.exerciseName} - $repFromText reps");
       return true;
     }

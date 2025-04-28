@@ -158,6 +158,9 @@ class _RunningTrackerState extends State<RunningTracker> {
       orElse: () => Workout(distance: 0.0),
     );
 
+    // kiểm tra để quyết định trạng thái
+    String status = (_distance >= targetDistance) ? "COMPLETED" : "IN_PROGRESS";
+
     if (runWorkout.exerciseName != null) {
       final distanceKm = (_distance / 1000).toStringAsFixed(3);
       double distanceInKm =  double.parse(distanceKm);
@@ -170,6 +173,12 @@ class _RunningTrackerState extends State<RunningTracker> {
         distanceCompleted: distanceInKm,  // 🔥 Ghi km vào DB
         durationCompleted: (_secondsElapsed / 60).ceil(),
       );
+      await dbHelper.updateWorkoutStatusByDayAndExercise(
+        dayNumber: runWorkout.day ?? 0,
+        exerciseName: runWorkout.exerciseName ?? '',
+        newStatus: status,
+      );
+
       print("✅ Đã lưu/ghi đè bài chạy bộ: ${runWorkout.exerciseName} - $distanceInKm km trong $_secondsElapsed giây");
       return true;
     }
