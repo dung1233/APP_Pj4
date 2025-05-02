@@ -1,7 +1,5 @@
 import 'package:training_souls/data/DatabaseHelper.dart';
 import 'package:training_souls/models/work_out.dart';
-import 'package:training_souls/screens/Train/rest.dart';
-import 'package:training_souls/screens/UI/Beginer/situp.dart';
 import 'package:training_souls/screens/start/Test.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -92,26 +90,26 @@ class _BeginnerScreenState extends State<BeginerScrenn> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 25),
+          const Spacer(),
           Text(
             "Ngày ${nextWorkout!.day ?? '1'}",
             style: const TextStyle(
-                fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                fontSize: 30, fontWeight: FontWeight.bold, color: Colors.white),
           ),
-          const SizedBox(height: 8),
-          Text(
-            nextWorkout!.exerciseName ?? "Bài tập không tên",
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              color: Colors.orange,
-            ),
-          ),
-          const SizedBox(height: 5),
-          Text(
-            _getWorkoutDescription(nextWorkout!),
-            style: const TextStyle(fontSize: 18, color: Colors.white),
-          ),
+          // const SizedBox(height: 8),
+          // Text(
+          //   nextWorkout!.exerciseName ?? "Bài tập không tên",
+          //   style: const TextStyle(
+          //     fontSize: 20,
+          //     fontWeight: FontWeight.w600,
+          //     color: Colors.orange,
+          //   ),
+          // ),
+          // const SizedBox(height: 5),
+          // Text(
+          //   _getWorkoutDescription(nextWorkout!),
+          //   style: const TextStyle(fontSize: 18, color: Colors.white),
+          // ),
           const Spacer(),
           OutlinedButton(
             style: OutlinedButton.styleFrom(

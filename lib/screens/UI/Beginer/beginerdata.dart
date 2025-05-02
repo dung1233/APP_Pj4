@@ -11,7 +11,7 @@ class BeginnerDataWidget extends StatefulWidget {
 }
 
 class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
-  List<List<Workout>> weeks = []; // ✅ Dữ liệu từ Hive
+  List<List<Workout>> weeks = []; // ✅ Dữ liệu từ SQLite
   bool isLoading = true; // ✅ Trạng thái tải dữ liệu
   Map<int, bool> expandedDays = {};
   @override

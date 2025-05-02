@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:lottie/lottie.dart';
 import 'package:training_souls/data/DatabaseHelper.dart';
 import 'package:training_souls/screens/TEST/squat_detector_view.dart';
@@ -94,6 +95,10 @@ class _RestState extends State<Restc> {
     return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
   }
 
+  Color primaryColor = Color(0xFFFF6B00); // Cam sáng hiện đại
+  Color secondaryColor = Color(0xFF333333); // Màu nền hoặc chữ phụ
+  Color backgroundColor = Color(0xFFF5F5F5); // Màu nền nhẹ
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -101,7 +106,6 @@ class _RestState extends State<Restc> {
         body: Center(child: CircularProgressIndicator()),
       );
     }
-
     return Scaffold(
       body: Column(
         children: [
@@ -110,13 +114,13 @@ class _RestState extends State<Restc> {
               color: Colors.white,
               child: Center(
                 child: Padding(
-                  padding: const EdgeInsets.all(20.0),
+                  padding: const EdgeInsets.all(10.0),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(20),
-                    child: Lottie.asset(
-                      'assets/img/Animation - 1743427831861.json',
-                      fit: BoxFit.contain,
-                      frameRate: FrameRate(60), // Thêm frame rate cố định
+                    child: Image.asset(
+                      'assets/img/dayoff.jpg',
+
+                      // Thêm frame rate cố định
                     ),
                   ),
                 ),
@@ -125,42 +129,18 @@ class _RestState extends State<Restc> {
           ),
           Container(
             padding: const EdgeInsets.symmetric(vertical: 20),
-            color: Colors.blue,
+            color: Colors.white,
             child: Column(
               children: [
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'TIẾP THEO',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                      const Text(
-                        'x 10',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Row(
-                    children: [
-                      const Expanded(
+                      Expanded(
                         child: Text(
-                          'Squat',
-                          style: TextStyle(
-                            color: Colors.white,
+                          '',
+                          style: GoogleFonts.urbanist(
+                            color: secondaryColor,
                             fontWeight: FontWeight.bold,
                             fontSize: 26,
                           ),
@@ -175,7 +155,7 @@ class _RestState extends State<Restc> {
                         ),
                         child: const Center(
                           child: Text(
-                            '?',
+                            '',
                             style: TextStyle(
                               color: Colors.blue,
                               fontWeight: FontWeight.bold,
@@ -187,10 +167,10 @@ class _RestState extends State<Restc> {
                   ),
                 ),
                 const SizedBox(height: 30),
-                const Text(
-                  'NGHỈ NGƠI',
-                  style: TextStyle(
-                    color: Colors.white,
+                Text(
+                  'Nghỉ  Ngơi',
+                  style: GoogleFonts.urbanist(
+                    color: secondaryColor,
                     fontWeight: FontWeight.bold,
                     fontSize: 24,
                   ),
@@ -198,18 +178,18 @@ class _RestState extends State<Restc> {
                 const SizedBox(height: 10),
                 Text(
                   timerText,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: secondaryColor,
                     fontFamily: 'RobotoMono',
                     fontWeight: FontWeight.bold,
                     fontSize: 60,
                   ),
                 ),
-                const SizedBox(height: 30),
+                const SizedBox(height: 60),
                 OutlinedButton(
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Colors.white),
-                    minimumSize: const Size(300, 50),
+                    side: BorderSide(color: Colors.black),
+                    minimumSize: Size(300, 50),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(25)),
                   ),
@@ -218,36 +198,39 @@ class _RestState extends State<Restc> {
                       setState(() => seconds += 20);
                     }
                   },
-                  child: const Text(
+                  child: Text(
                     '+20s',
-                    style: TextStyle(
-                      color: Colors.white,
+                    style: GoogleFonts.urbanist(
+                      color: secondaryColor,
                       fontWeight: FontWeight.bold,
-                      fontSize: 18,
+                      fontSize: 16,
                     ),
                   ),
                 ),
                 const SizedBox(height: 15),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.lightBlueAccent,
-                    minimumSize: const Size(300, 50),
+                    backgroundColor: primaryColor,
+                    minimumSize: Size(300, 50),
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25)),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    elevation: 5,
                   ),
                   onPressed: () {
                     timer?.cancel();
                     _goToNextScreen();
                   },
-                  child: const Text(
+                  child: Text(
                     'BỎ QUA',
-                    style: TextStyle(
+                    style: GoogleFonts.urbanist(
                       color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
                     ),
                   ),
                 ),
+                const SizedBox(height: 25),
               ],
             ),
           ),

@@ -1,5 +1,6 @@
 // TODO Implement this library.
 import 'package:flutter/foundation.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:training_souls/data/DatabaseHelper.dart';
 import 'package:training_souls/models/work_out.dart';
 import 'package:flutter/material.dart';
@@ -145,6 +146,7 @@ class WorkoutItem extends StatelessWidget {
   final int reps;
   final int? duration;
   final double? distance;
+  final String status;
 
   const WorkoutItem({
     super.key,
@@ -154,6 +156,7 @@ class WorkoutItem extends StatelessWidget {
     required this.reps,
     this.duration,
     this.distance,
+    required this.status,
   });
 
   @override
@@ -191,7 +194,7 @@ class WorkoutItem extends StatelessWidget {
               children: [
                 Text(
                   exerciseName,
-                  style: const TextStyle(
+                  style: GoogleFonts.urbanist(
                     fontWeight: FontWeight.bold,
                     fontSize: 18,
                   ),
@@ -202,11 +205,39 @@ class WorkoutItem extends StatelessWidget {
                   Text(
                     "${duration} phút"
                     "${distance != null && distance! > 0 ? ' - ${distance}km' : ''}",
-                    style: TextStyle(color: Colors.grey[600]),
+                    style: GoogleFonts.urbanist(
+                      color: Colors.grey[600],
+                    ),
                   ),
               ],
             ),
           ),
+          if (status == "COMPLETED")
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.green.withOpacity(0.1),
+              ),
+              child: const Icon(
+                Icons.check_circle,
+                color: Colors.green,
+                size: 24,
+              ),
+            )
+          else
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.orange.withOpacity(0.1),
+              ),
+              child: const Icon(
+                Icons.pending_outlined,
+                color: Colors.orange,
+                size: 24,
+              ),
+            ),
           IconButton(
             icon: const Icon(Icons.info_outline),
             onPressed: () {

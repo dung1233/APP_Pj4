@@ -34,7 +34,48 @@ class _DanhsachbaitapState extends State<Danhsachbaitap> {
     return MediaQuery.of(context).size.height * percentage;
   }
 
+  // Hàm kiểm tra trạng thái hoàn thành của một bài tập
+  Future<bool> checkExerciseCompletion(int day, String exerciseName) async {
+    final dbHelper = DatabaseHelper();
+    final results = await dbHelper.getExerciseResults(day);
+
+    // Kiểm tra xem bài tập có trong kết quả không
+    for (var result in results) {
+      if (result['exercise_name'] == exerciseName) {
+        return true; // Đã hoàn thành
+      }
+    }
+
+    return false; // Chưa hoàn thành
+  }
+
+  // Hàm cập nhật trạng thái hoàn thành cho tất cả bài tập
+  Future<void> _updateCompletionStatus() async {
+    final dbHelper = DatabaseHelper();
+    bool anyChange = false; // Flag xem có gì thay đổi không
+
+    for (var workout in workouts) {
+      if (workout.day != null && workout.exerciseName != null) {
+        bool isCompleted =
+            await checkExerciseCompletion(workout.day!, workout.exerciseName!);
+
+        if (isCompleted && workout.status != "COMPLETED") {
+          await dbHelper.updateWorkoutStatus(workout.id!, "COMPLETED");
+          workout.status = "COMPLETED";
+          anyChange = true; // Có thay đổi
+        }
+      }
+    }
+
+    if (mounted && anyChange) {
+      setState(() {}); // Chỉ setState nếu có thay đổi
+    }
+  }
+
+  // Sử dụng logic đã có - tìm bài tập dựa trên status NOT_COMPLETED
   Future<void> _loadWorkoutsFromSQLite() async {
+    setState(() => isLoading = true);
+
     final dbHelper = DatabaseHelper();
     final List<Workout> allWorkouts = await dbHelper.getWorkouts();
 
@@ -46,6 +87,7 @@ class _DanhsachbaitapState extends State<Danhsachbaitap> {
       return;
     }
 
+    // Giữ nguyên logic tìm bài tập dựa trên status NOT_COMPLETED
     final notStartedWorkout = allWorkouts.firstWhere(
       (workout) => workout.status == "NOT_COMPLETED",
       orElse: () => allWorkouts.first,
@@ -53,17 +95,28 @@ class _DanhsachbaitapState extends State<Danhsachbaitap> {
 
     setState(() {
       nextWorkout = notStartedWorkout;
+      // Lấy tất cả bài tập của ngày đó
       workouts = allWorkouts.where((w) => w.day == nextWorkout?.day).toList();
       isLoading = false;
     });
+
+    // Cập nhật trạng thái hoàn thành sau khi tải dữ liệu
+    await _updateCompletionStatus();
   }
 
-  int getTotalDuration() {
-    return workouts.fold(0, (sum, workout) => sum + (workout.duration ?? 0));
-  }
+  // Thêm hàm để người dùng có thể đánh dấu bài tập đã hoàn thành
+  Future<void> markExerciseAsCompleted(
+      int workoutId, String exerciseName, int day) async {
+    final dbHelper = DatabaseHelper();
 
-  int getTotalExercises() {
-    return workouts.length;
+    // Lưu kết quả bài tập
+    await dbHelper.insertExerciseResult(day, exerciseName);
+
+    // Cập nhật trạng thái trong cơ sở dữ liệu
+    await dbHelper.updateWorkoutStatus(workoutId, "COMPLETED");
+
+    // Cập nhật lại danh sách
+    await _loadWorkoutsFromSQLite();
   }
 
   Future<void> _navigateToTraining(int day) async {
@@ -116,6 +169,14 @@ class _DanhsachbaitapState extends State<Danhsachbaitap> {
     }
   }
 
+  int getTotalDuration() {
+    return workouts.fold(0, (sum, workout) => sum + (workout.duration ?? 0));
+  }
+
+  int getTotalExercises() {
+    return workouts.length;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -125,49 +186,117 @@ class _DanhsachbaitapState extends State<Danhsachbaitap> {
           "Danh sách bài tập",
           style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
-        SizedBox(
-          height: getHeightPercentage(context, 0.52),
-          child: ListView.builder(
-            itemCount: workouts.length,
-            itemBuilder: (context, index) {
-              final workout = workouts[index];
-              return WorkoutItem(
-                animationPath: workout.img ?? "",
-                exerciseName: workout.exerciseName ?? "Không tên",
-                sets: workout.sets ?? 0,
-                reps: workout.reps ?? 0,
-                duration: workout.duration,
-                distance: workout.distance,
-              );
-            },
+        if (isLoading)
+          const Center(
+            child: CircularProgressIndicator(),
+          )
+        else
+          SizedBox(
+            height: getHeightPercentage(context, 0.52),
+            child: ListView.builder(
+              itemCount: workouts.length,
+              itemBuilder: (context, index) {
+                final workout = workouts[index];
+                return GestureDetector(
+                  onTap: () {
+                    // Nếu bài tập chưa hoàn thành, hiển thị tùy chọn đánh dấu hoàn thành
+                    if (workout.status != "COMPLETED" && workout.id != null) {
+                      showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: Text('${workout.exerciseName}'),
+                          content: const Text(
+                              'Bạn muốn đánh dấu bài tập này là đã hoàn thành?'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: const Text('Hủy'),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                Navigator.pop(context);
+                                markExerciseAsCompleted(
+                                  workout.id!,
+                                  workout.exerciseName ?? "",
+                                  workout.day ?? 1,
+                                );
+                              },
+                              child: const Text('Đánh dấu hoàn thành'),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+                  },
+                  child: WorkoutItem(
+                    animationPath: workout.img ?? "",
+                    exerciseName: workout.exerciseName ?? "Không tên",
+                    sets: workout.sets ?? 0,
+                    reps: workout.reps ?? 0,
+                    duration: workout.duration,
+                    distance: workout.distance,
+                    status: workout.status ?? "NOT_COMPLETED",
+                  ),
+                );
+              },
+            ),
           ),
-        ),
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 10),
-          child: ElevatedButton(
-            onPressed: () {
-              final today = nextWorkout?.day;
-              print("🗓 Đang tập ngày: $today");
-
-              _navigateToTraining(today!);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFF6F00),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 120,
-                vertical: 15,
+          child: Column(
+            children: [
+              // Hiển thị thông tin ngày hiện tại
+              // Text(
+              //   "Ngày ${nextWorkout?.day ?? 0}",
+              //   style: TextStyle(
+              //     fontSize: 16,
+              //     fontWeight: FontWeight.bold,
+              //     color: Colors.grey[700],
+              //   ),
+              // ),
+              // // Hiển thị thông tin về tổng thời gian và số bài tập
+              // Text(
+              //   "${getTotalDuration()} phút - ${getTotalExercises()} bài tập",
+              //   style: TextStyle(
+              //     fontSize: 14,
+              //     color: Colors.grey[600],
+              //   ),
+              // ),
+              const SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: () {
+                  final today = nextWorkout?.day;
+                  if (today != null) {
+                    print("🗓 Đang tập ngày: $today");
+                    _navigateToTraining(today);
+                  } else {
+                    // Hiển thị thông báo lỗi nếu không có ngày
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Không có bài tập nào để bắt đầu."),
+                      ),
+                    );
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFFF6F00),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 120,
+                    vertical: 15,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                ),
+                child: const Text(
+                  "Bắt đầu",
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.white,
+                  ),
+                ),
               ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(30),
-              ),
-            ),
-            child: const Text(
-              "Bắt đầu",
-              style: TextStyle(
-                fontSize: 18,
-                color: Colors.white,
-              ),
-            ),
+            ],
           ),
         ),
       ],

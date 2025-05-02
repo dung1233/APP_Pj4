@@ -1,5 +1,6 @@
 // Tạo file mới: exercise_bottom_sheet.dart
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:lottie/lottie.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
@@ -60,7 +61,7 @@ class _ExerciseBottomSheetState extends State<ExerciseBottomSheet> {
             Center(
               child: Text(
                 widget.title,
-                style: TextStyle(
+                style: GoogleFonts.urbanist(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                 ),
@@ -135,37 +136,37 @@ class _ExerciseBottomSheetState extends State<ExerciseBottomSheet> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          "Lần lặp lại",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.blue,
-                          ),
-                        ),
-                        Row(
-                          children: [
-                            IconButton(
-                              icon: Icon(Icons.remove_circle_outline),
-                              onPressed: () {
-                                if (repetitions > 1) {
-                                  setState(() => repetitions--);
-                                }
-                              },
-                            ),
-                            Text(
-                              repetitions.toString(),
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            IconButton(
-                              icon: Icon(Icons.add_circle_outline),
-                              onPressed: () => setState(() => repetitions++),
-                            ),
-                          ],
-                        ),
+                        // Text(
+                        //   "Lần lặp lại",
+                        //   style: GoogleFonts.urbanist(
+                        //     fontSize: 18,
+                        //     fontWeight: FontWeight.bold,
+                        //     color: Colors.blue,
+                        //   ),
+                        // ),
+                        // Row(
+                        //   children: [
+                        //     IconButton(
+                        //       icon: Icon(Icons.remove_circle_outline),
+                        //       onPressed: () {
+                        //         if (repetitions > 1) {
+                        //           setState(() => repetitions--);
+                        //         }
+                        //       },
+                        //     ),
+                        //     Text(
+                        //       repetitions.toString(),
+                        //       style: GoogleFonts.urbanist(
+                        //         fontSize: 18,
+                        //         fontWeight: FontWeight.bold,
+                        //       ),
+                        //     ),
+                        //     IconButton(
+                        //       icon: Icon(Icons.add_circle_outline),
+                        //       onPressed: () => setState(() => repetitions++),
+                        //     ),
+                        //   ],
+                        // ),
                       ],
                     ),
 
@@ -174,7 +175,7 @@ class _ExerciseBottomSheetState extends State<ExerciseBottomSheet> {
                     // Hướng dẫn
                     Text(
                       "Hướng dẫn",
-                      style: TextStyle(
+                      style: GoogleFonts.urbanist(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                         color: Color.fromARGB(255, 230, 101, 3),
@@ -188,16 +189,15 @@ class _ExerciseBottomSheetState extends State<ExerciseBottomSheet> {
                             children: [
                               Text(
                                 item['title'] ?? '',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
+                                style: GoogleFonts.urbanist(
                                   color: Color.fromARGB(255, 230, 101, 3),
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                               SizedBox(height: 4),
                               Text(
                                 item['content'] ?? '',
-                                style: TextStyle(
+                                style: GoogleFonts.urbanist(
                                     fontSize: 14, color: Colors.black87),
                               ),
                             ],
@@ -209,10 +209,10 @@ class _ExerciseBottomSheetState extends State<ExerciseBottomSheet> {
                     // Vùng tập trung
                     Text(
                       "Vùng tập trung",
-                      style: TextStyle(
+                      style: GoogleFonts.urbanist(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.blue,
+                        color: Color(0xFFFF6B00),
                       ),
                     ),
                     SizedBox(height: 8),
@@ -236,7 +236,7 @@ class _ExerciseBottomSheetState extends State<ExerciseBottomSheet> {
                 },
                 child: Text("Đóng"),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
+                  backgroundColor: Color(0xFFFF6B00),
                   foregroundColor: Colors.white,
                   padding: EdgeInsets.symmetric(horizontal: 32, vertical: 12),
                 ),
