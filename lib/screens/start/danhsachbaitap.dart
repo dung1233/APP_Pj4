@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:training_souls/data/DatabaseHelper.dart';
 import 'package:training_souls/models/work_out.dart';
 import 'package:training_souls/screens/TEST/pushup_detector_view.dart';
@@ -182,9 +183,10 @@ class _DanhsachbaitapState extends State<Danhsachbaitap> {
     return Column(
       children: [
         const SizedBox(height: 10),
-        const Text(
+        Text(
           "Danh sách bài tập",
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          style:
+              GoogleFonts.urbanist(fontSize: 20, fontWeight: FontWeight.bold),
         ),
         if (isLoading)
           const Center(
@@ -248,7 +250,7 @@ class _DanhsachbaitapState extends State<Danhsachbaitap> {
               // Hiển thị thông tin ngày hiện tại
               // Text(
               //   "Ngày ${nextWorkout?.day ?? 0}",
-              //   style: TextStyle(
+              //   style: GoogleFonts.urbanist(
               //     fontSize: 16,
               //     fontWeight: FontWeight.bold,
               //     color: Colors.grey[700],
@@ -257,7 +259,7 @@ class _DanhsachbaitapState extends State<Danhsachbaitap> {
               // // Hiển thị thông tin về tổng thời gian và số bài tập
               // Text(
               //   "${getTotalDuration()} phút - ${getTotalExercises()} bài tập",
-              //   style: TextStyle(
+              //   style: GoogleFonts.urbanist(
               //     fontSize: 14,
               //     color: Colors.grey[600],
               //   ),
@@ -282,15 +284,15 @@ class _DanhsachbaitapState extends State<Danhsachbaitap> {
                   backgroundColor: const Color(0xFFFF6F00),
                   padding: const EdgeInsets.symmetric(
                     horizontal: 120,
-                    vertical: 15,
+                    vertical: 10,
                   ),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
+                    borderRadius: BorderRadius.circular(20),
                   ),
                 ),
-                child: const Text(
+                child: Text(
                   "Bắt đầu",
-                  style: TextStyle(
+                  style: GoogleFonts.urbanist(
                     fontSize: 18,
                     color: Colors.white,
                   ),

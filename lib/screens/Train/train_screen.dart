@@ -1,3 +1,4 @@
+import 'package:google_fonts/google_fonts.dart';
 import 'package:training_souls/screens/Train/icons_user.dart';
 import 'package:training_souls/screens/UI/Beginer/beginerdata.dart';
 import 'package:flutter/material.dart';
@@ -105,7 +106,8 @@ class _TrainScreenState extends State<TrainScreen> {
         children: [
           Text(
             title,
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            style:
+                GoogleFonts.urbanist(fontSize: 24, fontWeight: FontWeight.bold),
           ),
           SizedBox(height: 10),
           content,

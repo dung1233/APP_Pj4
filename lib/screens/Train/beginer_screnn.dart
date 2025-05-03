@@ -1,3 +1,4 @@
+import 'package:google_fonts/google_fonts.dart';
 import 'package:training_souls/data/DatabaseHelper.dart';
 import 'package:training_souls/models/work_out.dart';
 import 'package:training_souls/screens/start/Test.dart';
@@ -91,15 +92,21 @@ class _BeginnerScreenState extends State<BeginerScrenn> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Spacer(),
-          Text(
-            "Ngày ${nextWorkout!.day ?? '1'}",
-            style: const TextStyle(
-                fontSize: 30, fontWeight: FontWeight.bold, color: Colors.white),
+
+          Padding(
+            padding: const EdgeInsets.all(3.0),
+            child: Text(
+              "Ngày ${nextWorkout!.day ?? '1'}",
+              style: GoogleFonts.urbanist(
+                  fontSize: 30,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white),
+            ),
           ),
           // const SizedBox(height: 8),
           // Text(
           //   nextWorkout!.exerciseName ?? "Bài tập không tên",
-          //   style: const TextStyle(
+          //   style: const GoogleFonts.urbanist(
           //     fontSize: 20,
           //     fontWeight: FontWeight.w600,
           //     color: Colors.orange,
@@ -108,14 +115,14 @@ class _BeginnerScreenState extends State<BeginerScrenn> {
           // const SizedBox(height: 5),
           // Text(
           //   _getWorkoutDescription(nextWorkout!),
-          //   style: const TextStyle(fontSize: 18, color: Colors.white),
+          //   style: const GoogleFonts.urbanist(fontSize: 18, color: Colors.white),
           // ),
-          const Spacer(),
+          const SizedBox(height: 20),
           OutlinedButton(
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 30),
               side: const BorderSide(color: Colors.white, width: 1),
-              backgroundColor: Colors.white,
+              backgroundColor: Color(0xFFFF6F00),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(30)),
             ),
@@ -123,10 +130,10 @@ class _BeginnerScreenState extends State<BeginerScrenn> {
               Navigator.push(
                   context, MaterialPageRoute(builder: (context) => Test()));
             },
-            child: const Text(
+            child: Text(
               "Bắt đầu",
-              style: TextStyle(
-                  color: Colors.black,
+              style: GoogleFonts.urbanist(
+                  color: Colors.white,
                   fontSize: 18,
                   fontWeight: FontWeight.bold),
             ),
