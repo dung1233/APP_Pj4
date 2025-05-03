@@ -82,6 +82,11 @@ dependencies:
   geodesy: ^0.7.0              # For distance calculations
   flutter_map: ^8.1.0
   latlong2: ^0.9.1             # For displaying maps
+  youtube_player_flutter: ^9.1.1
+
+  #paypal
+  flutter_paypal_payment: ^1.0.8
+#  http: ^1.3.0
 
 flutter_launcher_icons:
   android: true
@@ -128,6 +133,10 @@ flutter:
     - assets/pose/fitness_pose_samples.csv
     - assets/3dmodel/
     - assets/
+    - assets/img/Animation - 1743427831861.json
+    - assets/img/Animation - 1742982248147.json
+    - assets/img/Animation - 1743004318512.json
+    - assets/img/Animation - 1743005455297.json
   # To add assets to your application, add an assets section, like this:
   # assets:
 

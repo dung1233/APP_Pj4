@@ -6,6 +6,8 @@ import 'package:dio/dio.dart';
 import 'package:hive/hive.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../Paypal/paypal_payment.dart';
+
 class ShopScreen extends StatefulWidget {
   const ShopScreen({super.key});
 
@@ -130,6 +132,29 @@ class _ShopScreenState extends State<ShopScreen>
     );
   }
 
+// paypal
+  void _startPaypalCheckout(Item item) async {
+    final token = await getToken();
+    if (token == null || token.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vui lòng đăng nhập để thanh toán')),
+      );
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PaypalPaymentDemo(
+          itemId: item.id,
+          userToken: token,
+        ),
+      ),
+
+
+    );
+  }
+
   void _showPurchaseConfirmation(Item item) {
     showDialog(
       context: context,
@@ -153,10 +178,10 @@ class _ShopScreenState extends State<ShopScreen>
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              _handlePurchase(item);
+              _startPaypalCheckout(item);
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-            child: const Text('Confirm'),
+            child: const Text('Thanh toán PayPal'),
           ),
         ],
       ),

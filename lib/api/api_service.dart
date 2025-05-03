@@ -21,9 +21,16 @@ abstract class ApiService {
 
   @GET("/items")
   Future<List<Item>> getItems();
+
   @POST("/purchase/{itemId}")
   Future<void> purchaseItem(
     @Path("itemId") int itemId,
     @Header("Authorization") String token,
   );
+  @POST("/purchase/complete")
+  Future<void> confirmPayment(
+      @Body() Map<String, dynamic> body,
+      @Header("Authorization") String token,
+      );
+
 }

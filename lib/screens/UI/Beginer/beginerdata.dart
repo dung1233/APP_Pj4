@@ -2,7 +2,6 @@ import 'package:training_souls/data/DatabaseHelper.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:training_souls/models/work_out.dart';
-import 'package:training_souls/screens/Test.dart';
 
 class BeginnerDataWidget extends StatefulWidget {
   const BeginnerDataWidget({super.key});
@@ -18,7 +17,58 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
   @override
   void initState() {
     super.initState();
-    _loadWorkoutsFromSQLite(); // ✅ Tải dữ liệu từ Hive khi widget khởi tạo
+    _loadWorkoutsFromSQLite();
+    // ✅ Tải dữ liệu từ Hive khi widget khởi tạo
+  }
+
+  Future<bool> checkExerciseCompletion(int day, String exerciseName) async {
+    final dbHelper = DatabaseHelper();
+    final results = await dbHelper.getExerciseResults(day);
+
+    // Kiểm tra xem bài tập có trong kết quả không
+    for (var result in results) {
+      if (result['exercise_name'] == exerciseName) {
+        // Thay đổi từ exerciseName thành exercise_name
+        return true; // Đã hoàn thành
+      }
+    }
+
+    return false; // Chưa hoàn thành
+  }
+
+  Future<void> _updateCompletionStatus() async {
+    final dbHelper = DatabaseHelper();
+
+    bool anyChange = false; // 🆕 Thêm flag xem có gì thay đổi không
+
+    for (var weekWorkouts in weeks) {
+      for (var workout in weekWorkouts) {
+        if (workout.day != null && workout.exerciseName != null) {
+          bool isCompleted = await checkExerciseCompletion(
+              workout.day!, workout.exerciseName!);
+
+          if (isCompleted && workout.status != "COMPLETED") {
+            await dbHelper.updateWorkoutStatus(workout.id!, "COMPLETED");
+            workout.status = "COMPLETED";
+            anyChange = true; // Có thay đổi
+          }
+        }
+      }
+    }
+
+    if (mounted && anyChange)
+      setState(() {}); // 🆕 Chỉ setState nếu có thay đổi
+  }
+
+  Future<void> saveExerciseResult(int day, String exerciseName) async {
+    final dbHelper = DatabaseHelper();
+    await dbHelper.insertExerciseResult(day, exerciseName);
+
+    // Sau khi lưu xong, cập nhật trạng thái bài tập
+    await _updateCompletionStatus();
+
+    // Nếu muốn chắc chắn hơn nữa (nếu dữ liệu bài tập thay đổi nhiều), thay bằng:
+    // await _loadWorkoutsFromSQLite();
   }
 
   /// ✅ Hàm này lấy dữ liệu từ Hive và nhóm theo tuần
@@ -63,6 +113,7 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
       weeks = groupedWeeks;
       isLoading = false;
     });
+    _updateCompletionStatus();
   }
 
   @override
@@ -204,7 +255,7 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
                                               children: dayWorkouts
                                                   .map((workout) =>
                                                       _buildWorkoutItem(
-                                                          workout, dayWorkouts, day))
+                                                          workout))
                                                   .toList(),
                                             ),
                                           ),
@@ -222,7 +273,10 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
     );
   }
 
-  Widget _buildWorkoutItem(Workout workout, List<Workout> dayWorkouts, int day) {
+  Widget _buildWorkoutItem(Workout workout) {
+    final isRestDay =
+        workout.exerciseName?.toLowerCase().contains("nghỉ ngơi") ?? false;
+    final displayStatus = isRestDay ? "NOT_STARTED" : workout.status;
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
       child: Container(
@@ -278,24 +332,16 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
           ),
           trailing: IconButton(
             icon: Icon(
-              workout.status == "COMPLETED"
+              displayStatus == "COMPLETED"
                   ? Icons.check_circle
                   : Icons.radio_button_unchecked,
-              color: workout.status == "COMPLETED" ? Colors.green : Colors.grey,
+              color: displayStatus == "COMPLETED"
+                  ? const Color.fromARGB(255, 14, 228, 50)
+                  : Colors.grey,
               size: 28,
             ),
-            onPressed: () => _toggleWorkoutStatus(workout),
+            onPressed: isRestDay ? null : () => _toggleWorkoutStatus(workout),
           ),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => Test(day: day, dayWorkouts: dayWorkouts),
-              ),
-            ).then((value) {
-              _loadWorkoutsFromSQLite(); // 🔥 Load lại dữ liệu sau khi quay về
-            });
-          },
         ),
       ),
     );
@@ -305,8 +351,6 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
     switch (status) {
       case "COMPLETED":
         return "Đã hoàn thành";
-      case "IN_PROGRESS":
-        return "Đang tập";
       case "MISSED":
         return "Đã bỏ lỡ";
       case "NOT_STARTED":
@@ -320,10 +364,8 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
     switch (status) {
       case "COMPLETED":
         return Colors.green;
-      case "IN_PROGRESS":
-        return Colors.orange;
       case "MISSED":
-        return Colors.red;
+        return Colors.orange;
       case "NOT_STARTED":
         return Colors.grey;
       default:

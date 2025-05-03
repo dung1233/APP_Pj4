@@ -84,8 +84,7 @@ class _TrainScreenState extends State<TrainScreen> {
                   Showcase(
                     key: _showcaseBeginnerKey,
                     description: "Bài tập .",
-                    child:
-                        BeginerScrenn(), // 🔥 Truyền userData vào BeginnerScreen
+                    child: BeginerScrenn(),
                   ),
                   _buildSection("Beginer Section", BeginnerDataWidget()),
                   // _buildSection("Medium Section", MediumDataWidget())

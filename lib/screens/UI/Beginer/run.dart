@@ -3,14 +3,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
-
-import '../../../models/work_out.dart';
-import '../../../data/DatabaseHelper.dart';
-import '../../User/test3.dart';
+import 'package:training_souls/data/DatabaseHelper.dart';
+import 'package:training_souls/screens/ol.dart';
+import 'package:training_souls/screens/trainhome.dart';
 
 class RunningTracker extends StatefulWidget {
-  final List<Workout> dayWorkouts;
-  const RunningTracker({super.key, required this.dayWorkouts});
+  final int day;
+  const RunningTracker({
+    super.key,
+    required this.day,
+  });
   @override
   _RunningTrackerState createState() => _RunningTrackerState();
 }
@@ -25,20 +27,91 @@ class _RunningTrackerState extends State<RunningTracker> {
   Timer? _timer;
   int _secondsElapsed = 0;
   StreamSubscription<Position>? _positionStreamSubscription;
-  late double targetDistance;
-  final dbHelper = DatabaseHelper();
-
+  double _totalDistance = 0;
   @override
   void initState() {
     super.initState();
     _determinePosition();
-    // 🔥 Lấy thông tin bài chạy bộ trong dayWorkouts
-    final runWorkout = widget.dayWorkouts.firstWhere(
-          (w) => (w.exerciseName?.toLowerCase().contains("chạy") ?? false),
-      orElse: () => Workout(distance: 0.0),
-    );
-    // 🔥 CHỈNH CHUẨN: chuyển từ km sang mét
-    targetDistance = (runWorkout.distance ?? 0.0) * 1000;
+    _loadWorkoutData();
+  }
+
+  void _stopTracking() {
+    setState(() {
+      _isTracking = false;
+    });
+    _stopTimer();
+    _positionStreamSubscription?.cancel();
+    _positionStreamSubscription = null;
+  }
+
+  void _checkGoalAchieved() {
+    if (_distance >= _totalDistance * 1000) {
+      _stopTracking(); // Dừng theo dõi
+      _saveWorkoutData(); // Lưu dữ liệu
+      Navigator.pop(context); // Hoặc chuyển đến trang bạn muốn
+    }
+  }
+
+  Future<void> _saveWorkoutData() async {
+    try {
+      final dbHelper = DatabaseHelper();
+
+      // Tạo đối tượng kết quả bài tập chạy bộ
+      final workoutResult = {
+        "exerciseName": "Chạy bộ", // Tên bài tập
+        "setsCompleted": 0, // Có thể set mặc định là 1 cho bài chạy
+        "repsCompleted": 0, // Số lần lặp không áp dụng cho chạy bộ
+        "distanceCompleted": _distance / 1000, // Chuyển từ mét sang km
+        "durationCompleted": _secondsElapsed / 60 // Thời gian tính bằng giây
+      };
+
+      // Lưu vào cơ sở dữ liệu
+      await dbHelper.saveExerciseResult(widget.day, workoutResult);
+
+      print("[DEBUG] ✅ Đã lưu kết quả chạy bộ: ${workoutResult.toString()}");
+
+      // Hiển thị thông báo thành công (tuỳ chọn)
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Đã lưu kết quả chạy bộ")),
+      );
+
+      // Chuyển trang sau khi lưu (tuỳ chọn)
+      Future.delayed(Duration(milliseconds: 100), () {
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => Trainhome()),
+          );
+        }
+      });
+    } catch (e) {
+      print("[DEBUG] ❌ Lỗi khi lưu kết quả chạy bộ: $e");
+
+      // Hiển thị thông báo lỗi (tuỳ chọn)
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Lỗi khi lưu kết quả: $e")),
+      );
+    }
+  }
+
+  // Hàm mới: Lấy dữ liệu từ SQLite
+  Future<void> _loadWorkoutData() async {
+    final dbHelper = DatabaseHelper();
+    final allWorkouts = await dbHelper.getWorkouts();
+    final runningWorkouts = allWorkouts
+        .where((w) => w.day == widget.day && w.exerciseName == "Chạy bộ")
+        .toList();
+
+    // Kiểm tra trường đúng tên trong lớp Workout
+    double firstDistance = runningWorkouts.isNotEmpty
+        ? runningWorkouts[0].distance ??
+            0.0 // Giả sử là 'distance', kiểm tra lại tên trường
+        : 0.0;
+
+    setState(() {
+      _totalDistance = firstDistance; // Đảm bảo _totalDistance là double
+      _isLoading = false;
+    });
   }
 
   Future<void> _determinePosition() async {
@@ -75,7 +148,8 @@ class _RunningTrackerState extends State<RunningTracker> {
   }
 
   void _startTracking() {
-    _positionStreamSubscription = Geolocator.getPositionStream().listen((Position position) {
+    _positionStreamSubscription =
+        Geolocator.getPositionStream().listen((Position position) {
       LatLng newPoint = LatLng(position.latitude, position.longitude);
       setState(() {
         if (_lastPosition != null) {
@@ -90,10 +164,11 @@ class _RunningTrackerState extends State<RunningTracker> {
         _route.add(newPoint);
       });
       _mapController.move(newPoint, 15.0);
+      _checkGoalAchieved();
     });
   }
 
-  Future<void> _toggleTracking() async {
+  void _toggleTracking() {
     setState(() {
       if (_isTracking) {
         _stopTimer();
@@ -113,22 +188,6 @@ class _RunningTrackerState extends State<RunningTracker> {
       }
       _isTracking = !_isTracking;
     });
-    // 🔥 Nếu vừa STOP thì lưu dữ liệu
-    if (!_isTracking) {
-      final saved = await _handleSaveRun();
-      if (saved && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("✅ Đã lưu kết quả chạy bộ!")),
-          );
-          Navigator.push(context, MaterialPageRoute(
-            builder: (_) => WorkoutLocalResultScreen(), // 👉 trang kết quả
-        ));
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("❌ Không thể lưu kết quả chạy bộ.")),
-        );
-      }
-    }
   }
 
   void _startTimer() {
@@ -151,40 +210,6 @@ class _RunningTrackerState extends State<RunningTracker> {
     int secs = seconds % 60;
     return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
   }
-
-  Future<bool> _handleSaveRun() async {
-    final runWorkout = widget.dayWorkouts.firstWhere(
-          (w) => (w.exerciseName?.toLowerCase().contains("chạy") ?? false),
-      orElse: () => Workout(distance: 0.0),
-    );
-
-    // kiểm tra để quyết định trạng thái
-    String status = (_distance >= targetDistance) ? "COMPLETED" : "IN_PROGRESS";
-
-    if (runWorkout.exerciseName != null) {
-      final distanceKm = (_distance / 1000).toStringAsFixed(3);
-      double distanceInKm =  double.parse(distanceKm);
-
-      await dbHelper.insertOrUpdateWorkoutResult(
-        dayNumber: runWorkout.day ?? 0,
-        exerciseName: runWorkout.exerciseName ?? '',
-        setsCompleted: 0,
-        repsCompleted: 0,
-        distanceCompleted: distanceInKm,  // 🔥 Ghi km vào DB
-        durationCompleted: (_secondsElapsed / 60).ceil(),
-      );
-      await dbHelper.updateWorkoutStatusByDayAndExercise(
-        dayNumber: runWorkout.day ?? 0,
-        exerciseName: runWorkout.exerciseName ?? '',
-        newStatus: status,
-      );
-
-      print("✅ Đã lưu/ghi đè bài chạy bộ: ${runWorkout.exerciseName} - $distanceInKm km trong $_secondsElapsed giây");
-      return true;
-    }
-    return false;
-  }
-
 
   @override
   Widget build(BuildContext context) {
@@ -210,7 +235,9 @@ class _RunningTrackerState extends State<RunningTracker> {
                   children: [
                     Text("Distance", style: TextStyle(color: Colors.white)),
                     Text(
-                      "${_distance.toStringAsFixed(1)}/${targetDistance.toStringAsFixed(0)} m",
+                      "${_distance.toStringAsFixed(1)} m"
+                      '/'
+                      '${(_totalDistance * 1000).toStringAsFixed(0)} m', // _totalDistance chuyển từ km sang mét
                       style: TextStyle(color: Colors.white, fontSize: 32),
                     ),
                   ],
@@ -240,53 +267,59 @@ class _RunningTrackerState extends State<RunningTracker> {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(20),
                 child: _isLoading || (_route.isEmpty && _lastPosition == null)
-                    ? Center(child: CircularProgressIndicator(color: Colors.orange[900]))
+                    ? Center(
+                        child: CircularProgressIndicator(
+                            color: Colors.orange[900]))
                     : FlutterMap(
-                  mapController: _mapController,
-                  options: MapOptions(
-                    initialCenter: _route.isNotEmpty
-                        ? _route.first
-                        : const LatLng(0.0, 0.0), // fallback location
-                    initialZoom: 15.0,
-                  ),
-                  children: [
-                    TileLayer(
-                      urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                      subdomains: ['a', 'b', 'c'],
-                    ),
-                    PolylineLayer(
-                      polylines: [
-                        Polyline(points: _route, color: Colors.blue, strokeWidth: 5.0),
-                      ],
-                    ),
-                    MarkerLayer(
-                      markers: [
-                        if (_route.isNotEmpty)
-                          Marker(
-                            point: _route.first,
-                            width: 40,
-                            height: 40,
-                            child: Icon(
-                              Icons.location_on,
-                              color: Colors.green,
-                              size: 40,
-                            ),
+                        mapController: _mapController,
+                        options: MapOptions(
+                          initialCenter: _route.isNotEmpty
+                              ? _route.first
+                              : const LatLng(0.0, 0.0), // fallback location
+                          initialZoom: 15.0,
+                        ),
+                        children: [
+                          TileLayer(
+                            urlTemplate:
+                                "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                            subdomains: ['a', 'b', 'c'],
                           ),
-                        if (_lastPosition != null)
-                          Marker(
-                            point: _lastPosition!,
-                            width: 40,
-                            height: 40,
-                            child: Icon(
-                              Icons.location_on,
-                              color: Colors.red,
-                              size: 40,
-                            ),
+                          PolylineLayer(
+                            polylines: [
+                              Polyline(
+                                  points: _route,
+                                  color: Colors.blue,
+                                  strokeWidth: 5.0),
+                            ],
                           ),
-                      ],
-                    ),
-                  ],
-                ),
+                          MarkerLayer(
+                            markers: [
+                              if (_route.isNotEmpty)
+                                Marker(
+                                  point: _route.first,
+                                  width: 40,
+                                  height: 40,
+                                  child: Icon(
+                                    Icons.location_on,
+                                    color: Colors.green,
+                                    size: 40,
+                                  ),
+                                ),
+                              if (_lastPosition != null)
+                                Marker(
+                                  point: _lastPosition!,
+                                  width: 40,
+                                  height: 40,
+                                  child: Icon(
+                                    Icons.location_on,
+                                    color: Colors.red,
+                                    size: 40,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ],
+                      ),
               ),
             ),
           ),
@@ -297,11 +330,15 @@ class _RunningTrackerState extends State<RunningTracker> {
               child: Container(
                 width: 80,
                 height: 80,
-                decoration: BoxDecoration(color: Colors.orange[900], shape: BoxShape.circle),
+                decoration: BoxDecoration(
+                    color: Colors.orange[900], shape: BoxShape.circle),
                 child: Center(
                   child: Text(
                     _isTracking ? "STOP" : "GO",
-                    style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold),
                   ),
                 ),
               ),

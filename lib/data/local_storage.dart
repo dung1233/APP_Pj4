@@ -69,11 +69,37 @@ class LocalStorage {
   static Future<void> saveToken(String token) async {
     var box = await Hive.openBox('userBox');
     await box.put('token', token);
+    await box.put(
+        'tokenSavedAt', DateTime.now().toIso8601String()); // 👉 Lưu thời điểm
     print("✅ Token đã được lưu: $token");
   }
 
   static Future<String?> getToken() async {
     var box = await Hive.openBox('userBox');
     return box.get('token');
+  }
+
+  static Future<bool> isTokenValid() async {
+    var box = await Hive.openBox('userBox');
+    final savedAtStr = box.get('tokenSavedAt');
+
+    if (savedAtStr == null) return false;
+
+    final savedAt = DateTime.tryParse(savedAtStr);
+    if (savedAt == null) return false;
+
+    final now = DateTime.now();
+    final duration = now.difference(savedAt);
+
+    return duration.inHours < 3; // 👉 Kiểm tra còn hạn dưới 3 tiếng
+  }
+
+  static Future<String?> getValidToken() async {
+    if (await isTokenValid()) {
+      return await getToken();
+    } else {
+      print("⚠️ Token đã hết hạn");
+      return null;
+    }
   }
 }

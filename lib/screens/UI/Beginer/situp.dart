@@ -5,29 +5,37 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-
-import '../../../data/DatabaseHelper.dart';
-import '../../../models/work_out.dart';
-import '../../User/test3.dart';
+import 'package:training_souls/data/DatabaseHelper.dart';
+import 'package:training_souls/screens/Train/restb.dart';
+import 'package:training_souls/screens/Train/restc.dart';
 
 late List<CameraDescription> cameras;
-
 Future<void> initializeCameras() async {
   cameras = await availableCameras();
 }
 
 class SitUpDetectorPage extends StatefulWidget {
-  final List<Workout> dayWorkouts;
-  const SitUpDetectorPage({super.key, required this.dayWorkouts});
+  final int day; // Chỉ cần truyền ngày tập
+
+  const SitUpDetectorPage({
+    super.key,
+    required this.day,
+  });
 
   @override
   State<SitUpDetectorPage> createState() => _SitUpDetectorPageState();
 }
 
 class _SitUpDetectorPageState extends State<SitUpDetectorPage> {
-  CameraController? _cameraController;
-  final PoseDetector _poseDetector = PoseDetector(options: PoseDetectorOptions());
+  late CameraController _cameraController;
+  final PoseDetector _poseDetector =
+      PoseDetector(options: PoseDetectorOptions());
+  int _totalRequiredReps = 0;
+  int _totalSets = 0;
+  int _currentSet = 1;
+  bool _isLoading = true;
   bool _isDetecting = false;
   int _counter = 0;
   String _position = 'down';
@@ -35,43 +43,145 @@ class _SitUpDetectorPageState extends State<SitUpDetectorPage> {
   int _upFrames = 0;
   int _downFrames = 0;
   final int _thresholdFrames = 5;
+  List<PoseLandmark> _landmarks = [];
   Size _imageSize = Size.zero;
   CameraLensDirection _currentDirection = CameraLensDirection.back;
-  final dbHelper = DatabaseHelper();
-  late final Workout sitUpWorkout;
 
   @override
   void initState() {
     super.initState();
     _init();
-    sitUpWorkout = widget.dayWorkouts.firstWhere(
-          (w) => w.exerciseName?.toLowerCase() == "sit-up" || w.exerciseName?.toLowerCase() == "gập bụng",
-      orElse: () => Workout(sets: 0, reps: 0),
+
+    _loadWorkoutData();
+  }
+
+  Future<void> _loadWorkoutData() async {
+    final dbHelper = DatabaseHelper();
+    final allWorkouts = await dbHelper.getWorkouts(); // Dùng phương thức có sẵn
+
+    final pushupWorkouts = allWorkouts
+        .where((w) => w.day == widget.day && w.exerciseName == "Gập bụng")
+        .toList();
+
+    setState(() {
+      _totalRequiredReps = pushupWorkouts.fold(
+          0, (sum, w) => sum + (w.sets ?? 0) * (w.reps ?? 0));
+      _totalSets = pushupWorkouts.fold(0, (sum, w) => sum + (w.sets ?? 0));
+      _isLoading = false;
+    });
+  }
+
+  Future<void> _saveWorkoutResult() async {
+    try {
+      final dbHelper = DatabaseHelper();
+
+      // Tạo đối tượng kết quả bài tập theo định dạng API của bạn
+      final workoutResult = {
+        "exerciseName": "Gập bụng", // Changed from "Hít đất" to "Gập bụng"
+        "setsCompleted": _currentSet,
+        "repsCompleted": _counter,
+        "distanceCompleted": 0.0,
+        "durationCompleted": 0
+      };
+
+      // Lưu vào cơ sở dữ liệu
+      await dbHelper.saveExerciseResult(widget.day, workoutResult);
+
+      print("[DEBUG] ✅ Đã lưu kết quả tập luyện: ${workoutResult.toString()}");
+    } catch (e) {
+      print("[DEBUG] ❌ Lỗi khi lưu kết quả: $e");
+    }
+  }
+
+  void _goToNextPage() async {
+    print("[DEBUG] 💾 Đang lưu kết quả tập luyện...");
+
+    // Đảm bảo widget vẫn mounted trước khi showDialog
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      // ignore: deprecated_member_use
+      builder: (context) => WillPopScope(
+        onWillPop: () async => false, // Ngăn người dùng đóng dialog
+        child: Center(child: CircularProgressIndicator()),
+      ),
     );
+
+    try {
+      await _saveWorkoutResult();
+
+      if (!mounted) return;
+
+      // Đóng dialog loading trước khi chuyển trang
+      Navigator.of(context, rootNavigator: true).pop();
+
+      // Chuyển trang với Navigator.pushReplacement
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => Restc(day: widget.day),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.of(context).pop(); // Đóng dialog nếu có lỗi
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Lỗi: $e")),
+      );
+    }
+  }
+
+  void _checkWorkoutProgress() {
+    int repsSoFar = _counter;
+    int oldSet = _currentSet;
+
+    print(
+        "[DEBUG] 🔄 Kiểm tra tiến độ: $repsSoFar/$_totalRequiredReps reps | Set: $_currentSet/$_totalSets");
+
+    if (repsSoFar >= _totalRequiredReps) {
+      print("[DEBUG] ✅ Đã đủ số lần! Chuyển trang...");
+      // Đã hoàn thành toàn bộ bài tập
+      _saveWorkoutResult().then((_) => _goToNextPage());
+    } else {
+      setState(() {
+        int repsPerSet = _totalRequiredReps ~/ _totalSets;
+        int newSet = (repsSoFar ~/ repsPerSet) + 1;
+        print(
+            "[DEBUG] 📊 Set mới tính được: $newSet (từ $repsSoFar ~/ $repsPerSet + 1)");
+        _currentSet = newSet;
+
+        // Nếu chuyển sang set mới
+        if (_currentSet > oldSet) {
+          print("[DEBUG] 🔄 Chuyển sang set mới: $_currentSet");
+
+          // Thông báo
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                  "Hoàn thành set $oldSet! Chuẩn bị cho set $_currentSet."),
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+      });
+    }
   }
 
   Future<void> _init() async {
     await Permission.camera.request();
-    final selectedCamera = cameras.firstWhere((c) => c.lensDirection == _currentDirection);
-    final controller = CameraController(selectedCamera, ResolutionPreset.high);
-    await controller.initialize();
-    await controller.startImageStream(_processCameraImage);
-    if (!mounted) return;
-    setState(() {
-      _cameraController = controller;
-    });
+    final selectedCamera =
+        cameras.firstWhere((c) => c.lensDirection == _currentDirection);
+    _cameraController = CameraController(selectedCamera, ResolutionPreset.high);
+    await _cameraController.initialize();
+    _cameraController.startImageStream(_processCameraImage);
+    setState(() {});
   }
 
   Future<void> _switchCamera() async {
-    final oldController = _cameraController;
-    _cameraController = null;
-    if (mounted) {
-      setState(() {});
-      final completer = Completer<void>();
-      WidgetsBinding.instance.addPostFrameCallback((_) => completer.complete());
-      await completer.future;
-    }
-    await oldController?.dispose();
+    _cameraController.stopImageStream();
+    await _cameraController.dispose();
 
     setState(() {
       _currentDirection = _currentDirection == CameraLensDirection.back
@@ -94,7 +204,7 @@ class _SitUpDetectorPageState extends State<SitUpDetectorPage> {
   }
 
   void _processCameraImage(CameraImage image) async {
-    if (_isDetecting || _cameraController == null) return;
+    if (_isDetecting) return;
     _isDetecting = true;
 
     final WriteBuffer allBytes = WriteBuffer();
@@ -122,6 +232,7 @@ class _SitUpDetectorPageState extends State<SitUpDetectorPage> {
 
     if (poses.isNotEmpty) {
       final Pose pose = poses.first;
+      _landmarks = pose.landmarks.values.toList();
 
       final leftShoulder = pose.landmarks[PoseLandmarkType.leftShoulder];
       final leftHip = pose.landmarks[PoseLandmarkType.leftHip];
@@ -130,9 +241,12 @@ class _SitUpDetectorPageState extends State<SitUpDetectorPage> {
       final rightHip = pose.landmarks[PoseLandmarkType.rightHip];
       final rightKnee = pose.landmarks[PoseLandmarkType.rightKnee];
 
-      if (leftShoulder != null && leftHip != null && leftKnee != null &&
-          rightShoulder != null && rightHip != null && rightKnee != null) {
-
+      if (leftShoulder != null &&
+          leftHip != null &&
+          leftKnee != null &&
+          rightShoulder != null &&
+          rightHip != null &&
+          rightKnee != null) {
         final leftAngle = _calculateAngle(
           Offset(leftShoulder.x, leftShoulder.y),
           Offset(leftHip.x, leftHip.y),
@@ -168,6 +282,7 @@ class _SitUpDetectorPageState extends State<SitUpDetectorPage> {
               _position = 'down';
               _counter++;
               _downFrames = 0;
+              _checkWorkoutProgress();
             }
           } else {
             _downFrames = 0;
@@ -181,107 +296,62 @@ class _SitUpDetectorPageState extends State<SitUpDetectorPage> {
 
   @override
   void dispose() {
-    _cameraController?.dispose();
+    _cameraController.dispose();
     _poseDetector.close();
     super.dispose();
-  }
-  Future<bool> _handleNext() async {
-    final sets = sitUpWorkout.sets ?? 0;
-    final reps = sitUpWorkout.reps ?? 0;
-    final estimatedSets = reps > 0 ? (_counter ~/ reps) : 0;
-
-    //kiểm tra xem tập đủ chưa để chọn trạng thái
-    final totalTarget = (sitUpWorkout.sets ?? 0) * (sitUpWorkout.reps ?? 0);
-    String status = (_counter >= totalTarget) ? "COMPLETED" : "IN_PROGRESS";
-
-    if (sitUpWorkout.exerciseName != null) {
-      await dbHelper.insertOrUpdateWorkoutResult(
-        dayNumber: sitUpWorkout.day ?? 0,
-        exerciseName: sitUpWorkout.exerciseName ?? '',
-        setsCompleted: estimatedSets,
-        repsCompleted: _counter,
-        distanceCompleted: 0.0,
-        durationCompleted: 0,
-      );
-      await dbHelper.updateWorkoutStatusByDayAndExercise(
-        dayNumber: sitUpWorkout.day ?? 0,
-        exerciseName: sitUpWorkout.exerciseName ?? '',
-        newStatus: status,
-      );
-
-      print("✅ Đã lưu/ghi đè vào local: ${sitUpWorkout.exerciseName} - $_counter reps");
-      return true;
-    }
-    return false;
   }
 
   @override
   Widget build(BuildContext context) {
-    final totalTarget = (sitUpWorkout.sets ?? 0) * (sitUpWorkout.reps ?? 0);
-    if (_cameraController?.value.isInitialized != true) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
-
     return Scaffold(
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          FittedBox(
-            fit: BoxFit.cover,
-            child: SizedBox(
-              width: _cameraController!.value.previewSize!.height,
-              height: _cameraController!.value.previewSize!.width,
-              child: CameraPreview(_cameraController!),
-            ),
-          ),
-          Positioned(
-            top: 40,
-            left: 20,
-            child: Text(
-              "Sit-Ups: $_counter/$totalTarget",
-              style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
-            ),
-          ),
-          Positioned(
-            bottom: 30,
-            left: 20,
-            child: FloatingActionButton(
-              onPressed: _switchCamera,
-              child: const Icon(Icons.cameraswitch),
-            ),
-          ),
-          Positioned(
-            bottom: 8,
-            right: 8,
-            child: SizedBox(
-              width: 50,
-              height: 50,
-              child: FloatingActionButton(
-                heroTag: 'next_button',
-                backgroundColor: Colors.orange[800],
-                onPressed: () async {
-                  final saved = await _handleNext();
-                  if (saved && mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text("✅ Đã lưu kết quả bài tập!")),
-                    );
-                    Navigator.push(context, MaterialPageRoute(
-                      builder: (_) => WorkoutLocalResultScreen(), // 👉 trang kết quả
-                    ));
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text("❌ Không thể lưu bài tập.")),
-                    );
-                  }
-                },
-                child: const Icon(Icons.arrow_forward, color: Colors.white, size: 24),
-              ),
-            ),
-          ),
-        ],
-      ),
+      body: _cameraController.value.isInitialized
+          ? Stack(
+              fit: StackFit.expand,
+              children: [
+                CameraPreview(_cameraController),
+                CustomPaint(
+                  painter: PosePainter(
+                      _landmarks, _imageSize, MediaQuery.of(context).size),
+                ),
+                Positioned(
+                  top: 40,
+                  left: 20,
+                  child: Text(
+                    'Sit-Ups: $_counter' '/' '$_totalRequiredReps',
+                    style: const TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white),
+                  ),
+                ),
+                Positioned(
+                  top: 80,
+                  left: 20,
+                  child: Text("Hiệp $_currentSet/$_totalSets",
+                      style: TextStyle(fontSize: 16, color: Colors.white)),
+                ),
+                Positioned(
+                  top: 120,
+                  left: 20,
+                  child: Text(
+                    'Angle: ${_latestAngle.toStringAsFixed(1)}°',
+                    style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.yellow),
+                  ),
+                ),
+                Positioned(
+                  bottom: 30,
+                  right: 20,
+                  child: FloatingActionButton(
+                    onPressed: _switchCamera,
+                    child: const Icon(Icons.cameraswitch),
+                  ),
+                )
+              ],
+            )
+          : const Center(child: CircularProgressIndicator()),
     );
   }
 }
@@ -294,7 +364,44 @@ class PosePainter extends CustomPainter {
   PosePainter(this.landmarks, this.imageSize, this.canvasSize);
 
   @override
-  void paint(Canvas canvas, Size size) {}
+  void paint(Canvas canvas, Size size) {
+    final pointPaint = Paint()
+      ..color = Colors.green
+      ..strokeWidth = 4
+      ..style = PaintingStyle.fill;
+
+    final linePaint = Paint()
+      ..color = Colors.red
+      ..strokeWidth = 2;
+
+    Offset scaleOffset(PoseLandmark lm) {
+      final dx = lm.x * canvasSize.width / imageSize.width;
+      final dy = lm.y * canvasSize.height / imageSize.height;
+      return Offset(dx, dy);
+    }
+
+    for (final landmark in landmarks) {
+      canvas.drawCircle(scaleOffset(landmark), 6, pointPaint);
+    }
+
+    void drawLine(PoseLandmarkType a, PoseLandmarkType b) {
+      final lmA = landmarks
+          .cast<PoseLandmark?>()
+          .firstWhere((l) => l?.type == a, orElse: () => null);
+      final lmB = landmarks
+          .cast<PoseLandmark?>()
+          .firstWhere((l) => l?.type == b, orElse: () => null);
+      if (lmA != null && lmB != null) {
+        canvas.drawLine(scaleOffset(lmA), scaleOffset(lmB), linePaint);
+      }
+    }
+
+    drawLine(PoseLandmarkType.leftShoulder, PoseLandmarkType.leftElbow);
+    drawLine(PoseLandmarkType.leftElbow, PoseLandmarkType.leftWrist);
+    drawLine(PoseLandmarkType.leftShoulder, PoseLandmarkType.leftHip);
+    drawLine(PoseLandmarkType.leftHip, PoseLandmarkType.leftKnee);
+    drawLine(PoseLandmarkType.leftKnee, PoseLandmarkType.leftAnkle);
+  }
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;

@@ -1,41 +1,52 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
+import 'package:training_souls/data/DatabaseHelper.dart';
 
-import '../../data/DatabaseHelper.dart';
-import '../../models/work_out.dart';
+import 'package:training_souls/screens/Train/rest.dart';
+import 'package:training_souls/screens/Train/restb.dart';
+import 'package:training_souls/screens/ol.dart';
+
 import 'detector_view.dart';
 import 'painters/pose_painter.dart';
 import 'pose_classifier_processor.dart';
-import '../User/test3.dart';
 
 class SquatDetectorView extends StatefulWidget {
-  final List<Workout> dayWorkouts;
-  const SquatDetectorView({super.key, required this.dayWorkouts});
+  final int day; // Thêm tham số day
+
+  const SquatDetectorView({
+    super.key,
+    required this.day,
+  });
   @override
   State<StatefulWidget> createState() => _SquatDetectorViewState();
 }
 
 class _SquatDetectorViewState extends State<SquatDetectorView> {
-  final PoseDetector _poseDetector = PoseDetector(options: PoseDetectorOptions());
-  final PoseClassifierProcessor _poseClassifierProcessor = PoseClassifierProcessor(isStreamMode: true);
-  final dbHelper = DatabaseHelper();
+  final PoseDetector _poseDetector =
+      PoseDetector(options: PoseDetectorOptions());
+  final PoseClassifierProcessor _poseClassifierProcessor =
+      PoseClassifierProcessor(isStreamMode: true);
+
+  int _totalRequiredReps = 0;
+  int _totalSets = 0;
+  int _currentSet = 1;
   bool _canProcess = true;
   bool _isBusy = false;
+  bool _isLoading = true; // Thêm trạng thái loading
   CustomPaint? _customPaint;
   String _exerciseText = "Chưa nhận diện";
-  int _repCount = 0;
+
   Pose? _previousPose;
   var _cameraLensDirection = CameraLensDirection.back;
-  late final Workout squatWorkout;
+
+  int get _repsPerSet => _totalRequiredReps ~/ _totalSets;
   @override
   void initState() {
     super.initState();
-    squatWorkout = widget.dayWorkouts.firstWhere(
-          (w) => w.exerciseName?.toLowerCase() == "squat" || w.exerciseName?.toLowerCase() == "squat",
-      orElse: () => Workout(sets: 0, reps: 0),
-    );
+    _loadWorkoutData(); // Tải dữ liệu khi khởi tạo
   }
+
   @override
   void dispose() {
     _canProcess = false;
@@ -43,10 +54,141 @@ class _SquatDetectorViewState extends State<SquatDetectorView> {
     super.dispose();
   }
 
+  int _extractRepCount() {
+    try {
+      // Tìm số trong chuỗi _exerciseText
+      RegExp regExp = RegExp(r'(\d+)');
+      var matches = regExp.allMatches(_exerciseText);
+
+      if (matches.isNotEmpty) {
+        return int.parse(matches.first.group(0)!);
+      }
+    } catch (e) {
+      print("[DEBUG] ❌ Lỗi khi trích xuất số từ _exerciseText: $e");
+    }
+
+    // Trả về 0 nếu không tìm thấy số
+    return 0;
+  }
+
+  Future<void> _loadWorkoutData() async {
+    final dbHelper = DatabaseHelper();
+    final allWorkouts = await dbHelper.getWorkouts();
+
+    final squatWorkouts = allWorkouts
+        .where((w) => w.day == widget.day && w.exerciseName == "Squat")
+        .toList();
+
+    setState(() {
+      _totalRequiredReps = squatWorkouts.fold(
+          0, (sum, w) => sum + (w.sets ?? 0) * (w.reps ?? 0));
+      _totalSets = squatWorkouts.fold(0, (sum, w) => sum + (w.sets ?? 0));
+      _isLoading = false;
+    });
+  }
+
+  void _goToNextPage() async {
+    print("[DEBUG] 💾 Đang lưu kết quả tập luyện...");
+
+    // Đảm bảo widget vẫn mounted trước khi showDialog
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      // ignore: deprecated_member_use
+      builder: (context) => WillPopScope(
+        onWillPop: () async => false, // Ngăn người dùng đóng dialog
+        child: Center(child: CircularProgressIndicator()),
+      ),
+    );
+
+    try {
+      await _saveWorkoutResult();
+
+      if (!mounted) return;
+
+      // Đóng dialog loading trước khi chuyển trang
+      Navigator.of(context, rootNavigator: true).pop();
+
+      // Chuyển trang với Navigator.pushReplacement
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => Restb(day: widget.day),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.of(context).pop(); // Đóng dialog nếu có lỗi
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Lỗi: $e")),
+      );
+    }
+  }
+
+  Future<void> _saveWorkoutResult() async {
+    try {
+      final dbHelper = DatabaseHelper();
+
+      // Tạo đối tượng kết quả bài tập
+      final workoutResult = {
+        "exerciseName": "Squat",
+        "setsCompleted": _currentSet,
+        "repsCompleted": _extractRepCount(),
+        "distanceCompleted": 0.0,
+        "durationCompleted": 0
+      };
+
+      // Lưu vào cơ sở dữ liệu
+      await dbHelper.saveExerciseResult(widget.day, workoutResult);
+
+      print("[DEBUG] ✅ Đã lưu kết quả tập luyện: ${workoutResult.toString()}");
+    } catch (e) {
+      print("[DEBUG] ❌ Lỗi khi lưu kết quả: $e");
+    }
+  }
+
+  void _checkWorkoutProgress() {
+    int repsSoFar = _extractRepCount();
+    int oldSet = _currentSet;
+
+    print(
+        "[DEBUG] 🔄 Kiểm tra tiến độ: $repsSoFar/$_totalRequiredReps reps | _repsPerSet=$_repsPerSet | _totalSets=$_totalSets");
+
+    if (repsSoFar >= _totalRequiredReps) {
+      print("[DEBUG] ✅ Đã đủ số lần! Chuyển trang...");
+      // Đã hoàn thành toàn bộ bài tập
+      _goToNextPage();
+    } else {
+      setState(() {
+        int newSet = (repsSoFar ~/ _repsPerSet) + 1;
+        print(
+            "[DEBUG] 📊 Set mới tính được: $newSet (từ $repsSoFar ~/ $_repsPerSet + 1)");
+        _currentSet = newSet;
+
+        // Nếu chuyển sang set mới
+        if (_currentSet > oldSet) {
+          // Reset _exerciseText để đếm lại từ đầu
+          _exerciseText = "Chưa nhận diện";
+          print(
+              "[DEBUG] 🔄 Reset counter khi chuyển sang set mới: $_currentSet");
+
+          // Thông báo
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                  "Hoàn thành set $oldSet! Chuẩn bị cho set $_currentSet."),
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final totalTarget = (squatWorkout.sets ?? 0) * (squatWorkout.reps ?? 0);
-
     return Stack(
       children: [
         DetectorView(
@@ -55,7 +197,12 @@ class _SquatDetectorViewState extends State<SquatDetectorView> {
           text: _exerciseText,
           onImage: _processImage,
           initialCameraLensDirection: _cameraLensDirection,
-          onCameraLensDirectionChanged: (value) => _cameraLensDirection = value,
+          onCameraLensDirectionChanged: (value) {
+            setState(() {
+              _cameraLensDirection = value;
+              _previousPose = null; // Reset khi đổi camera
+            });
+          },
         ),
         Positioned(
           top: 20,
@@ -63,123 +210,68 @@ class _SquatDetectorViewState extends State<SquatDetectorView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text("Bạn đang tập bài Squats", style: TextStyle(fontSize: 18, color: Colors.white)),
-              Text("$_exerciseText/$totalTarget",
+              Text("Bạn đang tập bài Squats",
                   style: TextStyle(fontSize: 18, color: Colors.white)),
-              Text(
-                "${squatWorkout.sets} sets × ${squatWorkout.reps} reps = = $totalTarget",
-                style: TextStyle(fontSize: 18, color: Colors.white),
-              ),
+              Text("Bài tập: $_exerciseText",
+                  style: TextStyle(fontSize: 18, color: Colors.white)),
+              Text("Hiệp $_currentSet/$_totalSets",
+                  style: TextStyle(fontSize: 16, color: Colors.white)),
+              Text("Số lần: ${_extractRepCount()}/$_totalRequiredReps",
+                  style: TextStyle(fontSize: 16, color: Colors.white)),
             ],
-          ),
-        ),
-        Positioned(
-          bottom: 8,
-          right: 8,
-          child: SizedBox(
-            width: 50,
-            height: 50,
-            child: FloatingActionButton(
-              heroTag: 'next_button',
-              backgroundColor: Colors.orange[800],
-              onPressed: () async {
-                final saved = await _handleNext();
-                if (saved && mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("✅ Đã lưu kết quả bài tập!")),
-                  );
-                  Navigator.push(context, MaterialPageRoute(
-                    builder: (_) => WorkoutLocalResultScreen(), // 👉 trang kết quả
-                  ));
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("❌ Không thể lưu bài tập.")),
-                  );
-                }
-              },
-              child: const Icon(Icons.arrow_forward, color: Colors.white, size: 24),
-            ),
           ),
         ),
       ],
     );
   }
-  Future<bool> _handleNext() async {
-    final sets = squatWorkout.sets ?? 0;
-    final reps = squatWorkout.reps ?? 0;
-    final repFromText = int.tryParse(
-      _exerciseText.split(":").last.trim().split(" ").first,
-    ) ?? 0;
 
-    final estimatedSets = reps > 0 ? (repFromText ~/ reps) : 0;
-
-    //kiểm tra xem tập đủ chưa để chọn trạng thái
-    final totalTarget = (squatWorkout.sets ?? 0) * (squatWorkout.reps ?? 0);
-    String status = (repFromText >= totalTarget) ? "COMPLETED" : "IN_PROGRESS";
-
-    if (squatWorkout.exerciseName != null) {
-      await dbHelper.insertOrUpdateWorkoutResult(
-        dayNumber: squatWorkout.day ?? 0,
-        exerciseName: squatWorkout.exerciseName ?? '',
-        setsCompleted: estimatedSets,
-        repsCompleted: repFromText,
-        distanceCompleted: 0.0,
-        durationCompleted: 0,
-      );
-      await dbHelper.updateWorkoutStatusByDayAndExercise(
-        dayNumber: squatWorkout.day ?? 0,
-        exerciseName: squatWorkout.exerciseName ?? '',
-        newStatus: status,
-      );
-
-      print("✅ Đã lưu/ghi đè vào local: ${squatWorkout.exerciseName} - $repFromText reps");
-      return true;
-    }
-    return false;
-  }
-
-  Future<void> _processImage(InputImage inputImage) async {
+  Future _processImage(InputImage inputImage) async {
     if (!_canProcess || _isBusy) return;
     _isBusy = true;
 
     final poses = await _poseDetector.processImage(inputImage);
 
-    if (poses.isNotEmpty && _isValidPose(poses.first)) {
-      List<String> classificationResult = _poseClassifierProcessor.getPoseResult(poses.first);
+    if (poses.isNotEmpty) {
+      if (!_isValidPose(poses.first)) {
+        // Log thông báo khi pose không hợp lệ
+        print("[DEBUG] ❌ Pose không hợp lệ (không đủ keypoints)");
+      } else if (!_isSignificantMovement(poses.first)) {
+        // Log thông báo khi chuyển động quá nhỏ
+        print("[DEBUG] ❌ Chuyển động quá nhỏ, không tính.");
+      } else {
+        List classificationResult =
+            _poseClassifierProcessor.getPoseResult(poses.first);
 
-      if (classificationResult.isNotEmpty && _isSignificantMovement(poses.first)) {
-        setState(() {
-          String detectedExercise = classificationResult[0];
-          if (detectedExercise.contains("squats")) {
-            _exerciseText = detectedExercise;
-            _updateRepCount(classificationResult);
-          } else {
-            _exerciseText = "Sai tư thế!";
-          }
-        });
+        if (classificationResult.isNotEmpty) {
+          setState(() {
+            String detectedExercise = classificationResult[0];
+            // Kiểm tra và cập nhật kết quả tập luyện nếu có
+            if (detectedExercise.contains("squats")) {
+              _exerciseText = detectedExercise;
+            } else {
+              _exerciseText = "Sai tư thế!";
+            }
+          });
+
+          _checkWorkoutProgress();
+        }
       }
+    } else {
+      // Log khi không phát hiện được pose nào
+      print("[DEBUG] ❌ Không phát hiện pose nào!");
     }
 
+    _previousPose = poses.isNotEmpty ? poses.first : null;
     _updateCanvas(poses, inputImage);
   }
 
-  void _updateRepCount(List<String> classificationResult) {
-    if (classificationResult.length > 1) {
-      List<String> parts = classificationResult[1].split(" ");
-      if (parts.length > 2) {
-        int newRepCount = int.tryParse(parts[2]) ?? _repCount;
-        if (newRepCount > _repCount) {
-          _repCount = newRepCount;
-          print("[DEBUG] Squats - Số lần: $_repCount");
-        }
-      }
-    }
-  }
-
   void _updateCanvas(List<Pose> poses, InputImage inputImage) {
-    if (poses.isNotEmpty && inputImage.metadata?.size != null && inputImage.metadata?.rotation != null) {
+    if (poses.isNotEmpty &&
+        inputImage.metadata?.size != null &&
+        inputImage.metadata?.rotation != null) {
       _customPaint = CustomPaint(
-        painter: PosePainter(poses, inputImage.metadata!.size, inputImage.metadata!.rotation, _cameraLensDirection),
+        painter: PosePainter(poses, inputImage.metadata!.size,
+            inputImage.metadata!.rotation, _cameraLensDirection),
       );
     } else {
       _customPaint = null;
@@ -207,11 +299,11 @@ class _SquatDetectorViewState extends State<SquatDetectorView> {
     int validKeypoints = 0;
     for (var keypoint in requiredKeypoints) {
       if (pose.landmarks.containsKey(keypoint)) {
-        validKeypoints++;  // Đếm số keypoints hợp lệ
+        validKeypoints++; // Đếm số keypoints hợp lệ
       }
     }
 
-    return validKeypoints >= 6;  // Cần ít nhất 6 điểm để tránh lỗi nhận diện
+    return validKeypoints >= 6; // Cần ít nhất 6 điểm để tránh lỗi nhận diện
   }
 
   bool _isSignificantMovement(Pose currentPose) {
@@ -226,7 +318,8 @@ class _SquatDetectorViewState extends State<SquatDetectorView> {
 
     double totalMovement = 0;
     for (var keypoint in keypointsToCheck) {
-      if (currentPose.landmarks.containsKey(keypoint) && _previousPose!.landmarks.containsKey(keypoint)) {
+      if (currentPose.landmarks.containsKey(keypoint) &&
+          _previousPose!.landmarks.containsKey(keypoint)) {
         final newPos = currentPose.landmarks[keypoint]!;
         final oldPos = _previousPose!.landmarks[keypoint]!;
 

@@ -105,7 +105,7 @@ class _CameraViewState extends State<CameraView> {
 
   Widget _switchLiveCameraToggle() => Positioned(
         bottom: 8,
-        left: 8,
+        right: 8,
         child: SizedBox(
           height: 50.0,
           width: 50.0,
