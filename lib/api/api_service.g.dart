@@ -184,12 +184,11 @@ class _ApiService implements ApiService {
         )));
     await _dio.fetch<void>(_options);
   }
-
   @override
   Future<void> confirmPayment(
-    Map<String, dynamic> body,
-    String token,
-  ) async {
+      Map<String, dynamic> body,
+      String token,
+      ) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{r'Authorization': token};
@@ -202,13 +201,13 @@ class _ApiService implements ApiService {
       extra: _extra,
     )
         .compose(
-          _dio.options,
-          '/purchase/complete',
-          queryParameters: queryParameters,
-          data: _data,
-        )
+      _dio.options,
+      '/purchase/complete',
+      queryParameters: queryParameters,
+      data: _data,
+    )
         .copyWith(
-            baseUrl: _combineBaseUrls(
+        baseUrl: _combineBaseUrls(
           _dio.options.baseUrl,
           baseUrl,
         )));

@@ -31,6 +31,6 @@ abstract class ApiService {
   Future<void> confirmPayment(
       @Body() Map<String, dynamic> body,
       @Header("Authorization") String token,
-      );
+  );
 
 }

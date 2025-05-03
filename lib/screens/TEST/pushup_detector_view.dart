@@ -247,17 +247,11 @@ class _PushUpDetectorViewState extends State<PushUpDetectorView> {
         print("[DEBUG] ❌ Chuyển động quá nhỏ, không tính.");
       } else {
         List classificationResult =
-        _poseClassifierProcessor.getPoseResult(poses.first);
+            _poseClassifierProcessor.getPoseResult(poses.first);
 
         if (classificationResult.isNotEmpty) {
           setState(() {
-            String detectedExercise = classificationResult[0];
-            // Kiểm tra và cập nhật kết quả tập luyện nếu có
-            if (detectedExercise.contains("pushups")) {
-              _exerciseText = detectedExercise;
-            } else {
-              _exerciseText = "Sai tư thế!";
-            }
+            _exerciseText = classificationResult[0];
           });
 
           _checkWorkoutProgress();
