@@ -1,9 +1,16 @@
+// Updated Dart code based on your instructions
+// Changes:
+// - Updated name + level on same row without icon
+// - Title shown as plain text (no icon)
+// - Other stats grouped in rows: Health + Strength, Endurance + Agility
+
 import 'package:flutter/material.dart';
 import 'package:flutter_3d_controller/flutter_3d_controller.dart';
 
+import '../../data/DatabaseHelper.dart';
+
 class StatusScreen extends StatefulWidget {
   const StatusScreen({super.key});
-
   _StatusScreenState createState() => _StatusScreenState();
 }
 
@@ -13,29 +20,61 @@ class _StatusScreenState extends State<StatusScreen> {
   String? chosenTexture;
   String? chosenModel;
   bool changeModel = false;
-  bool isLoading = false; // Biến trạng thái loading
+  bool isLoading = false;
   String srcGlb1 = 'assets/3dmodel/escanor_2.glb';
   String srcGlb = 'assets/3dmodel/RunningEscanor.glb';
   late final List<String> availableModels;
+  final dbHelper = DatabaseHelper();
+  Map<String, dynamic> _userProfile = {};
+  Map<String, dynamic> _userInfo = {};
 
   @override
   void initState() {
     super.initState();
     controller.onModelLoaded.addListener(() {
-      debugPrint('Model loaded: ${controller.onModelLoaded.value}');
+      debugPrint('Model loaded: \${controller.onModelLoaded.value}');
     });
-    availableModels = [srcGlb, srcGlb1]; // Khóa cứng danh sách ngay từ đầu
+    availableModels = [srcGlb, srcGlb1];
+    _printDatabaseContent(dbHelper);
+    _loadUserProfile(dbHelper);
+  }
+  Future<void> _printDatabaseContent(DatabaseHelper dbHelper) async {
+    final db = await dbHelper.database;
+
+    // Lấy và in thông tin người dùng
+    final userInfo = await db.query('user_info');
+    print("❓ Dữ liệu bảng user_info:");
+    userInfo.forEach((user) {
+      print(user);
+    });
+
+    // Lấy và in thông tin user_profile
+    final userProfiles = await db.query('user_profile');
+    print("❓ Dữ liệu bảng user_profile:");
+    userProfiles.forEach((profile) {
+      print(profile);
+    });
+
+  }
+  Future<void> _loadUserProfile(DatabaseHelper dbHelper) async {
+    final db = await dbHelper.database;
+    final name = await db.query('user_info');
+    final profiles = await db.query('user_profile');
+    if (profiles.isNotEmpty) {
+      setState(() {
+        _userProfile = profiles.first;
+        _userInfo = name.first;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // sua loi quay load model 3d
     void handleBackButton() {
       setState(() {
-        isLoading = true; // Hiển thị vòng loading
-        srcGlb1 = ""; // Xóa model
+        isLoading = true;
+        srcGlb1 = "";
       });
-
       Future.delayed(const Duration(seconds: 1), () {
         Navigator.pop(context, true);
       });
@@ -46,7 +85,7 @@ class _StatusScreenState extends State<StatusScreen> {
         title: const Text("Status Screen"),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: handleBackButton, // Gọi hàm chung
+          onPressed: handleBackButton,
         ),
       ),
       body: Stack(
@@ -60,46 +99,37 @@ class _StatusScreenState extends State<StatusScreen> {
                   progressBarColor: Colors.lightBlue,
                   enableTouch: true,
                   onProgress: (double progressValue) {
-                    debugPrint('Loading progress: $progressValue');
+                    debugPrint('Loading progress: \$progressValue');
                   },
                   onLoad: (String modelAddress) {
-                    debugPrint('Model loaded: $modelAddress');
+                    debugPrint('Model loaded: \$modelAddress');
                     controller.playAnimation();
                   },
                   onError: (String error) {
-                    debugPrint('Error: $error');
+                    debugPrint('Error: \$error');
                   },
                   controller: controller,
                   src: srcGlb1,
                 ),
               ),
-
+              const Divider(thickness: 2),
               _buildInfoPanel(),
-
-              //nut phong bi loi
-              // ElevatedButton(
-              //   onPressed: handleBackButton, // Gọi hàm chung
-              //   child: isLoading
-              //       ? const CircularProgressIndicator(color: Colors.white) // Hiển thị vòng load
-              //       : const Text("Back"),
-              // ),
             ],
           ),
           Positioned(
-            top: 16, // Đưa lên trên cùng
-            right: 20, // Giữ bên phải
+            top: 16,
+            right: 20,
             child: Column(
-              mainAxisSize: MainAxisSize.min, // Tránh lỗi tràn
+              mainAxisSize: MainAxisSize.min,
               children: _buildFloatingButtons(),
             ),
           ),
           Positioned(
-            top: 16, // Đưa lên trên cùng
-            left: 20, // Di chuyển nút sang bên trái
+            top: 16,
+            left: 20,
             child: _iconButton(Icons.accessibility_new, () async {
               String? selectedModel = await showPickerDialog(
                   'Choose Model', availableModels, srcGlb1);
-
               if (selectedModel != null && selectedModel != srcGlb1) {
                 setState(() {
                   srcGlb1 = selectedModel;
@@ -120,7 +150,7 @@ class _StatusScreenState extends State<StatusScreen> {
         child: Container(
           padding: const EdgeInsets.all(16.0),
           decoration: const BoxDecoration(
-            color: Color(0xFFFCF5FD), // Màu nền
+            color: Color(0xFFFCF5FD),
             borderRadius: BorderRadius.only(
               topLeft: Radius.circular(20),
               topRight: Radius.circular(20),
@@ -129,19 +159,86 @@ class _StatusScreenState extends State<StatusScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildTripleRow("Name", "???", "Level", "??"),
-              _buildSingleRow("Title", "???"),
-              const Divider(color: Colors.white),
-              _buildProgressRow("Power", "???", 0.75),
-              const Divider(color: Colors.white),
-              _buildTripleRow("Health", "???", "Strength", "??"),
-              _buildTripleRow("Endurance", "???", "Agility", "??"),
-              const Divider(color: Colors.white),
-              _buildSingleRow("Death point", "??"),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children:  [
+                  Text(_userInfo['name']?.toString() ?? "Tên người dùng", style: TextStyle(fontSize: 16)),
+                  Text("Level: ${_userInfo['level']?.toString() ?? "??"}", style: TextStyle(fontSize: 16)),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Text("Thành tựu: ${_userProfile['level'] ?? "??"}", style: TextStyle(fontSize: 16)),
+              const Divider(),
+              _buildPowerBar(),
+              const Divider(),
+              _buildStatRow('assets/img/Health.png', 'health', 'assets/img/Strength.png', 'strength'),
+              _buildStatRow('assets/img/Endurance.png', 'endurance', 'assets/img/aigilty.png', 'agility'),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  // Thay _buildStatRow cũ bằng phiên bản mới này
+  Widget _buildStatRow(String leftIcon, String leftKey, String rightIcon, String rightKey) {
+    final leftValue = _userProfile[leftKey]?.toString() ?? "???";
+    final rightValue = _userProfile[rightKey]?.toString() ?? "???";
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(children: [
+            Image.asset(leftIcon, width: 24, height: 24),
+            const SizedBox(width: 8),
+            Text(leftValue, style: const TextStyle(fontSize: 16)),
+          ]),
+          Row(children: [
+            Image.asset(rightIcon, width: 24, height: 24),
+            const SizedBox(width: 8),
+            Text(rightValue, style: const TextStyle(fontSize: 16)),
+          ]),
+        ],
+      ),
+    );
+  }
+
+
+  Widget _buildPowerBar() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Image.asset('assets/img/Power.png', width: 24, height: 24),
+        const SizedBox(height: 4),
+        Stack(
+          children: [
+            Container(
+              height: 20,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                gradient: const LinearGradient(
+                  colors: [Colors.red, Colors.yellow, Colors.green],
+                  stops: [0.3, 0.5, 1.0],
+                ),
+              ),
+            ),
+            Positioned(left: 0, child: _verticalMark("30")),
+            Positioned(left: 100, child: _verticalMark("50")),
+            Positioned(right: 0, child: _verticalMark("100")),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _verticalMark(String label) {
+    return Column(
+      children: [
+        Container(width: 1, height: 20, color: Colors.black),
+        Text(label, style: const TextStyle(fontSize: 10)),
+      ],
     );
   }
 
@@ -151,17 +248,13 @@ class _StatusScreenState extends State<StatusScreen> {
       _iconButton(Icons.pause, () => controller.pauseAnimation()),
       _iconButton(Icons.replay, () => controller.resetAnimation()),
       _iconButton(Icons.format_list_bulleted_outlined, () async {
-        List<String> availableAnimations =
-            await controller.getAvailableAnimations();
-        chosenAnimation = await showPickerDialog(
-            'Animations', availableAnimations, chosenAnimation);
+        List<String> availableAnimations = await controller.getAvailableAnimations();
+        chosenAnimation = await showPickerDialog('Animations', availableAnimations, chosenAnimation);
         controller.playAnimation(animationName: chosenAnimation);
       }),
       _iconButton(Icons.list_alt_rounded, () async {
-        List<String> availableTextures =
-            await controller.getAvailableTextures();
-        chosenTexture = await showPickerDialog(
-            'Textures', availableTextures, chosenTexture);
+        List<String> availableTextures = await controller.getAvailableTextures();
+        chosenTexture = await showPickerDialog('Textures', availableTextures, chosenTexture);
         controller.setTexture(textureName: chosenTexture ?? '');
       }),
       _iconButton(Icons.camera_alt_outlined, () {
@@ -180,24 +273,10 @@ class _StatusScreenState extends State<StatusScreen> {
               : 'assets/3dmodel/RunningEscanor.glb';
         });
       }, size: 30),
-      // _iconButton(Icons.accessibility_new, () async {
-      //
-      //   String? selectedModel = await showPickerDialog(
-      //       'Choose Model', availableModels, srcGlb1);
-      //
-      //   if (selectedModel != null && selectedModel != srcGlb1) {
-      //     setState(() {
-      //       srcGlb1 = selectedModel;
-      //       chosenAnimation = null;
-      //       chosenTexture = null;
-      //     });
-      //   }
-      // }),
     ];
   }
 
-  Widget _iconButton(IconData icon, VoidCallback onPressed,
-      {double size = 24}) {
+  Widget _iconButton(IconData icon, VoidCallback onPressed, {double size = 24}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
       child: IconButton(
@@ -207,195 +286,52 @@ class _StatusScreenState extends State<StatusScreen> {
     );
   }
 
-  Widget _buildTripleRow(
-      String title1, String value1, String title2, String value2) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Row(
-          children: [
-            // Kiểm tra title1 và hiển thị ảnh tương ứng
-            if (title1 == "Health")
-              Image.asset(
-                'assets/img/Health.png',
-                width: 24,
-                height: 24,
-              ),
-            if (title1 == "Endurance") // Thêm điều kiện cho Endurance
-              Image.asset(
-                'assets/img/Endurance.png',
-                width: 24,
-                height: 24,
-              ),
-            const SizedBox(width: 8),
-            Text("$title1: $value1",
-                style: const TextStyle(fontSize: 16, color: Colors.black)),
-          ],
-        ),
-        Row(
-          children: [
-            // Kiểm tra title2 và hiển thị ảnh tương ứng
-            if (title2 == "Strength")
-              Image.asset(
-                'assets/img/Strength.png',
-                width: 24,
-                height: 24,
-              ),
-            if (title2 == "Agility") // Thêm điều kiện cho Agility
-              Image.asset(
-                'assets/img/aigilty.png',
-                width: 24,
-                height: 24,
-              ),
-            const SizedBox(width: 8),
-            Text("$title2: $value2",
-                style: const TextStyle(fontSize: 16, color: Colors.black)),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSingleRow(String title, String value) {
-    return Row(
-      children: [
-        // Trực tiếp gọi ảnh cho từng title
-        if (title == "Death point")
-          Image.asset(
-            'assets/img/Agility.png', // Đường dẫn đến ảnh
-            width: 24,
-            height: 24,
-          ),
-        const SizedBox(width: 8),
-        Text("$title: $value",
-            style: const TextStyle(fontSize: 16, color: Colors.black)),
-      ],
-    );
-  }
-
-  Widget _buildProgressRow(String title, String value, double progress) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            // Trực tiếp gọi ảnh cho "Power"
-            if (title == "Power")
-              Image.asset(
-                'assets/img/Power.png', // Đường dẫn đến ảnh
-                width: 24,
-                height: 24,
-              ),
-            // Trực tiếp gọi ảnh cho "Health"
-            if (title == "Health")
-              Image.asset(
-                'assets/img/Health.png', // Đường dẫn đến ảnh
-                width: 24,
-                height: 24,
-              ),
-            // Trực tiếp gọi ảnh cho "Strength"
-            if (title == "Strength")
-              Image.asset(
-                'assets/img/Strength.png', // Đường dẫn đến ảnh
-                width: 24,
-                height: 24,
-              ),
-            // Trực tiếp gọi ảnh cho "Endurance"
-            if (title == "Endurance")
-              Image.asset(
-                'assets/img/Endurance.png', // Đường dẫn đến ảnh
-                width: 24,
-                height: 24,
-              ),
-            // Trực tiếp gọi ảnh cho "Agility"
-            if (title == "Agility")
-              Image.asset(
-                'assets/img/aigilty.png', // Đường dẫn đến ảnh
-                width: 24,
-                height: 24,
-              ),
-            // Trực tiếp gọi ảnh cho "Death point"
-            if (title == "Death point")
-              Image.asset(
-                'assets/img/Agility.png', // Đường dẫn đến ảnh
-                width: 24,
-                height: 24,
-              ),
-            const SizedBox(width: 8),
-            Text("$title: $value",
-                style: const TextStyle(fontSize: 16, color: Colors.black)),
-          ],
-        ),
-        const SizedBox(height: 4),
-        LinearProgressIndicator(
-          value: progress,
-          backgroundColor: Colors.white,
-          color: Color(0xFFDB4F31),
-          minHeight: 10,
-        ),
-      ],
-    );
-  }
-
   Future<String?> showPickerDialog(String title, List<String> inputList,
       [String? chosenItem]) async {
-    String? selectedItem = chosenItem; // Lưu model được chọn
-
     return await showModalBottomSheet<String>(
       context: context,
-      isScrollControlled: true, // Cho phép kéo dài modal nếu cần
       builder: (ctx) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return Container(
-              height: MediaQuery.of(context).size.height *
-                  0.4, // Chiếm 40% màn hình
-              padding: const EdgeInsets.all(10),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(title,
-                      style: const TextStyle(
-                          fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 10),
-                  Expanded(
-                    // Ngăn lỗi RenderFlex Overflow
-                    child: ListView.separated(
-                      itemCount: inputList.length,
-                      itemBuilder: (ctx, index) {
-                        return ListTile(
-                          title: Text(
-                            inputList[index],
-                            overflow:
-                                TextOverflow.ellipsis, // Tránh lỗi quá dài
-                            maxLines: 1,
-                          ),
-                          leading: Text('${index + 1}'),
-                          trailing: Icon(
-                            selectedItem == inputList[index]
-                                ? Icons.check_box
-                                : Icons.check_box_outline_blank,
-                            color: Colors.blue,
-                          ),
-                          onTap: () {
-                            setState(() {
-                              selectedItem = inputList[index];
-                            });
-                            Future.delayed(const Duration(milliseconds: 300),
-                                () {
-                              Navigator.pop(context, selectedItem);
-                            });
-                          },
-                        );
-                      },
-                      separatorBuilder: (ctx, index) =>
-                          const Divider(color: Colors.grey),
-                    ),
+        return SizedBox(
+          height: 250,
+          child: inputList.isEmpty
+              ? Center(
+            child: Text('$title list is empty'),
+          )
+              : ListView.separated(
+            itemCount: inputList.length,
+            padding: const EdgeInsets.only(top: 16),
+            itemBuilder: (ctx, index) {
+              return InkWell(
+                onTap: () {
+                  Navigator.pop(context, inputList[index]);
+                },
+                child: Container(
+                  height: 50,
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('${index + 1}'),
+                      Text(inputList[index]),
+                      Icon(
+                        chosenItem == inputList[index]
+                            ? Icons.check_box
+                            : Icons.check_box_outline_blank,
+                      )
+                    ],
                   ),
-                ],
-              ),
-            );
-          },
+                ),
+              );
+            },
+            separatorBuilder: (ctx, index) {
+              return const Divider(
+                color: Colors.grey,
+                thickness: 0.6,
+                indent: 10,
+                endIndent: 10,
+              );
+            },
+          ),
         );
       },
     );

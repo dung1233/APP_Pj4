@@ -86,6 +86,7 @@ dependencies:
   #paypal
   flutter_paypal_payment: ^1.0.8
   youtube_player_flutter: ^9.1.1
+  intl: ^0.19.0
 
 flutter_launcher_icons:
   android: true
