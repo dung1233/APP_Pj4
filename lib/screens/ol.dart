@@ -48,10 +48,6 @@ class _OlViewState extends State<Ol> {
   void displayWorkoutResults() async {
     final results = await dbHelper.getAllWorkoutResults();
 
-    setState(() {
-      workoutResults = results;
-      isLoading = false; // Dòng này cực kỳ quan trọng!
-    });
     // In kết quả để debug
     print("Tất cả kết quả workout: $results");
 

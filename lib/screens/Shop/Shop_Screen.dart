@@ -188,14 +188,16 @@ class _ShopScreenState extends State<ShopScreen>
                 ),
                 const SizedBox(width: 12),
                 Expanded(
+                  // ignore: prefer_const_constructors
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
+                    children: const [
+                      // ignore: prefer_const_constructors
                       Text('Tài Khoản : Premium',
-                          style: const TextStyle(
+                          style: TextStyle(
                               fontSize: 16, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 4),
-                      const Text('Các bài tập tại nhà',
+                      SizedBox(height: 4),
+                      Text('Các bài tập tại nhà',
                           style: TextStyle(color: Colors.grey)),
                     ],
                   ),
@@ -251,6 +253,7 @@ class _ShopScreenState extends State<ShopScreen>
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const Scaffold(
+        backgroundColor: Colors.white,
         body: Center(child: CircularProgressIndicator()),
       );
     }
@@ -258,6 +261,7 @@ class _ShopScreenState extends State<ShopScreen>
     if (_errorMessage != null) {
       return Scaffold(
         appBar: AppBar(title: const Text('Shop')),
+        backgroundColor: Colors.white,
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -276,6 +280,7 @@ class _ShopScreenState extends State<ShopScreen>
 
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Colors.white,
         title: const Text('Shop'),
         bottom: TabBar(
           controller: _tabController,
@@ -298,30 +303,33 @@ class _ShopScreenState extends State<ShopScreen>
       ),
       body: RefreshIndicator(
         onRefresh: _loadInitialData,
-        child: TabBarView(
-          controller: _tabController,
-          children: categories.map((category) {
-            final categoryItems = _getItemsByCategory(category);
+        child: Container(
+          color: Colors.white,
+          child: TabBarView(
+            controller: _tabController,
+            children: categories.map((category) {
+              final categoryItems = _getItemsByCategory(category);
 
-            if (categoryItems.isEmpty) {
-              return const Center(child: Text('No items available'));
-            }
+              if (categoryItems.isEmpty) {
+                return const Center(child: Text('No items available'));
+              }
 
-            return GridView.builder(
-              padding: const EdgeInsets.all(8),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 8,
-                mainAxisSpacing: 8,
-                childAspectRatio: 0.7,
-              ),
-              itemCount: categoryItems.length,
-              itemBuilder: (context, index) {
-                final item = categoryItems[index];
-                return _buildItemCard(item);
-              },
-            );
-          }).toList(),
+              return GridView.builder(
+                padding: const EdgeInsets.all(8),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 8,
+                  childAspectRatio: 0.7,
+                ),
+                itemCount: categoryItems.length,
+                itemBuilder: (context, index) {
+                  final item = categoryItems[index];
+                  return _buildItemCard(item);
+                },
+              );
+            }).toList(),
+          ),
         ),
       ),
     );
@@ -329,6 +337,7 @@ class _ShopScreenState extends State<ShopScreen>
 
   Widget _buildItemCard(Item item) {
     return Card(
+      color: Colors.white,
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
@@ -363,12 +372,7 @@ class _ShopScreenState extends State<ShopScreen>
               ),
               const SizedBox(height: 4),
               Row(
-                children: [
-                  const Icon(Icons.monetization_on,
-                      size: 16, color: Colors.amber),
-                  const SizedBox(width: 4),
-                  Text('1000 points'),
-                ],
+                children: [],
               ),
               if (item.description.isNotEmpty) ...[
                 const SizedBox(height: 4),
