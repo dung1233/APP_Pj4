@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_datepicker/datepicker.dart';
+import 'package:training_souls/data/DatabaseHelper.dart';
 
 class OnlineScreen extends StatefulWidget {
   const OnlineScreen({Key? key}) : super(key: key);
@@ -11,6 +12,9 @@ class OnlineScreen extends StatefulWidget {
 
 class _OnlineScreenState extends State<OnlineScreen> {
   late DateRangePickerController _datePickerController;
+  final DatabaseHelper _databaseHelper = DatabaseHelper();
+  List<Map<String, dynamic>> workoutResults = [];
+  bool isLoading = true;
 
   bool showAvg = false;
 
