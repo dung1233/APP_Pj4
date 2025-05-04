@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lottie/lottie.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
+// ignore: depend_on_referenced_packages
 
 class ExerciseBottomSheet extends StatefulWidget {
   final String title;

@@ -82,9 +82,10 @@ dependencies:
   geodesy: ^0.7.0              # For distance calculations
   flutter_map: ^8.1.0
   latlong2: ^0.9.1             # For displaying maps
-  youtube_player_flutter: ^9.1.1
+
   #paypal
   flutter_paypal_payment: ^1.0.8
+  youtube_player_flutter: ^9.1.1
 
 flutter_launcher_icons:
   android: true
