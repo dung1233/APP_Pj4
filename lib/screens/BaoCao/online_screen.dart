@@ -120,11 +120,18 @@ class _OnlineScreenState extends State<OnlineScreen> {
     final int id = workout['id'] ?? 0;
     final int dayNumber = workout['day_number'] ?? 0;
     final String exerciseName = workout['exercise_name'] ?? 'Không có tên';
-    final int setsCompleted = workout['sets_completed'] ?? 0;
-    final int repsCompleted = workout['reps_completed'] ?? 0;
+
+    // Fix: Đảm bảo chuyển đổi về int khi cần
+    final int setsCompleted = _safeParseInt(workout['sets_completed']);
+    final int repsCompleted = _safeParseInt(workout['reps_completed']);
+
+    // Fix: Sử dụng double cho khoảng cách
     final double distanceCompleted =
-        workout['distance_completed']?.toDouble() ?? 0.0;
-    final int durationCompleted = workout['duration_completed'] ?? 0;
+        _safeParseDouble(workout['distance_completed']);
+
+    // Fix: Đảm bảo chuyển đổi về int cho thời gian
+    final int durationCompleted = _safeParseInt(workout['duration_completed']);
+
     final String completedDate = workout['completed_date'] ?? '';
 
     // Xử lý định dạng ngày giờ nếu cần
@@ -231,6 +238,39 @@ class _OnlineScreenState extends State<OnlineScreen> {
     );
   }
 
+  // Helper methods to safely convert values to int and double
+  int _safeParseInt(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is double) return value.toInt();
+    if (value is String) {
+      try {
+        return int.parse(value);
+      } catch (e) {
+        try {
+          return double.parse(value).toInt();
+        } catch (e) {
+          return 0;
+        }
+      }
+    }
+    return 0;
+  }
+
+  double _safeParseDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) {
+      try {
+        return double.parse(value);
+      } catch (e) {
+        return 0.0;
+      }
+    }
+    return 0.0;
+  }
+
   // Widget hiển thị icon cho loại tập luyện dựa trên tên bài tập
   Widget _buildExerciseTypeIcon(String exerciseName) {
     IconData iconData;
@@ -253,7 +293,7 @@ class _OnlineScreenState extends State<OnlineScreen> {
         exerciseNameLower.contains('pushup')) {
       iconData = Icons.fitness_center;
       iconColor = Colors.blue;
-    } else if (exerciseNameLower.contains('squat') ||
+    } else if (exerciseNameLower.contains('Squat') ||
         exerciseNameLower.contains('stretch')) {
       iconData = Icons.self_improvement;
       iconColor = Colors.purple;

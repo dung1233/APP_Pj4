@@ -126,23 +126,48 @@ class _DanhsachbaitapState extends State<Danhsachbaitap> {
     final dayWorkouts =
         (await dbHelper.getWorkouts()).where((w) => w.day == day).toList();
 
-    // Tìm bài tập đầu tiên chưa hoàn thành
+    // Thứ tự cố định các bài tập
+    final fixedOrder = ['hít đất', 'squat', 'gập bụng', 'chạy bộ'];
+
+    // Tìm bài tập đầu tiên chưa hoàn thành theo thứ tự cố định
     Workout? nextWorkout;
-    for (var workout in dayWorkouts) {
-      if (workout.status != "COMPLETED" &&
-          workout.exerciseName != null &&
-          !workout.exerciseName!.toLowerCase().contains("nghỉ ngơi")) {
-        nextWorkout = workout;
-        break;
+
+    for (var exerciseType in fixedOrder) {
+      for (var workout in dayWorkouts) {
+        if (workout.status != "COMPLETED" &&
+            workout.exerciseName != null &&
+            workout.exerciseName!.toLowerCase().contains(exerciseType)) {
+          nextWorkout = workout;
+          break;
+        }
+      }
+      if (nextWorkout != null) break;
+    }
+
+    // Nếu không tìm thấy bài tập nào chưa hoàn thành, lấy bài đầu tiên theo thứ tự cố định
+    if (nextWorkout == null) {
+      for (var exerciseType in fixedOrder) {
+        final foundWorkout = dayWorkouts.firstWhere(
+          (w) =>
+              w.exerciseName != null &&
+              w.exerciseName!.toLowerCase().contains(exerciseType),
+          orElse: () => Workout(), // Giả sử Workout có constructor mặc định
+        );
+
+        if (foundWorkout.exerciseName != null) {
+          nextWorkout = foundWorkout;
+          break;
+        }
       }
     }
 
-    // Nếu không có bài tập nào chưa hoàn thành, lấy bài đầu tiên
+    // Nếu vẫn không tìm thấy, lấy bài tập đầu tiên không phải nghỉ ngơi
     nextWorkout ??= dayWorkouts.firstWhere(
-        (w) =>
-            w.exerciseName != null &&
-            !w.exerciseName!.toLowerCase().contains("nghỉ ngơi"),
-        orElse: () => dayWorkouts.first);
+      (w) =>
+          w.exerciseName != null &&
+          !w.exerciseName!.toLowerCase().contains("nghỉ ngơi"),
+      orElse: () => dayWorkouts.first,
+    );
 
     // Chuyển đến bài tập tương ứng
     if (nextWorkout.exerciseName?.toLowerCase().contains("hít đất") == true) {
