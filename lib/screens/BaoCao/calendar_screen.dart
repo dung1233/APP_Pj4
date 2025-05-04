@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_datepicker/datepicker.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import 'package:training_souls/data/DatabaseHelper.dart';
+import 'package:training_souls/providers/workout_data_service.dart';
+// Import service
 
 class CalendarScreen extends StatefulWidget {
   const CalendarScreen({Key? key}) : super(key: key);
@@ -89,6 +92,49 @@ class _CalendarScreenState extends State<CalendarScreen> {
     return completedWorkoutDays[dateOnly] == true;
   }
 
+  // Function to load workout details for a specific date
+  Future<void> _loadWorkoutDetailsForDate(DateTime date) async {
+    if (!mounted) return;
+
+    // Lấy service để cập nhật trạng thái
+    final workoutDataService =
+        Provider.of<WorkoutDataService>(context, listen: false);
+    workoutDataService.setLoadingWorkoutDetails(true);
+
+    try {
+      // Format date to ISO8601 format for the start of the day
+      final String formattedDate = DateFormat('yyyy-MM-dd').format(date);
+
+      // Query database for workouts on this specific date
+      final List<Map<String, dynamic>> workouts =
+          await _databaseHelper.getWorkoutsForDate(formattedDate);
+
+      debugPrint("========== WORKOUTS FOR $formattedDate ==========");
+      for (var workout in workouts) {
+        debugPrint(workout.toString());
+      }
+      debugPrint("===============================================");
+
+      // Cập nhật dữ liệu vào service để OnlineScreen có thể truy cập
+      workoutDataService.updateSelectedDateWorkouts(date, workouts);
+    } catch (e) {
+      debugPrint("Error loading workout details for date $date: $e");
+      // Handle error if needed
+    } finally {
+      if (mounted) {
+        workoutDataService.setLoadingWorkoutDetails(false);
+      }
+    }
+  }
+
+  // Handle date selection
+  void _onDateSelected(DateRangePickerSelectionChangedArgs args) {
+    if (args.value is DateTime) {
+      final DateTime selectedDate = args.value;
+      _loadWorkoutDetailsForDate(selectedDate);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return SizedBox(
@@ -105,8 +151,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
               controller: _datePickerController,
               backgroundColor: Colors.white,
               selectionShape: DateRangePickerSelectionShape.rectangle,
+              onSelectionChanged: _onDateSelected,
               cellBuilder: (BuildContext context,
                   DateRangePickerCellDetails cellDetails) {
+                // Get the current selected date from service
+                final workoutDataService =
+                    Provider.of<WorkoutDataService>(context);
+                final selectedDate = workoutDataService.selectedDate;
+
                 // Check if this date has completed workouts
                 final bool hasCompletedWorkout =
                     isCompletedWorkoutDay(cellDetails.date);
@@ -117,14 +169,26 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         cellDetails.date.month == DateTime.now().month &&
                         cellDetails.date.day == DateTime.now().day;
 
+                // Is this the selected date?
+                final bool isSelected = selectedDate != null &&
+                    selectedDate.year == cellDetails.date.year &&
+                    selectedDate.month == cellDetails.date.month &&
+                    selectedDate.day == cellDetails.date.day;
+
                 return Container(
                   margin: const EdgeInsets.all(2),
                   decoration: BoxDecoration(
-                    color: isToday ? Colors.greenAccent : Colors.white,
+                    color: isSelected
+                        ? Colors.blue.withOpacity(0.3)
+                        : isToday
+                            ? Colors.greenAccent
+                            : Colors.white,
                     borderRadius: BorderRadius.circular(5),
-                    border: isToday
-                        ? Border.all(color: Colors.green, width: 1)
-                        : null,
+                    border: isSelected
+                        ? Border.all(color: Colors.blue, width: 1.5)
+                        : isToday
+                            ? Border.all(color: Colors.green, width: 1)
+                            : null,
                   ),
                   alignment: Alignment.center,
                   child: Stack(
@@ -137,6 +201,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                     cellDetails.visibleDates[15].month
                                 ? Colors.black87
                                 : Colors.black26,
+                            fontWeight: isSelected
+                                ? FontWeight.bold
+                                : FontWeight.normal,
                           ),
                         ),
                       ),
@@ -177,7 +244,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
           // Show error message if any
           if (errorMessage != null && !isLoading)
             Container(
-              // ignore: deprecated_member_use
               color: Colors.white.withOpacity(0.7),
               child: Center(
                 child: Column(

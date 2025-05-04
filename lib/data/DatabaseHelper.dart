@@ -275,6 +275,21 @@ class DatabaseHelper {
     }
   }
 
+  Future<List<Map<String, dynamic>>> getWorkoutsForDate(
+      String dateString) async {
+    final db = await database;
+
+    // Tìm tất cả kết quả tập luyện có ngày hoàn thành là ngày được chọn
+    // Chúng ta tìm kiếm bằng cách so sánh phần đầu của chuỗi ngày (YYYY-MM-DD)
+    final List<Map<String, dynamic>> results = await db.rawQuery('''
+    SELECT * FROM workout_results 
+    WHERE completed_date LIKE '$dateString%'
+    ORDER BY completed_date DESC
+  ''');
+
+    return results;
+  }
+
   // Lấy tất cả kết quả từ bảng workout_results
   Future<List<Map<String, dynamic>>> getAllWorkoutResults() async {
     final db = await database;

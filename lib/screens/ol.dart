@@ -11,6 +11,8 @@ class Ol extends StatefulWidget {
 }
 
 class _OlViewState extends State<Ol> {
+  List<Map<String, dynamic>> workoutResults = [];
+  bool isLoading = true;
   @override
   void initState() {
     super.initState();
@@ -22,6 +24,10 @@ class _OlViewState extends State<Ol> {
     final dbHelper = DatabaseHelper();
     final results = await dbHelper.getAllWorkoutResults();
 
+    setState(() {
+      workoutResults = results;
+      isLoading = false; // Dòng này cực kỳ quan trọng!
+    });
     // In kết quả để debug
     print("Tất cả kết quả workout: $results");
 
@@ -69,7 +75,8 @@ class _OlViewState extends State<Ol> {
                   ),
                 ),
                 const SizedBox(height: 30), // Khoảng cách giữa hai phần
-                WorkoutsWidget(),
+                WorkoutsWidget(
+                    workoutResults: workoutResults, isLoading: isLoading),
                 const SizedBox(height: 20), // Khoảng cách trước phần Awards
                 AwardsWidget(),
               ],
@@ -212,12 +219,14 @@ class ActivityRingPainter extends CustomPainter {
 }
 
 class WorkoutsWidget extends StatelessWidget {
-  final List<Map<String, String>> workouts = [
-    {"title": "Push-Up Training", "value": "136 CAL", "day": "Today"},
-    {"title": "Runner", "value": "2.02 MI", "day": "Thursday"},
-    {"title": "Sit-Up", "value": "83 CAL", "day": "Wednesday"},
-    {"title": "Squat", "value": "83 CAL", "day": "Wednesday"},
-  ];
+  final List<Map<String, dynamic>> workoutResults;
+  final bool isLoading;
+
+  const WorkoutsWidget({
+    super.key,
+    required this.workoutResults,
+    required this.isLoading,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -240,9 +249,67 @@ class WorkoutsWidget extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 10),
-        Column(
-          children: workouts.map((workout) => WorkoutCard(workout)).toList(),
-        ),
+        if (isLoading)
+          Center(child: CircularProgressIndicator(color: Colors.green))
+        else if (workoutResults.isEmpty)
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Text(
+                "No workouts available",
+                style: TextStyle(color: Colors.white70, fontSize: 16),
+              ),
+            ),
+          )
+        else
+          Column(
+            children: workoutResults.map((workout) {
+              // Lấy dữ liệu từ workout để hiển thị
+              String title = workout["exercise_name"] ?? "Unknown";
+              int sets = workout["sets_completed"] ?? 0;
+              int reps = workout["reps_completed"] ?? 0;
+
+              // Định dạng ngày hoàn thành
+              String completedDate = workout["completed_date"] ?? "";
+              String displayDate = "Today"; // Mặc định hiển thị "Today"
+
+              if (completedDate.isNotEmpty) {
+                try {
+                  final date = DateTime.parse(completedDate);
+                  final now = DateTime.now();
+                  final difference = now.difference(date).inDays;
+
+                  if (difference == 0) {
+                    displayDate = "Today";
+                  } else if (difference == 1) {
+                    displayDate = "Yesterday";
+                  } else {
+                    // Hiển thị tên của ngày trong tuần
+                    List<String> weekdays = [
+                      "Monday",
+                      "Tuesday",
+                      "Wednesday",
+                      "Thursday",
+                      "Friday",
+                      "Saturday",
+                      "Sunday"
+                    ];
+                    displayDate = weekdays[
+                        date.weekday - 1]; // weekday bắt đầu từ 1 (Monday)
+                  }
+                } catch (e) {
+                  print("Error parsing date: $e");
+                  displayDate = "Recently";
+                }
+              }
+
+              return WorkoutCard({
+                "title": title,
+                "value": "$sets sets × $reps reps",
+                "day": displayDate,
+              });
+            }).toList(),
+          ),
       ],
     );
   }

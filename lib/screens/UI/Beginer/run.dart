@@ -80,7 +80,7 @@ class _RunningTrackerState extends State<RunningTracker> {
         if (mounted) {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (_) => Trainhome()),
+            MaterialPageRoute(builder: (_) => Ol()),
           );
         }
       });
