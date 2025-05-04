@@ -253,7 +253,7 @@ class _PushUpDetectorViewState extends State<PushUpDetectorView> {
           setState(() {
             String detectedExercise = classificationResult[0];
             // Kiểm tra và cập nhật kết quả tập luyện nếu có
-            if (detectedExercise.contains("squats")) {
+            if (detectedExercise.contains("pushups")) {
               _exerciseText = detectedExercise;
             } else {
               _exerciseText = "Sai tư thế!";

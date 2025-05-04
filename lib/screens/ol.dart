@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:training_souls/data/DatabaseHelper.dart';
+import 'package:intl/intl.dart';
 
 class Ol extends StatefulWidget {
   const Ol({super.key});
@@ -11,17 +12,40 @@ class Ol extends StatefulWidget {
 }
 
 class _OlViewState extends State<Ol> {
-  List<Map<String, dynamic>> workoutResults = [];
-  bool isLoading = true;
+  final dbHelper = DatabaseHelper();
+  List<Map<String, dynamic>> _results = [];
+  Map<String, dynamic> _userProfile = {};
   @override
   void initState() {
     super.initState();
     displayWorkoutResults();
+    _printDatabaseContent(dbHelper);
+    _loadUserProfile(dbHelper);
+  }
+
+  Future<void> _printDatabaseContent(DatabaseHelper dbHelper) async {
+    final db = await dbHelper.database;
+
+    // Lấy và in thông tin user_profile
+    final userProfiles = await db.query('user_profile');
+    print("❓ Dữ liệu bảng user_profile:");
+    userProfiles.forEach((profile) {
+      print(profile);
+    });
+  }
+
+  Future<void> _loadUserProfile(DatabaseHelper dbHelper) async {
+    final db = await dbHelper.database;
+    final profiles = await db.query('user_profile');
+    if (profiles.isNotEmpty) {
+      setState(() {
+        _userProfile = profiles.first;
+      });
+    }
   }
 
   // Trong màn hình hoặc widget muốn hiển thị kết quả
   void displayWorkoutResults() async {
-    final dbHelper = DatabaseHelper();
     final results = await dbHelper.getAllWorkoutResults();
 
     setState(() {
@@ -43,6 +67,9 @@ class _OlViewState extends State<Ol> {
       print("Ngày hoàn thành: ${result['completed_date']}");
       print("-----------------------");
     }
+    setState(() {
+      _results = results;
+    });
   }
 
   @override
@@ -57,26 +84,39 @@ class _OlViewState extends State<Ol> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Padding(
-                  padding: const EdgeInsets.only(left: 15.0, top: 8),
-                  child: Text(
-                    'Acivity',
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 25,
-                        fontWeight: FontWeight.bold),
+                  padding:
+                      const EdgeInsets.only(left: 15.0, right: 15.0, top: 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Activity',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 25,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.refresh, color: Colors.white),
+                        onPressed: () {
+                          displayWorkoutResults();
+                        },
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 20), // Đẩy lên cao hơn
                 Center(
                   child: ActivityRingsWidget(
-                    moveProgress: 171 / 270,
-                    exerciseProgress: 26 / 30,
-                    standProgress: 4 / 12,
+                    strength: _userProfile['strength'] ?? 0,
+                    agility: _userProfile['agility'] ?? 0,
+                    endurance: _userProfile['endurance'] ?? 0,
+                    health: _userProfile['health'] ?? 0,
                   ),
                 ),
                 const SizedBox(height: 30), // Khoảng cách giữa hai phần
-                WorkoutsWidget(
-                    workoutResults: workoutResults, isLoading: isLoading),
+                WorkoutsWidget(results: _results),
                 const SizedBox(height: 20), // Khoảng cách trước phần Awards
                 AwardsWidget(),
               ],
@@ -89,19 +129,22 @@ class _OlViewState extends State<Ol> {
 }
 
 class ActivityRingsWidget extends StatelessWidget {
-  final double moveProgress;
-  final double exerciseProgress;
-  final double standProgress;
+  final int strength;
+  final int agility;
+  final int endurance;
+  final int health;
 
   const ActivityRingsWidget({
     super.key,
-    required this.moveProgress,
-    required this.exerciseProgress,
-    required this.standProgress,
+    required this.strength,
+    required this.agility,
+    required this.endurance,
+    required this.health,
   });
 
   @override
   Widget build(BuildContext context) {
+    final int maxStat = 100;
     return Column(
       children: [
         Container(
@@ -119,18 +162,10 @@ class ActivityRingsWidget extends StatelessWidget {
                   padding: const EdgeInsets.only(top: 30.0),
                   child: Column(
                     children: [
-                      _buildActivityText(
-                          "Move",
-                          "${(moveProgress * 270).toInt()}/270 CAL",
-                          Colors.red),
-                      _buildActivityText(
-                          "Exercise",
-                          "${(exerciseProgress * 30).toInt()}/30 MIN",
-                          Colors.green),
-                      _buildActivityText(
-                          "Stand",
-                          "${(standProgress * 12).toInt()}/12 HRS",
-                          Colors.blue),
+                      _buildStatText("Strength", strength, Colors.red),
+                      _buildStatText("Agility", agility, Colors.yellow),
+                      _buildStatText("Endurance", endurance, Colors.blue),
+                      _buildStatText("Health", health, Colors.green),
                     ],
                   ),
                 ),
@@ -141,9 +176,10 @@ class ActivityRingsWidget extends StatelessWidget {
                     CustomPaint(
                       size: const Size(150, 150),
                       painter: ActivityRingPainter(
-                        moveProgress,
-                        exerciseProgress,
-                        standProgress,
+                        strength / maxStat,
+                        agility / maxStat,
+                        endurance / maxStat,
+                        health / maxStat,
                       ),
                     ),
                   ],
@@ -171,24 +207,45 @@ class ActivityRingsWidget extends StatelessWidget {
       ),
     );
   }
+
+  Widget _buildStatText(String label, int value, Color color) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: [
+          Text(label, style: TextStyle(color: Colors.white, fontSize: 14)),
+          const SizedBox(width: 8),
+          Text("$value",
+              style: TextStyle(
+                  color: color, fontSize: 14, fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
 }
 
 class ActivityRingPainter extends CustomPainter {
-  final double moveProgress;
-  final double exerciseProgress;
-  final double standProgress;
+  final double strengthProgress;
+  final double agilityProgress;
+  final double enduranceProgress;
+  final double healthProgress;
 
   ActivityRingPainter(
-      this.moveProgress, this.exerciseProgress, this.standProgress);
+    this.strengthProgress,
+    this.agilityProgress,
+    this.enduranceProgress,
+    this.healthProgress,
+  );
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2;
 
-    _drawRing(canvas, center, radius - 10, Colors.red, moveProgress);
-    _drawRing(canvas, center, radius - 20, Colors.green, exerciseProgress);
-    _drawRing(canvas, center, radius - 30, Colors.blue, standProgress);
+    _drawRing(canvas, center, radius - 10, Colors.red, strengthProgress);
+    _drawRing(canvas, center, radius - 20, Colors.yellow, agilityProgress);
+    _drawRing(canvas, center, radius - 30, Colors.blue, enduranceProgress);
+    _drawRing(canvas, center, radius - 40, Colors.green, healthProgress);
   }
 
   void _drawRing(Canvas canvas, Offset center, double radius, Color color,
@@ -219,14 +276,9 @@ class ActivityRingPainter extends CustomPainter {
 }
 
 class WorkoutsWidget extends StatelessWidget {
-  final List<Map<String, dynamic>> workoutResults;
-  final bool isLoading;
+  final List<Map<String, dynamic>> results;
 
-  const WorkoutsWidget({
-    super.key,
-    required this.workoutResults,
-    required this.isLoading,
-  });
+  const WorkoutsWidget({super.key, required this.results});
 
   @override
   Widget build(BuildContext context) {
@@ -249,76 +301,55 @@ class WorkoutsWidget extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 10),
-        if (isLoading)
-          Center(child: CircularProgressIndicator(color: Colors.green))
-        else if (workoutResults.isEmpty)
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Text(
-                "No workouts available",
-                style: TextStyle(color: Colors.white70, fontSize: 16),
-              ),
-            ),
-          )
-        else
-          Column(
-            children: workoutResults.map((workout) {
-              // Lấy dữ liệu từ workout để hiển thị
-              String title = workout["exercise_name"] ?? "Unknown";
-              int sets = workout["sets_completed"] ?? 0;
-              int reps = workout["reps_completed"] ?? 0;
+        ...results.map((r) {
+          final name = (r['exercise_name'] ?? '').toString().toLowerCase();
+          final isRun = name.contains('run') || name.contains('chạy');
+          String value;
 
-              // Định dạng ngày hoàn thành
-              String completedDate = workout["completed_date"] ?? "";
-              String displayDate = "Today"; // Mặc định hiển thị "Today"
+          if (isRun) {
+            final rawDistance = (r['distance_completed'] as num?) ?? 0.0;
+            final rawDuration = (r['duration_completed'] as num?) ?? 0.0;
 
-              if (completedDate.isNotEmpty) {
-                try {
-                  final date = DateTime.parse(completedDate);
-                  final now = DateTime.now();
-                  final difference = now.difference(date).inDays;
+            final distanceStr =
+                rawDistance.toStringAsFixed(1).replaceAll('.', ',');
+            final durationStr =
+                rawDuration.floor().toString(); // làm tròn xuống phút
 
-                  if (difference == 0) {
-                    displayDate = "Today";
-                  } else if (difference == 1) {
-                    displayDate = "Yesterday";
-                  } else {
-                    // Hiển thị tên của ngày trong tuần
-                    List<String> weekdays = [
-                      "Monday",
-                      "Tuesday",
-                      "Wednesday",
-                      "Thursday",
-                      "Friday",
-                      "Saturday",
-                      "Sunday"
-                    ];
-                    displayDate = weekdays[
-                        date.weekday - 1]; // weekday bắt đầu từ 1 (Monday)
-                  }
-                } catch (e) {
-                  print("Error parsing date: $e");
-                  displayDate = "Recently";
-                }
-              }
+            value = "$distanceStr Km - $durationStr p";
+          } else {
+            value = "${r['sets_completed']} sets - ${r['reps_completed']} reps";
+          }
 
-              return WorkoutCard({
-                "title": title,
-                "value": "$sets sets × $reps reps",
-                "day": displayDate,
-              });
-            }).toList(),
-          ),
+          return WorkoutCard(
+            title: r['exercise_name'] ?? 'No Name',
+            value: value,
+            day: r['completed_date'] ?? '',
+          );
+        }),
       ],
     );
   }
 }
 
 class WorkoutCard extends StatelessWidget {
-  final Map<String, String> workout;
+  final String title;
+  final String value;
+  final String day;
 
-  const WorkoutCard(this.workout, {super.key});
+  const WorkoutCard({
+    super.key,
+    required this.title,
+    required this.value,
+    required this.day,
+  });
+  String _formatDate(String raw) {
+    try {
+      final date = DateTime.parse(raw);
+      return DateFormat('dd/MM/yyyy').format(date);
+    } catch (_) {
+      return raw;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -329,14 +360,14 @@ class WorkoutCard extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         child: ListTile(
           leading: Icon(Icons.fitness_center, color: Colors.green),
-          title: Text(workout["title"]!,
-              style: TextStyle(color: Colors.white, fontSize: 16)),
-          subtitle: Text(workout["value"]!,
+          title:
+              Text(title, style: TextStyle(color: Colors.white, fontSize: 16)),
+          subtitle: Text(value,
               style: TextStyle(
                   color: Colors.green,
                   fontSize: 14,
                   fontWeight: FontWeight.bold)),
-          trailing: Text(workout["day"]!,
+          trailing: Text(_formatDate(day),
               style: TextStyle(color: Colors.grey, fontSize: 14)),
         ),
       ),

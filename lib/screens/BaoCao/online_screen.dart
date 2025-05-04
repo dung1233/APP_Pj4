@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:syncfusion_flutter_datepicker/datepicker.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -69,7 +70,7 @@ class _OnlineScreenState extends State<OnlineScreen> {
             Text(
               'Không có hoạt động tập luyện nào vào ngày ${DateFormat('dd/MM/yyyy').format(service.selectedDate!)}',
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 16),
+              style: GoogleFonts.urbanist(fontSize: 16),
             ),
             const SizedBox(height: 16),
             ElevatedButton.icon(
@@ -96,7 +97,8 @@ class _OnlineScreenState extends State<OnlineScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Text(
             'Hoạt động ngày ${DateFormat('dd/MM/yyyy').format(service.selectedDate!)}',
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            style:
+                GoogleFonts.urbanist(fontSize: 18, fontWeight: FontWeight.bold),
           ),
         ),
         Expanded(
@@ -106,25 +108,6 @@ class _OnlineScreenState extends State<OnlineScreen> {
               final workout = service.selectedDateWorkouts[index];
               return _buildWorkoutItem(workout);
             },
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: ElevatedButton.icon(
-            icon: const Icon(Icons.add),
-            onPressed: () {
-              if (kDebugMode) {
-                print(
-                    'Thêm hoạt động cho ngày ${DateFormat('dd/MM/yyyy').format(service.selectedDate!)}');
-              }
-              // TODO: Thêm code để thêm hoạt động mới
-            },
-            label: const Text('Thêm hoạt động'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue,
-              foregroundColor: Colors.white,
-              minimumSize: const Size(double.infinity, 45),
-            ),
           ),
         ),
       ],
@@ -158,6 +141,7 @@ class _OnlineScreenState extends State<OnlineScreen> {
 
     // Tạo widget hiển thị chi tiết
     return Card(
+      color: Colors.white,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -170,7 +154,7 @@ class _OnlineScreenState extends State<OnlineScreen> {
                 Expanded(
                   child: Text(
                     exerciseName,
-                    style: const TextStyle(
+                    style: GoogleFonts.urbanist(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
@@ -186,7 +170,7 @@ class _OnlineScreenState extends State<OnlineScreen> {
                 const Icon(Icons.repeat, size: 16, color: Colors.grey),
                 const SizedBox(width: 4),
                 Text('$setsCompleted set × $repsCompleted lần',
-                    style: const TextStyle(color: Colors.grey)),
+                    style: GoogleFonts.urbanist(color: Colors.grey)),
               ],
             ),
             const SizedBox(height: 8),
@@ -197,14 +181,14 @@ class _OnlineScreenState extends State<OnlineScreen> {
                   const Icon(Icons.straighten, size: 16, color: Colors.grey),
                   const SizedBox(width: 4),
                   Text('${distanceCompleted.toStringAsFixed(1)} km',
-                      style: const TextStyle(color: Colors.grey)),
+                      style: GoogleFonts.urbanist(color: Colors.grey)),
                   const SizedBox(width: 16),
                 ],
                 if (durationCompleted > 0) ...[
                   const Icon(Icons.timer, size: 16, color: Colors.grey),
                   const SizedBox(width: 4),
                   Text('$durationCompleted phút',
-                      style: const TextStyle(color: Colors.grey)),
+                      style: GoogleFonts.urbanist(color: Colors.grey)),
                 ],
               ],
             ),
@@ -212,7 +196,7 @@ class _OnlineScreenState extends State<OnlineScreen> {
               const SizedBox(height: 8),
               Text(
                 'Thời gian: ${DateFormat('HH:mm, dd/MM/yyyy').format(parsedDate)}',
-                style: const TextStyle(color: Colors.grey, fontSize: 12),
+                style: GoogleFonts.urbanist(color: Colors.grey, fontSize: 12),
               ),
             ],
             const SizedBox(height: 16),
@@ -326,7 +310,7 @@ class _OnlineScreenState extends State<OnlineScreen> {
                     _datePickerController.displayDate != null
                         ? "${_datePickerController.displayDate!.month.toString().padLeft(2, '0')}-${_datePickerController.displayDate!.year}"
                         : "00-0000",
-                    style: const TextStyle(
+                    style: GoogleFonts.urbanist(
                         fontSize: 23, fontWeight: FontWeight.bold),
                   ),
                 ),
