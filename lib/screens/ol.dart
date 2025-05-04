@@ -22,6 +22,7 @@ class _OlViewState extends State<Ol> {
     _printDatabaseContent(dbHelper);
     _loadUserProfile(dbHelper);
   }
+
   Future<void> _printDatabaseContent(DatabaseHelper dbHelper) async {
     final db = await dbHelper.database;
 
@@ -31,8 +32,8 @@ class _OlViewState extends State<Ol> {
     userProfiles.forEach((profile) {
       print(profile);
     });
-
   }
+
   Future<void> _loadUserProfile(DatabaseHelper dbHelper) async {
     final db = await dbHelper.database;
     final profiles = await db.query('user_profile');
@@ -45,7 +46,6 @@ class _OlViewState extends State<Ol> {
 
   // Trong màn hình hoặc widget muốn hiển thị kết quả
   void displayWorkoutResults() async {
-
     final results = await dbHelper.getAllWorkoutResults();
 
     // In kết quả để debug
@@ -80,7 +80,8 @@ class _OlViewState extends State<Ol> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Padding(
-                  padding: const EdgeInsets.only(left: 15.0, right: 15.0, top: 8),
+                  padding:
+                      const EdgeInsets.only(left: 15.0, right: 15.0, top: 8),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -202,6 +203,7 @@ class ActivityRingsWidget extends StatelessWidget {
       ),
     );
   }
+
   Widget _buildStatText(String label, int value, Color color) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
@@ -209,7 +211,9 @@ class ActivityRingsWidget extends StatelessWidget {
         children: [
           Text(label, style: TextStyle(color: Colors.white, fontSize: 14)),
           const SizedBox(width: 8),
-          Text("$value", style: TextStyle(color: color, fontSize: 14, fontWeight: FontWeight.bold)),
+          Text("$value",
+              style: TextStyle(
+                  color: color, fontSize: 14, fontWeight: FontWeight.bold)),
         ],
       ),
     );
@@ -222,12 +226,12 @@ class ActivityRingPainter extends CustomPainter {
   final double enduranceProgress;
   final double healthProgress;
 
-
   ActivityRingPainter(
-      this.strengthProgress,
-      this.agilityProgress,
-      this.enduranceProgress,
-      this.healthProgress,);
+    this.strengthProgress,
+    this.agilityProgress,
+    this.enduranceProgress,
+    this.healthProgress,
+  );
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -302,8 +306,10 @@ class WorkoutsWidget extends StatelessWidget {
             final rawDistance = (r['distance_completed'] as num?) ?? 0.0;
             final rawDuration = (r['duration_completed'] as num?) ?? 0.0;
 
-            final distanceStr = rawDistance.toStringAsFixed(1).replaceAll('.', ',');
-            final durationStr = rawDuration.floor().toString(); // làm tròn xuống phút
+            final distanceStr =
+                rawDistance.toStringAsFixed(1).replaceAll('.', ',');
+            final durationStr =
+                rawDuration.floor().toString(); // làm tròn xuống phút
 
             value = "$distanceStr Km - $durationStr p";
           } else {
@@ -350,8 +356,8 @@ class WorkoutCard extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         child: ListTile(
           leading: Icon(Icons.fitness_center, color: Colors.green),
-          title: Text(title,
-              style: TextStyle(color: Colors.white, fontSize: 16)),
+          title:
+              Text(title, style: TextStyle(color: Colors.white, fontSize: 16)),
           subtitle: Text(value,
               style: TextStyle(
                   color: Colors.green,

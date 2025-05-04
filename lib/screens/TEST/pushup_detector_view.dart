@@ -247,7 +247,7 @@ class _PushUpDetectorViewState extends State<PushUpDetectorView> {
         print("[DEBUG] ❌ Chuyển động quá nhỏ, không tính.");
       } else {
         List classificationResult =
-        _poseClassifierProcessor.getPoseResult(poses.first);
+            _poseClassifierProcessor.getPoseResult(poses.first);
 
         if (classificationResult.isNotEmpty) {
           setState(() {

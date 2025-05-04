@@ -7,6 +7,7 @@ import 'package:dio/dio.dart';
 import 'package:training_souls/api/auth_service.dart';
 import 'package:training_souls/api/api_service.dart';
 import 'package:training_souls/providers/auth_provider.dart';
+import 'package:training_souls/providers/workout_data_service.dart';
 import 'package:training_souls/providers/workout_provider.dart';
 import 'package:training_souls/hive_service.dart';
 import 'package:training_souls/screens/home/home.dart';
@@ -30,8 +31,9 @@ void main() async {
                 AuthProvider(AuthService(dio))), // Provider đăng nhập
         ChangeNotifierProvider(
             create: (context) => WorkoutProvider(ApiService(dio))),
+        ChangeNotifierProvider(create: (context) => UserProvider()),
         ChangeNotifierProvider(
-            create: (context) => UserProvider()), // Provider bài tập
+            create: (_) => WorkoutDataService()), // Provider bài tập
       ],
       child: const MyApp(),
     ),

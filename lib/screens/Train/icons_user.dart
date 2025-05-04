@@ -145,19 +145,19 @@ class _IconsUserState extends State<IconsUser> {
       print(profile);
     });
 
-    // Lấy và in thông tin roles
-    final roles = await db.query('roles');
-    print("❓ Dữ liệu bảng roles:");
-    roles.forEach((role) {
-      print(role);
-    });
+    // // Lấy và in thông tin roles
+    // final roles = await db.query('roles');
+    // print("❓ Dữ liệu bảng roles:");
+    // roles.forEach((role) {
+    //   print(role);
+    // });
 
-    // Lấy và in thông tin permissions
-    final permissions = await db.query('permissions');
-    print("❓ Dữ liệu bảng permissions:");
-    permissions.forEach((permission) {
-      print(permission);
-    });
+    // // Lấy và in thông tin permissions
+    // final permissions = await db.query('permissions');
+    // print("❓ Dữ liệu bảng permissions:");
+    // permissions.forEach((permission) {
+    //   print(permission);
+    // });
   }
 
   @override
