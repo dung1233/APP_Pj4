@@ -77,6 +77,16 @@ dependencies:
   sqflite: ^2.4.1
   flutter_launcher_icons: "^0.14.3"
 
+  #gps
+  geolocator: ^13.0.2          # For getting real-time location updates
+  geodesy: ^0.7.0              # For distance calculations
+  flutter_map: ^8.1.0
+  latlong2: ^0.9.1             # For displaying maps
+
+  #paypal
+  flutter_paypal_payment: ^1.0.8
+  youtube_player_flutter: ^9.1.1
+
 flutter_launcher_icons:
   android: true
   ios: true

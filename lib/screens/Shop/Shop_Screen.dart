@@ -149,40 +149,100 @@ class _ShopScreenState extends State<ShopScreen>
           userToken: token,
         ),
       ),
-
-
     );
   }
 
   void _showPurchaseConfirmation(Item item) {
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Confirm Purchase'),
-        content: Column(
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(item.name),
-            const SizedBox(height: 8),
-            Text('Price: 1000 points'),
-            const SizedBox(height: 8),
-            Text('Your points: 99999'),
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+            Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.asset(
+                    'assets/splash/slaper.png', // đường dẫn tới icon gói sản phẩm
+                    width: 48,
+                    height: 48,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Tài Khoản : Premium',
+                          style: const TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 4),
+                      const Text('Các bài tập tại nhà',
+                          style: TextStyle(color: Colors.grey)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Ngày bắt đầu hôm nay'),
+                Text(' 3.000.000 đ/Năm',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
+              ],
+            ),
+            SizedBox(height: 4),
+            Text('+ thuế', style: TextStyle(color: Colors.grey)),
+            SizedBox(height: 16),
+            Divider(),
+            Icon(Icons.info_outline, size: 18, color: Colors.grey),
+            SizedBox(height: 4),
+            Text('• Bạn chưa đáp ứng điều kiện dùng thử miễn phí'),
+            SizedBox(height: 4),
+            Text(
+                '• Hủy bất kỳ lúc nào trong phần Gói thuê bao trên Google Play'),
+            SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _startPaypalCheckout(item); // hoặc xử lý mua hàng
+              },
+              style: ElevatedButton.styleFrom(
+                minimumSize: Size.fromHeight(48),
+                backgroundColor: Color(0xFFFF6B00),
+              ),
+              child: Text(
+                'Thanh toán',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+            SizedBox(height: 8),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Hủy'),
+            ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _startPaypalCheckout(item);
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-            child: const Text('Thanh toán PayPal'),
-          ),
-        ],
       ),
     );
   }
