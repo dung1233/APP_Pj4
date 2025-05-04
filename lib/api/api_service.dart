@@ -27,4 +27,10 @@ abstract class ApiService {
     @Path("itemId") int itemId,
     @Header("Authorization") String token,
   );
+  @POST("/purchase/complete")
+  Future<void> confirmPayment(
+      @Body() Map<String, dynamic> body,
+      @Header("Authorization") String token,
+  );
+
 }
