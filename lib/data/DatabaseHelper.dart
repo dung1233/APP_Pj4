@@ -1,3 +1,8 @@
+import 'package:dio/dio.dart';
+import 'package:hive/hive.dart';
+import 'package:training_souls/api/user_service.dart';
+import 'package:training_souls/models/user.dart';
+import 'package:training_souls/models/user_response.dart';
 import 'package:training_souls/models/work_out.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
@@ -180,35 +185,35 @@ class DatabaseHelper {
     ''');
     }
 
-    // // Kiểm tra bảng roles
-    // tables = await db.rawQuery(
-    //     "SELECT name FROM sqlite_master WHERE type='table' AND name='roles'");
-    // if (tables.isEmpty) {
-    //   await db.execute('''
-    //   CREATE TABLE roles (
-    //     roleID INTEGER PRIMARY KEY AUTOINCREMENT,
-    //     userID INTEGER,
-    //     name TEXT,
-    //     description TEXT,
-    //     FOREIGN KEY(userID) REFERENCES user_info(userID)
-    //   )
-    // ''');
-    // }
+    // Kiểm tra bảng roles
+    tables = await db.rawQuery(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='roles'");
+    if (tables.isEmpty) {
+      await db.execute('''
+      CREATE TABLE roles (
+        roleID INTEGER PRIMARY KEY AUTOINCREMENT,
+        userID INTEGER,
+        name TEXT,
+        description TEXT,
+        FOREIGN KEY(userID) REFERENCES user_info(userID)
+      )
+    ''');
+    }
 
-    // // Kiểm tra bảng permissions
-    // tables = await db.rawQuery(
-    //     "SELECT name FROM sqlite_master WHERE type='table' AND name='permissions'");
-    // if (tables.isEmpty) {
-    //   await db.execute('''
-    //   CREATE TABLE permissions (
-    //     permissionID INTEGER PRIMARY KEY AUTOINCREMENT,
-    //     roleID INTEGER,
-    //     name TEXT,
-    //     description TEXT,
-    //     FOREIGN KEY(roleID) REFERENCES roles(roleID)
-    //   )
-    // ''');
-    // }
+    // Kiểm tra bảng permissions
+    tables = await db.rawQuery(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='permissions'");
+    if (tables.isEmpty) {
+      await db.execute('''
+      CREATE TABLE permissions (
+        permissionID INTEGER PRIMARY KEY AUTOINCREMENT,
+        roleID INTEGER,
+        name TEXT,
+        description TEXT,
+        FOREIGN KEY(roleID) REFERENCES roles(roleID)
+      )
+    ''');
+    }
   }
 
   Future<void> saveExerciseResult(
@@ -434,5 +439,109 @@ class DatabaseHelper {
       },
       conflictAlgorithm: ConflictAlgorithm.replace, // Nếu trùng thì thay
     );
+  }
+
+  Future<void> updateUserInfoInDatabase(User user) async {
+    final db = await database;
+
+    try {
+      await db.transaction((txn) async {
+        // 1. Xóa dữ liệu user cũ
+        await txn.delete('user_info');
+
+        // 2. Thêm thông tin user mới
+        final userInfoMap = {
+          'userID': user.userID, // Giữ userID từ API
+          'name': user.name,
+          'email': user.email,
+          'accountType': user.accountType,
+          'points': user.points,
+          'level': user.level,
+        };
+
+        await txn.insert('user_info', userInfoMap);
+
+        // 3. Cập nhật user_profile
+        final userProfileExists = await txn.query('user_profile',
+            where: 'userID = ?', whereArgs: [user.userID]);
+
+        final userProfileMap = {
+          'userID': user.userID,
+          'gender': user.userProfile.gender,
+          'age': user.userProfile.age,
+          'height': user.userProfile.height,
+          'weight': user.userProfile.weight,
+          'bmi': user.userProfile.bmi,
+          'bodyFatPercentage': user.userProfile.bodyFatPercentage,
+          'muscleMassPercentage': user.userProfile.muscleMassPercentage,
+          'activityLevel': user.userProfile.activityLevel,
+          'fitnessGoal': user.userProfile.fitnessGoal,
+          'level': user.userProfile.level,
+          'strength': user.userProfile.strength,
+          'deathPoints': user.userProfile.deathPoints,
+          'agility': user.userProfile.agility,
+          'endurance': user.userProfile.endurance,
+          'health': user.userProfile.health,
+        };
+
+        if (userProfileExists.isEmpty) {
+          await txn.insert('user_profile', userProfileMap);
+        } else {
+          await txn.update('user_profile', userProfileMap,
+              where: 'userID = ?', whereArgs: [user.userID]);
+        }
+
+        // 4. Cập nhật roles (nếu cần)
+        // Xóa roles cũ
+        await txn
+            .delete('roles', where: 'userID = ?', whereArgs: [user.userID]);
+
+        // Thêm roles mới
+        for (var role in user.roles) {
+          await txn.insert('roles', {
+            'userID': user.userID,
+            'name': role.name,
+            'description': role.description,
+          });
+        }
+      });
+
+      print(
+          "[DEBUG] ✅ Đã cập nhật thông tin user, profile và roles trong database");
+    } catch (e) {
+      print("[DEBUG] ❌ Lỗi cập nhật database: $e");
+      throw e;
+    }
+  }
+
+  Future<void> updateUserInfoFromAPI() async {
+    try {
+      // Lấy token từ Hive
+      var box = await Hive.openBox('userBox');
+      final token = box.get('token');
+
+      if (token == null) {
+        throw Exception("Token không tồn tại, vui lòng đăng nhập lại");
+      }
+
+      // Tạo đối tượng API Service
+      final dio = Dio();
+      final userService = UserService(dio);
+
+      // Gọi API để lấy thông tin người dùng mới
+      final UserResponse userResponse =
+          await userService.getMyInfo("Bearer $token");
+
+      // Truy cập thuộc tính result (đối tượng User)
+      final User user = userResponse.result;
+
+      // Cập nhật thông tin vào database
+      await updateUserInfoInDatabase(user);
+
+      print("[DEBUG] ✅ Đã cập nhật thông tin người dùng từ API thành công");
+    } catch (e) {
+      print("[DEBUG] ❌ Lỗi khi cập nhật thông tin từ API: $e");
+      throw e;
+    }
   }
 }
