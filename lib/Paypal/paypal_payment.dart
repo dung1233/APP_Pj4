@@ -42,17 +42,11 @@ class PaypalPaymentDemo extends StatelessWidget {
                       "item_list": {
                         "items": [
                           {
-                            "name": "Apple",
-                            "quantity": 6,
-                            "price": '10',
+                            "name": "Premium Update",
+                            "quantity": 1,
+                            "price": '120',
                             "currency": "USD"
                           },
-                          {
-                            "name": "Pineapple",
-                            "quantity": 5,
-                            "price": '12',
-                            "currency": "USD"
-                          }
                         ],
                       }
                     }

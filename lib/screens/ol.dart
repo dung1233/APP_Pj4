@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:training_souls/data/DatabaseHelper.dart';
 import 'package:intl/intl.dart';
+import 'package:training_souls/screens/trainhome.dart';
 
 class Ol extends StatefulWidget {
   const Ol({super.key});
@@ -85,6 +86,17 @@ class _OlViewState extends State<Ol> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
+                      IconButton(
+                        icon: Icon(Icons.home, color: Colors.white),
+                        onPressed: () {
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(builder: (context) => Trainhome()),
+                                (Route<dynamic> route) => false,
+                          );
+
+                        },
+                      ),
                       Text(
                         'Activity',
                         style: TextStyle(
