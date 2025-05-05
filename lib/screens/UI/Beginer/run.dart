@@ -235,10 +235,10 @@ class _RunningTrackerState extends State<RunningTracker> {
                   children: [
                     Text("Distance", style: TextStyle(color: Colors.white)),
                     Text(
-                      "${_distance.toStringAsFixed(1)} m"
+                      "${_distance.toStringAsFixed(1)}m"
                       '/'
-                      '${(_totalDistance * 1000).toStringAsFixed(0)} m', // _totalDistance chuyển từ km sang mét
-                      style: TextStyle(color: Colors.white, fontSize: 32),
+                      '${(_totalDistance * 1000).toStringAsFixed(0)}m', // _totalDistance chuyển từ km sang mét
+                      style: TextStyle(color: Colors.white, fontSize: 26),
                     ),
                   ],
                 ),
@@ -248,7 +248,7 @@ class _RunningTrackerState extends State<RunningTracker> {
                     Text("Time", style: TextStyle(color: Colors.white)),
                     Text(
                       _formatTime(_secondsElapsed),
-                      style: TextStyle(color: Colors.white, fontSize: 32),
+                      style: TextStyle(color: Colors.white, fontSize: 26),
                     ),
                   ],
                 ),
