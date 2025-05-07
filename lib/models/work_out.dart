@@ -2,7 +2,7 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'work_out.g.dart'; // File được sinh tự động bởi json_serializable
 
-@JsonSerializable() // Annotation để chỉ định lớp này có thể serialize/deserialize JSON
+@JsonSerializable()
 class Workout {
   final int? id;
   final int? day;
@@ -15,6 +15,7 @@ class Workout {
   final bool? restDay;
   final double? distance;
   String status;
+  String? completionDate; // 👈 thêm trường này
 
   Workout({
     this.id,
@@ -28,16 +29,14 @@ class Workout {
     this.restDay,
     this.distance,
     this.status = "NOT_STARTED",
+    this.completionDate, // 👈 thêm vào constructor
   });
 
-  // Phương thức từ JSON sang đối tượng Workout
   factory Workout.fromJson(Map<String, dynamic> json) =>
       _$WorkoutFromJson(json);
 
-  // Phương thức từ đối tượng Workout sang JSON
   Map<String, dynamic> toJson() => _$WorkoutToJson(this);
 
-  // Phương thức từ Map sang Workout (dùng cho SQLite)
   factory Workout.fromMap(Map<String, dynamic> map) {
     return Workout(
       id: map['id'],
@@ -48,14 +47,13 @@ class Workout {
       sets: map['sets'],
       reps: map['reps'],
       duration: map['duration'],
-      restDay: map['restDay'] ==
-          1, // SQLite không hỗ trợ bool, nên lưu dưới dạng int (0 hoặc 1)
+      restDay: map['restDay'] == 1,
       distance: map['distance'],
       status: map['status'] ?? "NOT_STARTED",
+      completionDate: map['completionDate'], // 👈 thêm vào đây
     );
   }
 
-  // Phương thức từ Workout sang Map (dùng cho SQLite)
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -66,9 +64,10 @@ class Workout {
       'sets': sets,
       'reps': reps,
       'duration': duration,
-      'restDay': restDay == true ? 1 : 0, // Chuyển bool thành int
+      'restDay': restDay == true ? 1 : 0,
       'distance': distance,
       'status': status,
+      'completionDate': completionDate, // 👈 và ở đây
     };
   }
 }

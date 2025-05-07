@@ -24,13 +24,19 @@ class DatabaseHelper {
     String path = join(await getDatabasesPath(), 'workout_database.db');
     return await openDatabase(
       path,
-      version: 6, // Tăng version lên 6
+      version: 8, // Tăng version lên 8 từ 7
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    print("[DEBUG] Upgrading database from version $oldVersion to $newVersion");
+
+    if (oldVersion < 7) {
+      await db.execute('ALTER TABLE workouts ADD COLUMN completionDate TEXT');
+    }
+
     if (oldVersion < 3) {
       await db.execute(
           'ALTER TABLE workouts ADD COLUMN status TEXT DEFAULT "NOT_STARTED"');
@@ -94,6 +100,26 @@ class DatabaseHelper {
         )
       ''');
     }
+
+    // Thêm kiểm tra cho version 8
+    if (oldVersion < 8) {
+      try {
+        // Kiểm tra xem cột đã tồn tại chưa
+        var columns = await db.rawQuery('PRAGMA table_info(workouts)');
+        bool hasCompletionDate =
+            columns.any((column) => column['name'] == 'completionDate');
+
+        if (!hasCompletionDate) {
+          await db
+              .execute('ALTER TABLE workouts ADD COLUMN completionDate TEXT');
+          print("[DEBUG] ✅ Đã thêm cột completionDate vào bảng workouts");
+        } else {
+          print("[DEBUG] ℹ️ Cột completionDate đã tồn tại trong bảng workouts");
+        }
+      } catch (e) {
+        print("[DEBUG] ❌ Lỗi khi thêm cột completionDate: $e");
+      }
+    }
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -109,7 +135,7 @@ class DatabaseHelper {
       )
     ''');
 
-    // Tạo bảng workouts (bài tập)
+    // Tạo bảng workouts (bài tập) - ĐÃ THÊM completionDate vào định nghĩa
     await db.execute('''
       CREATE TABLE workouts (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -122,9 +148,11 @@ class DatabaseHelper {
         duration INTEGER,
         restDay INTEGER,
         distance REAL,
-        status TEXT DEFAULT 'NOT_STARTED'
+        status TEXT DEFAULT 'NOT_STARTED',
+        completionDate TEXT
       )
     ''');
+
     await db.execute('''
       CREATE TABLE workout_results(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -278,6 +306,41 @@ class DatabaseHelper {
       print("[DEBUG] ❌ Lỗi database: $e");
       throw e;
     }
+  }
+
+  Future<int> markWorkoutAsCompleted(int workoutId) async {
+    final db = await database;
+
+    // Format ngày hiện tại theo định dạng yyyy-MM-dd
+    final String today = DateTime.now().toIso8601String().split('T')[0];
+
+    return await db.update(
+      'workouts',
+      {
+        'status': 'COMPLETED',
+        'completionDate': today,
+      },
+      where: 'id = ?',
+      whereArgs: [workoutId],
+    );
+  }
+
+// Phương thức để kiểm tra xem người dùng đã hoàn thành bài tập nào hôm nay
+  Future<Workout?> getCompletedWorkoutForToday() async {
+    final db = await database;
+    final String today = DateTime.now().toIso8601String().split('T')[0];
+
+    final List<Map<String, dynamic>> maps = await db.query(
+      'workouts',
+      where: 'completionDate = ? AND status = ?',
+      whereArgs: [today, 'COMPLETED'],
+    );
+
+    if (maps.isNotEmpty) {
+      return Workout.fromMap(maps.first);
+    }
+
+    return null;
   }
 
   //mã đẩy lên dữ liệu lên
