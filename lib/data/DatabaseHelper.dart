@@ -280,6 +280,79 @@ class DatabaseHelper {
     }
   }
 
+  //mã đẩy lên dữ liệu lên
+  Future<void> checkAndSyncWorkouts(int dayNumber) async {
+    try {
+      final db = await database;
+
+      // Lấy tất cả kết quả cho ngày này
+      final List<Map<String, dynamic>> results = await db.query(
+          'workout_results',
+          where: 'day_number = ?',
+          whereArgs: [dayNumber]);
+
+      // Nếu có đủ 4 bài tập, gửi lên API
+      if (results.length >= 4) {
+        print("[DEBUG] 🔄 Đã hoàn thành đủ bài tập, bắt đầu đồng bộ");
+
+        // Định dạng lại dữ liệu theo cấu trúc API
+        final List<Map<String, dynamic>> formattedResults = results
+            .map((result) => {
+                  "exerciseName": result['exercise_name'],
+                  "setsCompleted": result['sets_completed'],
+                  "repsCompleted": result['reps_completed'],
+                  "distanceCompleted": result['distance_completed'],
+                  "durationCompleted": result['duration_completed']
+                })
+            .toList();
+
+        final Map<String, dynamic> apiData = {
+          "dayNumber": dayNumber,
+          "results": formattedResults
+        };
+
+        // Gửi lên API
+        await sendToApi(apiData);
+
+        // Sau khi gửi thành công, xóa dữ liệu local
+        await db.delete('workout_results',
+            where: 'day_number = ?', whereArgs: [dayNumber]);
+
+        print("[DEBUG] ✅ Đã đồng bộ và xóa dữ liệu local");
+      } else {
+        print("[DEBUG] ⏳ Chưa đủ bài tập (${results.length}/4), đợi tiếp");
+      }
+    } catch (e) {
+      print("[DEBUG] ❌ Lỗi khi kiểm tra và đồng bộ: $e");
+    }
+  }
+
+  Future<void> sendToApi(Map<String, dynamic> data) async {
+    try {
+      final box = await Hive.openBox('userBox');
+      final token = box.get('token');
+      final Dio dio = Dio();
+      final response = await dio.post(
+        'http://54.251.220.228:8080/trainingSouls/workout/workout-results',
+        data: data,
+        options: Options(headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token', // 👈 Thêm token ở đây
+        }),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        print("[DEBUG] ✅ Gửi API thành công");
+      } else {
+        print("[DEBUG] ❌ Lỗi API: ${response.statusCode} - ${response.data}");
+        throw Exception("API error: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("[DEBUG] ❌ Lỗi kết nối API: $e");
+      throw e;
+    }
+  }
+
   Future<List<Map<String, dynamic>>> getWorkoutsForDate(
       String dateString) async {
     final db = await database;
