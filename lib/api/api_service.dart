@@ -1,4 +1,5 @@
 import 'package:training_souls/models/item.dart';
+import 'package:training_souls/models/work_history.dart';
 import 'package:training_souls/models/work_out.dart';
 import 'package:dio/dio.dart';
 import 'package:retrofit/retrofit.dart';
@@ -29,8 +30,11 @@ abstract class ApiService {
   );
   @POST("/purchase/complete")
   Future<void> confirmPayment(
-      @Body() Map<String, dynamic> body,
-      @Header("Authorization") String token,
+    @Body() Map<String, dynamic> body,
+    @Header("Authorization") String token,
   );
-
+  @GET("/workout/history")
+  Future<List<WorkoutHistory>> getWorkoutHistory(
+    @Header("Authorization") String token,
+  );
 }

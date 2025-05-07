@@ -43,9 +43,9 @@ class _BeginnerScreenState extends State<BeginerScrenn> {
     allWorkouts.sort((a, b) => (a.day ?? 0).compareTo(b.day ?? 0));
 
     // ✅ Debug: in danh sách tất cả bài tập
-    for (var w in allWorkouts) {
-      print("📆 Ngày ${w.day}, ${w.exerciseName}, trạng thái: ${w.status}");
-    }
+    // for (var w in allWorkouts) {
+    //   print("📆 Ngày ${w.day}, ${w.exerciseName}, trạng thái: ${w.status}");
+    // }
 
     // Lấy ngày hiện tại để biết hôm nay là ngày bao nhiêu trong chương trình
     final DateTime now = DateTime.now();
