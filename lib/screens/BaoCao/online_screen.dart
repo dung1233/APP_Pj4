@@ -286,7 +286,7 @@ class _OnlineScreenState extends State<OnlineScreen> {
     } else if (exerciseNameLower.contains('gập bụng') ||
         exerciseNameLower.contains('cycle') ||
         exerciseNameLower.contains('bike')) {
-      iconData = Icons.directions_bike;
+      iconData = Icons.self_improvement;
       iconColor = Colors.green;
     } else if (exerciseNameLower.contains('hít đất') ||
         exerciseNameLower.contains('push up') ||
