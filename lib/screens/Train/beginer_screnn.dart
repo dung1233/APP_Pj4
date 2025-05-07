@@ -43,9 +43,12 @@ class _BeginnerScreenState extends State<BeginerScrenn> {
     allWorkouts.sort((a, b) => (a.day ?? 0).compareTo(b.day ?? 0));
 
     // ✅ Debug: in danh sách tất cả bài tập
-    // for (var w in allWorkouts) {
-    //   print("📆 Ngày ${w.day}, ${w.exerciseName}, trạng thái: ${w.status}");
-    // }
+    if (kDebugMode) {
+      print("📊 Tổng số bài tập: ${allWorkouts.length}");
+      for (var w in allWorkouts) {
+        print("📆 Ngày ${w.day}, ${w.exerciseName}, trạng thái: ${w.status}");
+      }
+    }
 
     // Lấy ngày hiện tại để biết hôm nay là ngày bao nhiêu trong chương trình
     final DateTime now = DateTime.now();
@@ -59,10 +62,23 @@ class _BeginnerScreenState extends State<BeginerScrenn> {
 
     if (completedWorkouts.isEmpty) {
       // Chưa có bài tập nào được hoàn thành, hiển thị bài đầu tiên
-      workoutToShow = allWorkouts.firstWhere((w) => w.status == "NOT_COMPLETED",
-          orElse: () => allWorkouts.first);
-      print(
-          "👉 Bắt đầu chương trình: ngày ${workoutToShow.day}, ${workoutToShow.exerciseName}");
+      try {
+        workoutToShow = allWorkouts.firstWhere(
+            (w) => w.status == "NOT_COMPLETED" && (w.day ?? 0) > 0,
+            orElse: () => allWorkouts.first);
+        if (kDebugMode) {
+          print(
+              "👉 Bắt đầu chương trình mới: ngày ${workoutToShow.day}, ${workoutToShow.exerciseName}");
+        }
+      } catch (e) {
+        // Bảo vệ thêm trong trường hợp có lỗi khi tìm bài đầu tiên
+        workoutToShow = allWorkouts.first;
+        if (kDebugMode) {
+          print("⚠️ Lỗi khi tìm bài tập đầu tiên: $e");
+          print(
+              "👉 Sử dụng bài tập đầu tiên: ngày ${workoutToShow.day}, ${workoutToShow.exerciseName}");
+        }
+      }
     } else {
       // Sắp xếp các bài tập đã hoàn thành theo ngày
       completedWorkouts.sort((a, b) => (a.day ?? 0).compareTo(b.day ?? 0));
@@ -70,6 +86,11 @@ class _BeginnerScreenState extends State<BeginerScrenn> {
       // Lấy bài tập cuối cùng đã hoàn thành
       final lastCompletedWorkout = completedWorkouts.last;
       final int lastCompletedDay = lastCompletedWorkout.day ?? 0;
+
+      if (kDebugMode) {
+        print(
+            "📌 Bài tập cuối cùng đã hoàn thành: ngày $lastCompletedDay, ${lastCompletedWorkout.exerciseName}");
+      }
 
       // Kiểm tra xem bài tập cuối cùng được hoàn thành vào ngày hôm nay không
       final DateTime? completionDate =
@@ -90,27 +111,65 @@ class _BeginnerScreenState extends State<BeginerScrenn> {
               lastCompletedWorkout; // Để UI có thể hiển thị thông tin bài tập đã hoàn thành
           showCompletionMessage = true;
         });
-        print(
-            "👉 Đã hoàn thành bài ngày $lastCompletedDay hôm nay. Cần đợi đến ngày mai.");
+        if (kDebugMode) {
+          print(
+              "👉 Đã hoàn thành bài ngày $lastCompletedDay hôm nay. Cần đợi đến ngày mai.");
+        }
         return;
       }
 
       // Tìm bài tập tiếp theo chưa hoàn thành
       try {
-        workoutToShow = allWorkouts.firstWhere(
-          (w) => (w.day ?? 0) > lastCompletedDay && w.status == "NOT_COMPLETED",
-        );
-        print(
-            "👉 Bài tập tiếp theo: ngày ${workoutToShow.day}, ${workoutToShow.exerciseName}");
-      } catch (e) {
-        // Không tìm thấy bài tập nào chưa hoàn thành
-        print("👉 Đã hoàn thành tất cả bài tập trong chương trình.");
+        // Tìm bài tập tiếp theo với điều kiện day > lastCompletedDay và status = NOT_COMPLETED
+        List<Workout> nextWorkouts = allWorkouts
+            .where((w) =>
+                (w.day ?? 0) > lastCompletedDay && w.status == "NOT_COMPLETED")
+            .toList();
 
-        // Hiển thị bài tập cuối cùng đã hoàn thành thay vì quay lại bài đầu tiên
-        workoutToShow = lastCompletedWorkout;
-        setState(() {
-          allWorkoutsCompleted = true;
-        });
+        if (nextWorkouts.isNotEmpty) {
+          // Sắp xếp lại để chắc chắn lấy bài tập có ngày gần nhất
+          nextWorkouts.sort((a, b) => (a.day ?? 0).compareTo(b.day ?? 0));
+          workoutToShow = nextWorkouts.first;
+
+          if (kDebugMode) {
+            print(
+                "👉 Bài tập tiếp theo: ngày ${workoutToShow.day}, ${workoutToShow.exerciseName}");
+          }
+        } else {
+          // Không tìm thấy bài tập nào chưa hoàn thành
+          if (kDebugMode) {
+            print("👉 Đã hoàn thành tất cả bài tập trong chương trình.");
+          }
+
+          // Hiển thị bài tập cuối cùng đã hoàn thành thay vì quay lại bài đầu tiên
+          workoutToShow = lastCompletedWorkout;
+          setState(() {
+            allWorkoutsCompleted = true;
+          });
+        }
+      } catch (e) {
+        // Xử lý lỗi nếu có
+        if (kDebugMode) {
+          print("⚠️ Lỗi khi tìm bài tập tiếp theo: $e");
+        }
+
+        // Fallback: Hiển thị bài tập đầu tiên chưa hoàn thành
+        try {
+          workoutToShow = allWorkouts.firstWhere(
+              (w) => w.status == "NOT_COMPLETED",
+              orElse: () => lastCompletedWorkout);
+          if (kDebugMode) {
+            print(
+                "👉 Fallback - Sử dụng bài tập: ngày ${workoutToShow.day}, ${workoutToShow.exerciseName}");
+          }
+        } catch (e2) {
+          workoutToShow = allWorkouts.first;
+          if (kDebugMode) {
+            print("⚠️ Lỗi khi tìm bài tập fallback: $e2");
+            print(
+                "👉 Sử dụng bài tập đầu tiên: ngày ${workoutToShow.day}, ${workoutToShow.exerciseName}");
+          }
+        }
       }
     }
 
