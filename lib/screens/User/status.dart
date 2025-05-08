@@ -167,7 +167,7 @@ class _StatusScreenState extends State<StatusScreen> {
                 ],
               ),
               const SizedBox(height: 6),
-              Text("Thành tựu: ${_userProfile['level'] ?? "??"}", style: TextStyle(fontSize: 16)),
+              Text("Thành tựu: ${_userInfo['accountType'] ?? "??"}", style: TextStyle(fontSize: 16)),
               const Divider(),
               _buildPowerBar(),
               const Divider(),

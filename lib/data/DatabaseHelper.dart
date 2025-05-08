@@ -248,34 +248,20 @@ class DatabaseHelper {
     ''');
     }
 
-    // Kiểm tra bảng permissions
-    tables = await db.rawQuery(
-        "SELECT name FROM sqlite_master WHERE type='table' AND name='permissions'");
-    if (tables.isEmpty) {
-      await db.execute('''
-      CREATE TABLE permissions (
-        permissionID INTEGER PRIMARY KEY AUTOINCREMENT,
-        roleID INTEGER,
-        name TEXT,
-        description TEXT,
-        FOREIGN KEY(roleID) REFERENCES roles(roleID)
-      )
-    ''');
-    }
-
-    // Kiểm tra cột workoutDate trong bảng workouts
-    var columns = await db.rawQuery('PRAGMA table_info(workouts)');
-    bool hasWorkoutDate =
-        columns.any((column) => column['name'] == 'workoutDate');
-
-    if (!hasWorkoutDate) {
-      try {
-        await db.execute('ALTER TABLE workouts ADD COLUMN workoutDate TEXT');
-        print("[DEBUG] ✅ Đã thêm cột workoutDate vào bảng workouts");
-      } catch (e) {
-        print("[DEBUG] ❌ Lỗi khi thêm cột workoutDate: $e");
-      }
-    }
+    // // Kiểm tra bảng permissions
+    // tables = await db.rawQuery(
+    //     "SELECT name FROM sqlite_master WHERE type='table' AND name='permissions'");
+    // if (tables.isEmpty) {
+    //   await db.execute('''
+    //   CREATE TABLE permissions (
+    //     permissionID INTEGER PRIMARY KEY AUTOINCREMENT,
+    //     roleID INTEGER,
+    //     name TEXT,
+    //     description TEXT,
+    //     FOREIGN KEY(roleID) REFERENCES roles(roleID)
+    //   )
+    // ''');
+    // }
   }
 
   Future<void> saveExerciseResult(
@@ -340,144 +326,6 @@ class DatabaseHelper {
       print("[DEBUG] ❌ Lỗi database: $e");
       throw e;
     }
-  }
-
-  Future<int> markWorkoutAsCompleted(int workoutId) async {
-    final db = await database;
-
-    // Format ngày hiện tại theo định dạng yyyy-MM-dd
-    final String today = DateTime.now().toIso8601String().split('T')[0];
-
-    return await db.update(
-      'workouts',
-      {
-        'status': 'COMPLETED',
-        'completionDate': today,
-      },
-      where: 'id = ?',
-      whereArgs: [workoutId],
-    );
-  }
-
-  // Phương thức để kiểm tra xem người dùng đã hoàn thành bài tập nào hôm nay
-  Future<Workout?> getCompletedWorkoutForToday() async {
-    final db = await database;
-    final String today = DateTime.now().toIso8601String().split('T')[0];
-
-    final List<Map<String, dynamic>> maps = await db.query(
-      'workouts',
-      where: 'completionDate = ? AND status = ?',
-      whereArgs: [today, 'COMPLETED'],
-    );
-
-    if (maps.isNotEmpty) {
-      return Workout.fromMap(maps.first);
-    }
-
-    return null;
-  }
-
-  // Phương thức mới để lấy tất cả bài tập theo ngày tập luyện cụ thể
-  Future<List<Workout>> getWorkoutsByDate(String workoutDate) async {
-    final db = await database;
-
-    final List<Map<String, dynamic>> maps = await db.query(
-      'workouts',
-      where: 'workoutDate = ?',
-      whereArgs: [workoutDate],
-    );
-
-    return List.generate(maps.length, (i) {
-      return Workout.fromMap(maps[i]);
-    });
-  }
-
-  //mã đẩy lên dữ liệu lên
-  Future<void> checkAndSyncWorkouts(int dayNumber) async {
-    try {
-      final db = await database;
-
-      // Lấy tất cả kết quả cho ngày này
-      final List<Map<String, dynamic>> results = await db.query(
-          'workout_results',
-          where: 'day_number = ?',
-          whereArgs: [dayNumber]);
-
-      // Nếu có đủ 4 bài tập, gửi lên API
-      if (results.length >= 4) {
-        print("[DEBUG] 🔄 Đã hoàn thành đủ bài tập, bắt đầu đồng bộ");
-
-        // Định dạng lại dữ liệu theo cấu trúc API
-        final List<Map<String, dynamic>> formattedResults = results
-            .map((result) => {
-                  "exerciseName": result['exercise_name'],
-                  "setsCompleted": result['sets_completed'],
-                  "repsCompleted": result['reps_completed'],
-                  "distanceCompleted": result['distance_completed'],
-                  "durationCompleted": result['duration_completed']
-                })
-            .toList();
-
-        final Map<String, dynamic> apiData = {
-          "dayNumber": dayNumber,
-          "results": formattedResults
-        };
-
-        // Gửi lên API
-        await sendToApi(apiData);
-
-        // Sau khi gửi thành công, xóa dữ liệu local
-        await db.delete('workout_results',
-            where: 'day_number = ?', whereArgs: [dayNumber]);
-
-        print("[DEBUG] ✅ Đã đồng bộ và xóa dữ liệu local");
-      } else {
-        print("[DEBUG] ⏳ Chưa đủ bài tập (${results.length}/4), đợi tiếp");
-      }
-    } catch (e) {
-      print("[DEBUG] ❌ Lỗi khi kiểm tra và đồng bộ: $e");
-    }
-  }
-
-  Future<void> sendToApi(Map<String, dynamic> data) async {
-    try {
-      final box = await Hive.openBox('userBox');
-      final token = box.get('token');
-      final Dio dio = Dio();
-      final response = await dio.post(
-        'http://54.251.220.228:8080/trainingSouls/workout/workout-results',
-        data: data,
-        options: Options(headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token', // 👈 Thêm token ở đây
-        }),
-      );
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        print("[DEBUG] ✅ Gửi API thành công");
-      } else {
-        print("[DEBUG] ❌ Lỗi API: ${response.statusCode} - ${response.data}");
-        throw Exception("API error: ${response.statusCode}");
-      }
-    } catch (e) {
-      print("[DEBUG] ❌ Lỗi kết nối API: $e");
-      throw e;
-    }
-  }
-
-  Future<List<Map<String, dynamic>>> getWorkoutsForDate(
-      String dateString) async {
-    final db = await database;
-
-    // Tìm tất cả kết quả tập luyện có ngày hoàn thành là ngày được chọn
-    // Chúng ta tìm kiếm bằng cách so sánh phần đầu của chuỗi ngày (YYYY-MM-DD)
-    final List<Map<String, dynamic>> results = await db.rawQuery('''
-    SELECT * FROM workout_results 
-    WHERE completed_date LIKE '$dateString%'
-    ORDER BY completed_date DESC
-  ''');
-
-    return results;
   }
 
   // Lấy tất cả kết quả từ bảng workout_results

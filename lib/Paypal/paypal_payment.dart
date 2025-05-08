@@ -149,7 +149,7 @@ class PaypalPaymentDemo extends StatelessWidget {
                             );
                           }
                         },
-                        child: const Text("Về trang chủ"),
+                        child: const Text("Về cửa hàng"),
                       ),
                     ],
                   ),
