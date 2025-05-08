@@ -21,7 +21,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false; // Biến để hiển thị trạng thái loading
-
   @override
   void dispose() {
     _emailController.dispose();
