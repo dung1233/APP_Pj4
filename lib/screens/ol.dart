@@ -83,68 +83,63 @@ class _OlViewState extends State<Ol> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        backgroundColor: Colors.black,
-        body: ListView(
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding:
-                      const EdgeInsets.only(left: 15.0, right: 15.0, top: 8),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      IconButton(
-                        icon: Icon(Icons.home, color: Colors.white),
-                        onPressed: () {
-                          Navigator.pushAndRemoveUntil(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => Trainhome()),
-                            (Route<dynamic> route) => false,
-                          );
-                        },
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: ListView(
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(left: 15.0, right: 15.0, top: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.home, color: Colors.white),
+                      onPressed: () {
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(builder: (context) => Trainhome()),
+                          (Route<dynamic> route) => false,
+                        );
+                      },
+                    ),
+                    Text(
+                      'Activity',
+                      style: GoogleFonts.urbanist(
+                        color: Colors.white,
+                        fontSize: 25,
+                        fontWeight: FontWeight.bold,
                       ),
-                      Text(
-                        'Activity',
-                        style: GoogleFonts.urbanist(
-                          color: Colors.white,
-                          fontSize: 25,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.refresh, color: Colors.white),
-                        onPressed: () {
-                          displayWorkoutResults();
-                        },
-                      ),
-                    ],
-                  ),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.refresh, color: Colors.white),
+                      onPressed: () {
+                        displayWorkoutResults();
+                      },
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 20), // Đẩy lên cao hơn
-                Center(
-                  child: ActivityRingsWidget(
-                    strength: _userProfile['strength'] ?? 0,
-                    agility: _userProfile['agility'] ?? 0,
-                    endurance: _userProfile['endurance'] ?? 0,
-                    health: _userProfile['health'] ?? 0,
-                  ),
+              ),
+              const SizedBox(height: 20), // Đẩy lên cao hơn
+              Center(
+                child: ActivityRingsWidget(
+                  strength: _userProfile['strength'] ?? 0,
+                  agility: _userProfile['agility'] ?? 0,
+                  endurance: _userProfile['endurance'] ?? 0,
+                  health: _userProfile['health'] ?? 0,
                 ),
-                const SizedBox(height: 30), // Khoảng cách giữa hai phần
-                WorkoutsWidget(results: _results),
-                const SizedBox(height: 20), // Khoảng cách trước phần Awards
-                AwardsWidget(),
-              ],
-            ),
-          ],
-        ),
+              ),
+              const SizedBox(height: 30), // Khoảng cách giữa hai phần
+              WorkoutsWidget(results: _results),
+              const SizedBox(height: 20), // Khoảng cách trước phần Awards
+              AwardsWidget(),
+            ],
+          ),
+        ],
       ),
-    );
+    ); // ✅ thêm dấu ;
   }
 }
 

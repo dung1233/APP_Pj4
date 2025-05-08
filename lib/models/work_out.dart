@@ -15,7 +15,8 @@ class Workout {
   final bool? restDay;
   final double? distance;
   String status;
-  String? completionDate; // 👈 thêm trường này
+  String? completionDate;
+  String? workoutDate; // 👈 Thêm trường workoutDate
 
   Workout({
     this.id,
@@ -29,7 +30,8 @@ class Workout {
     this.restDay,
     this.distance,
     this.status = "NOT_STARTED",
-    this.completionDate, // 👈 thêm vào constructor
+    this.completionDate,
+    this.workoutDate, // 👈 Thêm vào constructor
   });
 
   factory Workout.fromJson(Map<String, dynamic> json) =>
@@ -50,7 +52,8 @@ class Workout {
       restDay: map['restDay'] == 1,
       distance: map['distance'],
       status: map['status'] ?? "NOT_STARTED",
-      completionDate: map['completionDate'], // 👈 thêm vào đây
+      completionDate: map['completionDate'],
+      workoutDate: map['workoutDate'], // 👈 Thêm vào đây
     );
   }
 
@@ -67,7 +70,8 @@ class Workout {
       'restDay': restDay == true ? 1 : 0,
       'distance': distance,
       'status': status,
-      'completionDate': completionDate, // 👈 và ở đây
+      'completionDate': completionDate,
+      'workoutDate': workoutDate, // 👈 Thêm vào đây
     };
   }
 }

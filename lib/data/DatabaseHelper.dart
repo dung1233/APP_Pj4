@@ -24,7 +24,7 @@ class DatabaseHelper {
     String path = join(await getDatabasesPath(), 'workout_database.db');
     return await openDatabase(
       path,
-      version: 8, // Tăng version lên 8 từ 7
+      version: 9, // Tăng version lên 9 từ 8
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -101,7 +101,7 @@ class DatabaseHelper {
       ''');
     }
 
-    // Thêm kiểm tra cho version 8
+    // Kiểm tra và thêm cột completionDate (version 8)
     if (oldVersion < 8) {
       try {
         // Kiểm tra xem cột đã tồn tại chưa
@@ -120,6 +120,25 @@ class DatabaseHelper {
         print("[DEBUG] ❌ Lỗi khi thêm cột completionDate: $e");
       }
     }
+
+    // Thêm cột workoutDate (version 9)
+    if (oldVersion < 9) {
+      try {
+        // Kiểm tra xem cột đã tồn tại chưa
+        var columns = await db.rawQuery('PRAGMA table_info(workouts)');
+        bool hasWorkoutDate =
+            columns.any((column) => column['name'] == 'workoutDate');
+
+        if (!hasWorkoutDate) {
+          await db.execute('ALTER TABLE workouts ADD COLUMN workoutDate TEXT');
+          print("[DEBUG] ✅ Đã thêm cột workoutDate vào bảng workouts");
+        } else {
+          print("[DEBUG] ℹ️ Cột workoutDate đã tồn tại trong bảng workouts");
+        }
+      } catch (e) {
+        print("[DEBUG] ❌ Lỗi khi thêm cột workoutDate: $e");
+      }
+    }
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -135,7 +154,7 @@ class DatabaseHelper {
       )
     ''');
 
-    // Tạo bảng workouts (bài tập) - ĐÃ THÊM completionDate vào định nghĩa
+    // Tạo bảng workouts (bài tập) - ĐÃ THÊM workoutDate vào định nghĩa
     await db.execute('''
       CREATE TABLE workouts (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -149,7 +168,8 @@ class DatabaseHelper {
         restDay INTEGER,
         distance REAL,
         status TEXT DEFAULT 'NOT_STARTED',
-        completionDate TEXT
+        completionDate TEXT,
+        workoutDate TEXT
       )
     ''');
 
@@ -242,6 +262,20 @@ class DatabaseHelper {
       )
     ''');
     }
+
+    // Kiểm tra cột workoutDate trong bảng workouts
+    var columns = await db.rawQuery('PRAGMA table_info(workouts)');
+    bool hasWorkoutDate =
+        columns.any((column) => column['name'] == 'workoutDate');
+
+    if (!hasWorkoutDate) {
+      try {
+        await db.execute('ALTER TABLE workouts ADD COLUMN workoutDate TEXT');
+        print("[DEBUG] ✅ Đã thêm cột workoutDate vào bảng workouts");
+      } catch (e) {
+        print("[DEBUG] ❌ Lỗi khi thêm cột workoutDate: $e");
+      }
+    }
   }
 
   Future<void> saveExerciseResult(
@@ -325,7 +359,7 @@ class DatabaseHelper {
     );
   }
 
-// Phương thức để kiểm tra xem người dùng đã hoàn thành bài tập nào hôm nay
+  // Phương thức để kiểm tra xem người dùng đã hoàn thành bài tập nào hôm nay
   Future<Workout?> getCompletedWorkoutForToday() async {
     final db = await database;
     final String today = DateTime.now().toIso8601String().split('T')[0];
@@ -341,6 +375,21 @@ class DatabaseHelper {
     }
 
     return null;
+  }
+
+  // Phương thức mới để lấy tất cả bài tập theo ngày tập luyện cụ thể
+  Future<List<Workout>> getWorkoutsByDate(String workoutDate) async {
+    final db = await database;
+
+    final List<Map<String, dynamic>> maps = await db.query(
+      'workouts',
+      where: 'workoutDate = ?',
+      whereArgs: [workoutDate],
+    );
+
+    return List.generate(maps.length, (i) {
+      return Workout.fromMap(maps[i]);
+    });
   }
 
   //mã đẩy lên dữ liệu lên
@@ -452,9 +501,7 @@ class DatabaseHelper {
     return formattedResults;
   }
 
-  // Các phương thức khác giữ nguyên
-
-  // Thêm bài tập vào database
+  // Thêm bài tập vào database với workoutDate
   Future<void> insertWorkout(Workout workout) async {
     final db = await database;
     await db.insert('workouts', workout.toMap(),
@@ -505,7 +552,7 @@ class DatabaseHelper {
   }
 
   // Thêm roles
-// Thêm roles và trả về roleID
+  // Thêm roles và trả về roleID
   Future<int> insertRole(Map<String, dynamic> role) async {
     final db = await database;
     return await db.insert('roles', role,
@@ -568,7 +615,7 @@ class DatabaseHelper {
     final db = await database;
 
     await db.insert(
-      'exercise_results', // 👉 Tên bảng lưu kết quả, sửa đúng tên bảng của em nhé
+      'exercise_results',
       {
         'day': day,
         'exercise_name': exerciseName,

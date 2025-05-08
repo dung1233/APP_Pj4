@@ -1,9 +1,12 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:training_souls/data/DatabaseHelper.dart';
+import 'package:training_souls/providers/workout_provider.dart';
 import 'package:training_souls/screens/ol.dart';
 import 'package:training_souls/screens/trainhome.dart';
 
@@ -48,7 +51,7 @@ class _RunningTrackerState extends State<RunningTracker> {
     if (_distance >= _totalDistance * 1000) {
       _stopTracking(); // Dừng theo dõi
       _saveWorkoutData(); // Lưu dữ liệu
-      Navigator.pop(context); // Hoặc chuyển đến trang bạn muốn
+      // Hoặc chuyển đến trang bạn muốn
     }
   }
 
@@ -65,10 +68,10 @@ class _RunningTrackerState extends State<RunningTracker> {
       };
 
       await dbHelper.saveExerciseResult(widget.day, workoutResult);
-      print("[DEBUG] ✅ Đã lưu kết quả chạy bộ: $workoutResult");
-
+      if (kDebugMode) {
+        print("[DEBUG] ✅ Đã lưu kết quả chạy bộ: $workoutResult");
+      }
       await dbHelper.checkAndSyncWorkouts(widget.day);
-
       if (mounted) {
         Navigator.pushReplacement(
           context,
@@ -76,7 +79,9 @@ class _RunningTrackerState extends State<RunningTracker> {
         );
       }
     } catch (e) {
-      print("[DEBUG] ❌ Lỗi khi lưu kết quả chạy bộ: $e");
+      if (kDebugMode) {
+        print("[DEBUG] ❌ Lỗi khi lưu kết quả chạy bộ: $e");
+      }
 
       // Thêm kiểm tra mounted ở đây để tránh lỗi
       if (mounted) {
