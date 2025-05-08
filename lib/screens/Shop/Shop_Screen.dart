@@ -209,7 +209,7 @@ class _ShopScreenState extends State<ShopScreen>
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text('Ngày bắt đầu hôm nay'),
-                Text(' 120 USD/Tháng',
+                Text(' 3.000.000 đ/Năm',
                     style: TextStyle(fontWeight: FontWeight.bold)),
               ],
             ),

@@ -21,7 +21,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false; // Biến để hiển thị trạng thái loading
-
   @override
   void dispose() {
     _emailController.dispose();
@@ -36,8 +35,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final workoutProvider =
         Provider.of<WorkoutProvider>(context, listen: false);
-    final userProvider = Provider.of<UserProvider>(context,
-        listen: false); // 👈 Thêm UserProvider
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
 
     try {
       // Thực hiện đăng nhập
@@ -60,8 +58,8 @@ class _LoginScreenState extends State<LoginScreen> {
           );
         }
       } else {
-        // Nếu đã có dữ liệu, lấy danh sách bài tập
-        await workoutProvider.fetchAndSaveWorkouts(authProvider.token!);
+        // Nếu đã có dữ liệu, đồng bộ danh sách bài tập
+        await workoutProvider.syncWorkouts(authProvider.token!);
 
         if (mounted) {
           Navigator.pushReplacement(

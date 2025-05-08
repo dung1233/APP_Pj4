@@ -11,8 +11,8 @@ class UserProfilePage extends StatefulWidget {
   _UserScreenState createState() => _UserScreenState();
 }
 
-class _UserScreenState extends State<UserProfilePage> with AutomaticKeepAliveClientMixin<UserProfilePage>{
-
+class _UserScreenState extends State<UserProfilePage>
+    with AutomaticKeepAliveClientMixin<UserProfilePage> {
   final dbHelper = DatabaseHelper();
   // Map<String, dynamic> _userProfile = {};
   Map<String, dynamic> _userInfo = {};
@@ -125,7 +125,8 @@ class _UserScreenState extends State<UserProfilePage> with AutomaticKeepAliveCli
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(20),
                       gradient: getAccountGradient(accountTypeRaw),
@@ -152,7 +153,8 @@ class _UserScreenState extends State<UserProfilePage> with AutomaticKeepAliveCli
                   const SizedBox(height: 10),
                   Text(
                     _userInfo['name'] ?? 'Tên người dùng',
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                 ],
               ),
@@ -185,7 +187,8 @@ class _UserScreenState extends State<UserProfilePage> with AutomaticKeepAliveCli
                   const Divider(),
                   ListTile(
                     leading: const Icon(Icons.logout, color: Colors.red),
-                    title: const Text("Đăng xuất", style: TextStyle(color: Colors.red)),
+                    title: const Text("Đăng xuất",
+                        style: TextStyle(color: Colors.red)),
                     onTap: () {},
                   ),
                 ],

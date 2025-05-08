@@ -86,7 +86,7 @@ class _SitUpDetectorPageState extends State<SitUpDetectorPage> {
 
       // Lưu vào cơ sở dữ liệu
       await dbHelper.saveExerciseResult(widget.day, workoutResult);
-
+      await dbHelper.checkAndSyncWorkouts(widget.day);
       print("[DEBUG] ✅ Đã lưu kết quả tập luyện: ${workoutResult.toString()}");
     } catch (e) {
       print("[DEBUG] ❌ Lỗi khi lưu kết quả: $e");

@@ -1,6 +1,10 @@
 import 'dart:math';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:hive/hive.dart';
+import 'package:training_souls/api/api_service.dart';
 import 'package:training_souls/data/DatabaseHelper.dart';
 import 'package:intl/intl.dart';
 import 'package:training_souls/screens/trainhome.dart';
@@ -12,16 +16,46 @@ class Ol extends StatefulWidget {
   State<StatefulWidget> createState() => _OlViewState();
 }
 
+late final ApiService apiService;
+
 class _OlViewState extends State<Ol> {
   final dbHelper = DatabaseHelper();
   List<Map<String, dynamic>> _results = [];
   Map<String, dynamic> _userProfile = {};
+  late final ApiService apiService; // Chuyển vào trong class
+
   @override
   void initState() {
     super.initState();
+
+    final dio = Dio();
+    apiService = ApiService(dio);
+
     displayWorkoutResults();
     _printDatabaseContent(dbHelper);
     _loadUserProfile(dbHelper);
+  }
+
+  void displayWorkoutResults() async {
+    try {
+      var box = await Hive.openBox('userBox');
+      final token = box.get('token');
+
+      if (token == null) {
+        throw Exception("Token không tồn tại, vui lòng đăng nhập lại");
+      }
+
+      final workouts = await apiService.getWorkoutHistory("Bearer $token");
+      print("🎯 Dữ liệu trả về từ API:");
+      for (var w in workouts) {
+        print(w.toJson());
+      }
+      setState(() {
+        _results = workouts.map((w) => w.toJson()).toList();
+      });
+    } catch (e) {
+      print("❌ Lỗi khi gọi API workout history: $e");
+    }
   }
 
   Future<void> _printDatabaseContent(DatabaseHelper dbHelper) async {
@@ -46,93 +80,66 @@ class _OlViewState extends State<Ol> {
   }
 
   // Trong màn hình hoặc widget muốn hiển thị kết quả
-  void displayWorkoutResults() async {
-    final results = await dbHelper.getAllWorkoutResults();
-
-    // In kết quả để debug
-    print("Tất cả kết quả workout: $results");
-
-    // Xử lý và hiển thị kết quả
-    for (var result in results) {
-      print("ID: ${result['id']}");
-      print("Ngày: ${result['day_number']}");
-      print("Tên bài tập: ${result['exercise_name']}");
-      print("Sets hoàn thành: ${result['sets_completed']}");
-      print("Reps hoàn thành: ${result['reps_completed']}");
-      print("Khoảng cách hoàn thành: ${result['distance_completed']}");
-      print("Thời gian hoàn thành: ${result['duration_completed']}");
-      print("Ngày hoàn thành: ${result['completed_date']}");
-      print("-----------------------");
-    }
-    setState(() {
-      _results = results;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        backgroundColor: Colors.black,
-        body: ListView(
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding:
-                      const EdgeInsets.only(left: 15.0, right: 15.0, top: 8),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      IconButton(
-                        icon: Icon(Icons.home, color: Colors.white),
-                        onPressed: () {
-                          Navigator.pushAndRemoveUntil(
-                            context,
-                            MaterialPageRoute(builder: (context) => Trainhome()),
-                                (Route<dynamic> route) => false,
-                          );
-
-                        },
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: ListView(
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(left: 15.0, right: 15.0, top: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.home, color: Colors.white),
+                      onPressed: () {
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(builder: (context) => Trainhome()),
+                          (Route<dynamic> route) => false,
+                        );
+                      },
+                    ),
+                    Text(
+                      'Activity',
+                      style: GoogleFonts.urbanist(
+                        color: Colors.white,
+                        fontSize: 25,
+                        fontWeight: FontWeight.bold,
                       ),
-                      Text(
-                        'Activity',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 25,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.refresh, color: Colors.white),
-                        onPressed: () {
-                          displayWorkoutResults();
-                        },
-                      ),
-                    ],
-                  ),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.refresh, color: Colors.white),
+                      onPressed: () {
+                        displayWorkoutResults();
+                      },
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 20), // Đẩy lên cao hơn
-                Center(
-                  child: ActivityRingsWidget(
-                    strength: _userProfile['strength'] ?? 0,
-                    agility: _userProfile['agility'] ?? 0,
-                    endurance: _userProfile['endurance'] ?? 0,
-                    health: _userProfile['health'] ?? 0,
-                  ),
+              ),
+              const SizedBox(height: 20), // Đẩy lên cao hơn
+              Center(
+                child: ActivityRingsWidget(
+                  strength: _userProfile['strength'] ?? 0,
+                  agility: _userProfile['agility'] ?? 0,
+                  endurance: _userProfile['endurance'] ?? 0,
+                  health: _userProfile['health'] ?? 0,
                 ),
-                const SizedBox(height: 30), // Khoảng cách giữa hai phần
-                WorkoutsWidget(results: _results),
-                const SizedBox(height: 20), // Khoảng cách trước phần Awards
-                AwardsWidget(),
-              ],
-            ),
-          ],
-        ),
+              ),
+              const SizedBox(height: 30), // Khoảng cách giữa hai phần
+              WorkoutsWidget(results: _results),
+              const SizedBox(height: 20), // Khoảng cách trước phần Awards
+              AwardsWidget(),
+            ],
+          ),
+        ],
       ),
-    );
+    ); // ✅ thêm dấu ;
   }
 }
 
@@ -206,10 +213,11 @@ class ActivityRingsWidget extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(title, style: TextStyle(color: Colors.white, fontSize: 16)),
+          Text(title,
+              style: GoogleFonts.urbanist(color: Colors.white, fontSize: 16)),
           const SizedBox(width: 8),
           Text(value,
-              style: TextStyle(
+              style: GoogleFonts.urbanist(
                   color: color, fontSize: 16, fontWeight: FontWeight.bold)),
         ],
       ),
@@ -221,10 +229,11 @@ class ActivityRingsWidget extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
         children: [
-          Text(label, style: TextStyle(color: Colors.white, fontSize: 14)),
+          Text(label,
+              style: GoogleFonts.urbanist(color: Colors.white, fontSize: 14)),
           const SizedBox(width: 8),
           Text("$value",
-              style: TextStyle(
+              style: GoogleFonts.urbanist(
                   color: color, fontSize: 14, fontWeight: FontWeight.bold)),
         ],
       ),
@@ -299,39 +308,41 @@ class WorkoutsWidget extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text("Workouts",
-                  style: TextStyle(
+                  style: GoogleFonts.urbanist(
                       color: Colors.white,
                       fontSize: 20,
                       fontWeight: FontWeight.bold)),
               Text("Show More",
-                  style: TextStyle(color: Colors.green, fontSize: 16)),
+                  style:
+                      GoogleFonts.urbanist(color: Colors.green, fontSize: 16)),
             ],
           ),
         ),
         const SizedBox(height: 10),
         ...results.map((r) {
-          final name = (r['exercise_name'] ?? '').toString().toLowerCase();
+          final name = (r['exerciseName'] ?? '').toString().toLowerCase();
           final isRun = name.contains('run') || name.contains('chạy');
           String value;
 
           if (isRun) {
-            final rawDistance = (r['distance_completed'] as num?) ?? 0.0;
-            final rawDuration = (r['duration_completed'] as num?) ?? 0.0;
+            // Xử lý cho bài tập chạy bộ
+            final rawDistance = (r['distanceCompleted'] ?? 0.0);
+            final rawDuration = (r['durationCompleted'] ?? 0.0);
 
-            final distanceStr =
-                rawDistance.toStringAsFixed(1).replaceAll('.', ',');
-            final durationStr =
-                rawDuration.floor().toString(); // làm tròn xuống phút
-
-            value = "$distanceStr Km - $durationStr p";
+            value = "$rawDistance m - $rawDuration p";
           } else {
-            value = "${r['sets_completed']} sets - ${r['reps_completed']} reps";
+            // Xử lý cho các bài tập khác
+            value =
+                "${r['setsCompleted'] ?? 0} sets - ${r['repsCompleted'] ?? 0} reps";
           }
 
+          // Xử lý ngày hoàn thành
+          String day = r['completionDate'] ?? 'Hôm nay';
+
           return WorkoutCard(
-            title: r['exercise_name'] ?? 'No Name',
+            title: r['exerciseName'] ?? 'No Name',
             value: value,
-            day: r['completed_date'] ?? '',
+            day: day,
           );
         }),
       ],
@@ -368,15 +379,15 @@ class WorkoutCard extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         child: ListTile(
           leading: Icon(Icons.fitness_center, color: Colors.green),
-          title:
-              Text(title, style: TextStyle(color: Colors.white, fontSize: 16)),
+          title: Text(title,
+              style: GoogleFonts.urbanist(color: Colors.white, fontSize: 16)),
           subtitle: Text(value,
-              style: TextStyle(
+              style: GoogleFonts.urbanist(
                   color: Colors.green,
                   fontSize: 14,
                   fontWeight: FontWeight.bold)),
           trailing: Text(_formatDate(day),
-              style: TextStyle(color: Colors.grey, fontSize: 14)),
+              style: GoogleFonts.urbanist(color: Colors.grey, fontSize: 14)),
         ),
       ),
     );
@@ -401,12 +412,13 @@ class AwardsWidget extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text("Awards",
-                  style: TextStyle(
+                  style: GoogleFonts.urbanist(
                       color: Colors.white,
                       fontSize: 20,
                       fontWeight: FontWeight.bold)),
               Text("Show More",
-                  style: TextStyle(color: Colors.green, fontSize: 16)),
+                  style:
+                      GoogleFonts.urbanist(color: Colors.green, fontSize: 16)),
             ],
           ),
         ),
@@ -436,9 +448,9 @@ class AwardCard extends StatelessWidget {
           Icon(Icons.emoji_events, color: Colors.yellow, size: 50),
           const SizedBox(height: 5),
           Text(award["title"]!,
-              style: TextStyle(color: Colors.white, fontSize: 14)),
+              style: GoogleFonts.urbanist(color: Colors.white, fontSize: 14)),
           Text(award["subtitle"]!,
-              style: TextStyle(color: Colors.grey, fontSize: 12)),
+              style: GoogleFonts.urbanist(color: Colors.grey, fontSize: 12)),
         ],
       ),
     );

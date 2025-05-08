@@ -1,9 +1,12 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:training_souls/data/DatabaseHelper.dart';
+import 'package:training_souls/providers/workout_provider.dart';
 import 'package:training_souls/screens/ol.dart';
 import 'package:training_souls/screens/trainhome.dart';
 
@@ -48,7 +51,7 @@ class _RunningTrackerState extends State<RunningTracker> {
     if (_distance >= _totalDistance * 1000) {
       _stopTracking(); // Dừng theo dõi
       _saveWorkoutData(); // Lưu dữ liệu
-      Navigator.pop(context); // Hoặc chuyển đến trang bạn muốn
+      // Hoặc chuyển đến trang bạn muốn
     }
   }
 
@@ -56,41 +59,36 @@ class _RunningTrackerState extends State<RunningTracker> {
     try {
       final dbHelper = DatabaseHelper();
 
-      // Tạo đối tượng kết quả bài tập chạy bộ
       final workoutResult = {
-        "exerciseName": "Chạy bộ", // Tên bài tập
-        "setsCompleted": 0, // Có thể set mặc định là 1 cho bài chạy
-        "repsCompleted": 0, // Số lần lặp không áp dụng cho chạy bộ
-        "distanceCompleted": _distance / 1000, // Chuyển từ mét sang km
-        "durationCompleted": _secondsElapsed / 60 // Thời gian tính bằng giây
+        "exerciseName": "Chạy bộ",
+        "setsCompleted": 0,
+        "repsCompleted": 0,
+        "distanceCompleted": _distance / 1000,
+        "durationCompleted": _secondsElapsed / 60
       };
 
-      // Lưu vào cơ sở dữ liệu
       await dbHelper.saveExerciseResult(widget.day, workoutResult);
-
-      print("[DEBUG] ✅ Đã lưu kết quả chạy bộ: ${workoutResult.toString()}");
-
-      // Hiển thị thông báo thành công (tuỳ chọn)
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Đã lưu kết quả chạy bộ")),
-      );
-
-      // Chuyển trang sau khi lưu (tuỳ chọn)
-      Future.delayed(Duration(milliseconds: 100), () {
-        if (mounted) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => Ol()),
-          );
-        }
-      });
+      if (kDebugMode) {
+        print("[DEBUG] ✅ Đã lưu kết quả chạy bộ: $workoutResult");
+      }
+      await dbHelper.checkAndSyncWorkouts(widget.day);
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => Ol()),
+        );
+      }
     } catch (e) {
-      print("[DEBUG] ❌ Lỗi khi lưu kết quả chạy bộ: $e");
+      if (kDebugMode) {
+        print("[DEBUG] ❌ Lỗi khi lưu kết quả chạy bộ: $e");
+      }
 
-      // Hiển thị thông báo lỗi (tuỳ chọn)
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Lỗi khi lưu kết quả: $e")),
-      );
+      // Thêm kiểm tra mounted ở đây để tránh lỗi
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Lỗi khi lưu kết quả: $e")),
+        );
+      }
     }
   }
 

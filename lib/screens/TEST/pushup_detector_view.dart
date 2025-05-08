@@ -1,4 +1,5 @@
 import 'package:camera/camera.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
 import 'package:training_souls/data/DatabaseHelper.dart';
@@ -62,26 +63,34 @@ class _PushUpDetectorViewState extends State<PushUpDetectorView> {
     int repsSoFar = _extractRepCount();
     int oldSet = _currentSet;
 
-    print(
-        "[DEBUG] 🔄 Kiểm tra tiến độ: $repsSoFar/$_totalRequiredReps reps | _repsPerSet=$_repsPerSet | _totalSets=$_totalSets");
+    if (kDebugMode) {
+      print(
+          "[DEBUG] 🔄 Kiểm tra tiến độ: $repsSoFar/$_totalRequiredReps reps | _repsPerSet=$_repsPerSet | _totalSets=$_totalSets");
+    }
 
     if (repsSoFar >= _totalRequiredReps) {
-      print("[DEBUG] ✅ Đã đủ số lần! Chuyển trang...");
+      if (kDebugMode) {
+        print("[DEBUG] ✅ Đã đủ số lần! Chuyển trang...");
+      }
       // Đã hoàn thành toàn bộ bài tập
       _goToNextPage();
     } else {
       setState(() {
         int newSet = (repsSoFar ~/ _repsPerSet) + 1;
-        print(
-            "[DEBUG] 📊 Set mới tính được: $newSet (từ $repsSoFar ~/ $_repsPerSet + 1)");
+        if (kDebugMode) {
+          print(
+              "[DEBUG] 📊 Set mới tính được: $newSet (từ $repsSoFar ~/ $_repsPerSet + 1)");
+        }
         _currentSet = newSet;
 
         // Nếu chuyển sang set mới
         if (_currentSet > oldSet) {
           // Reset _exerciseText để đếm lại từ đầu
           _exerciseText = "Chưa nhận diện";
-          print(
-              "[DEBUG] 🔄 Reset counter khi chuyển sang set mới: $_currentSet");
+          if (kDebugMode) {
+            print(
+                "[DEBUG] 🔄 Reset counter khi chuyển sang set mới: $_currentSet");
+          }
 
           // Thông báo
           ScaffoldMessenger.of(context).showSnackBar(
@@ -112,14 +121,24 @@ class _PushUpDetectorViewState extends State<PushUpDetectorView> {
       // Lưu vào cơ sở dữ liệu
       await dbHelper.saveExerciseResult(widget.day, workoutResult);
 
-      print("[DEBUG] ✅ Đã lưu kết quả tập luyện: ${workoutResult.toString()}");
+      // Kiểm tra và đồng bộ nếu đủ bài tập
+      await dbHelper.checkAndSyncWorkouts(widget.day);
+
+      if (kDebugMode) {
+        print(
+            "[DEBUG] ✅ Đã lưu kết quả tập luyện: ${workoutResult.toString()}");
+      }
     } catch (e) {
-      print("[DEBUG] ❌ Lỗi khi lưu kết quả: $e");
+      if (kDebugMode) {
+        print("[DEBUG] ❌ Lỗi khi lưu kết quả: $e");
+      }
     }
   }
 
   void _goToNextPage() async {
-    print("[DEBUG] 💾 Đang lưu kết quả tập luyện...");
+    if (kDebugMode) {
+      print("[DEBUG] 💾 Đang lưu kết quả tập luyện...");
+    }
 
     // Đảm bảo widget vẫn mounted trước khi showDialog
     if (!mounted) return;
@@ -185,7 +204,9 @@ class _PushUpDetectorViewState extends State<PushUpDetectorView> {
         return int.parse(matches.first.group(0)!);
       }
     } catch (e) {
-      print("[DEBUG] ❌ Lỗi khi trích xuất số từ _exerciseText: $e");
+      if (kDebugMode) {
+        print("[DEBUG] ❌ Lỗi khi trích xuất số từ _exerciseText: $e");
+      }
     }
 
     // Trả về 0 nếu không tìm thấy số
@@ -241,10 +262,14 @@ class _PushUpDetectorViewState extends State<PushUpDetectorView> {
     if (poses.isNotEmpty) {
       if (!_isValidPose(poses.first)) {
         // Log thông báo khi pose không hợp lệ
-        print("[DEBUG] ❌ Pose không hợp lệ (không đủ keypoints)");
+        if (kDebugMode) {
+          print("[DEBUG] ❌ Pose không hợp lệ (không đủ keypoints)");
+        }
       } else if (!_isSignificantMovement(poses.first)) {
         // Log thông báo khi chuyển động quá nhỏ
-        print("[DEBUG] ❌ Chuyển động quá nhỏ, không tính.");
+        if (kDebugMode) {
+          print("[DEBUG] ❌ Chuyển động quá nhỏ, không tính.");
+        }
       } else {
         List classificationResult =
             _poseClassifierProcessor.getPoseResult(poses.first);
@@ -265,7 +290,9 @@ class _PushUpDetectorViewState extends State<PushUpDetectorView> {
       }
     } else {
       // Log khi không phát hiện được pose nào
-      print("[DEBUG] ❌ Không phát hiện pose nào!");
+      if (kDebugMode) {
+        print("[DEBUG] ❌ Không phát hiện pose nào!");
+      }
     }
 
     _previousPose = poses.isNotEmpty ? poses.first : null;
@@ -310,7 +337,9 @@ class _PushUpDetectorViewState extends State<PushUpDetectorView> {
       }
     }
 
-    print("[DEBUG] ✅ Số keypoints hợp lệ: $validKeypoints");
+    if (kDebugMode) {
+      print("[DEBUG] ✅ Số keypoints hợp lệ: $validKeypoints");
+    }
 
     if (_cameraLensDirection == CameraLensDirection.front) {
       return validKeypoints >= 4;
@@ -345,17 +374,25 @@ class _PushUpDetectorViewState extends State<PushUpDetectorView> {
       }
     }
 
-    print(
-        "[DEBUG] ✅ totalMovementZ: $totalMovementZ | totalMovementY: $totalMovementY");
+    if (kDebugMode) {
+      print(
+          "[DEBUG] ✅ totalMovementZ: $totalMovementZ | totalMovementY: $totalMovementY");
+    }
 
     if (_cameraLensDirection == CameraLensDirection.front) {
       bool isMoving = totalMovementZ > 15 || totalMovementY > 15;
-      if (!isMoving) print("[DEBUG] ❌ Chuyển động quá nhỏ, không tính.");
+      // ignore: curly_braces_in_flow_control_structures
+      if (!isMoving) if (kDebugMode) {
+        print("[DEBUG] ❌ Chuyển động quá nhỏ, không tính.");
+      }
       return isMoving;
     }
 
     bool isMoving = totalMovementZ > 30 || totalMovementY > 30;
-    if (!isMoving) print("[DEBUG] ❌ Chuyển động quá nhỏ, không tính.");
+    // ignore: curly_braces_in_flow_control_structures
+    if (!isMoving) if (kDebugMode) {
+      print("[DEBUG] ❌ Chuyển động quá nhỏ, không tính.");
+    }
     return isMoving;
   }
 }

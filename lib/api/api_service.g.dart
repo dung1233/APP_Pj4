@@ -184,11 +184,12 @@ class _ApiService implements ApiService {
         )));
     await _dio.fetch<void>(_options);
   }
+
   @override
   Future<void> confirmPayment(
-      Map<String, dynamic> body,
-      String token,
-      ) async {
+    Map<String, dynamic> body,
+    String token,
+  ) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{r'Authorization': token};
@@ -201,17 +202,54 @@ class _ApiService implements ApiService {
       extra: _extra,
     )
         .compose(
-      _dio.options,
-      '/purchase/complete',
-      queryParameters: queryParameters,
-      data: _data,
-    )
+          _dio.options,
+          '/purchase/complete',
+          queryParameters: queryParameters,
+          data: _data,
+        )
         .copyWith(
-        baseUrl: _combineBaseUrls(
+            baseUrl: _combineBaseUrls(
           _dio.options.baseUrl,
           baseUrl,
         )));
     await _dio.fetch<void>(_options);
+  }
+
+  @override
+  Future<List<WorkoutHistory>> getWorkoutHistory(String token) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{r'Authorization': token};
+    _headers.removeWhere((k, v) => v == null);
+    const Map<String, dynamic>? _data = null;
+    final _options = _setStreamType<List<WorkoutHistory>>(Options(
+      method: 'GET',
+      headers: _headers,
+      extra: _extra,
+    )
+        .compose(
+          _dio.options,
+          '/workout/history',
+          queryParameters: queryParameters,
+          data: _data,
+        )
+        .copyWith(
+            baseUrl: _combineBaseUrls(
+          _dio.options.baseUrl,
+          baseUrl,
+        )));
+    final _result = await _dio.fetch<List<dynamic>>(_options);
+    late List<WorkoutHistory> _value;
+    try {
+      _value = _result.data!
+          .map(
+              (dynamic i) => WorkoutHistory.fromJson(i as Map<String, dynamic>))
+          .toList();
+    } on Object catch (e, s) {
+      errorLogger?.logError(e, s, _options);
+      rethrow;
+    }
+    return _value;
   }
 
   RequestOptions _setStreamType<T>(RequestOptions requestOptions) {
