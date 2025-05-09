@@ -129,6 +129,7 @@ class _TrainScreenState extends State<TrainScreen> {
     return ShowCaseWidget(
       builder: (context) => Scaffold(
         appBar: AppBar(
+          automaticallyImplyLeading: false,
           title: Text(
             "Danh sách bài tập",
             style: GoogleFonts.urbanist(fontWeight: FontWeight.bold),

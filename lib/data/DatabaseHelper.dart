@@ -8,6 +8,7 @@ import 'package:training_souls/models/user_response.dart';
 import 'package:training_souls/models/work_out.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import 'package:training_souls/providers/workout_provider.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper _instance = DatabaseHelper._internal();
@@ -342,6 +343,35 @@ class DatabaseHelper {
       print("[DEBUG] ❌ Lỗi database: $e");
       throw e;
     }
+  }
+
+  Future<void> saveWorkoutsAndNotify(
+      List<Workout> workouts, WorkoutProvider provider) async {
+    // Lưu các bài tập vào database
+    for (var workout in workouts) {
+      await insertWorkout(workout);
+    }
+
+    // Thông báo cho provider để refresh dữ liệu
+    await provider.refreshAfterDatabaseChange();
+
+    debugPrint(
+        "✅ Đã lưu ${workouts.length} bài tập vào SQLite và cập nhật UI!");
+  }
+
+// Nếu bạn đã có hàm insertMultipleWorkouts, hãy sửa nó như sau:
+  Future<void> insertMultipleWorkouts(List<Workout> workouts,
+      {WorkoutProvider? provider}) async {
+    for (var workout in workouts) {
+      await insertWorkout(workout);
+    }
+
+    // Nếu provider được cung cấp, thông báo để refresh UI
+    if (provider != null) {
+      await provider.refreshAfterDatabaseChange();
+    }
+
+    debugPrint("✅ Đã lưu ${workouts.length} bài tập vào SQLite!");
   }
 
   Future<int> markWorkoutAsCompleted(int workoutId) async {

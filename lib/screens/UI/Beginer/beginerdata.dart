@@ -95,6 +95,26 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
     }
   }
 
+  @override
+  void initState() {
+    super.initState();
+    // Đảm bảo dữ liệu được tải khi widget khởi tạo
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _ensureDataLoaded();
+    });
+  }
+
+  Future<void> _ensureDataLoaded() async {
+    // Lấy provider từ context
+    final provider = Provider.of<WorkoutProvider>(context, listen: false);
+
+    // Kiểm tra và tải dữ liệu nếu cần
+    if (provider.workouts.isEmpty && !provider.isLoading) {
+      debugPrint("DEBUG: BeginnerDataWidget triggering workout reload");
+      await provider.loadWorkoutsFromSQLite();
+    }
+  }
+
   Future<void> saveExerciseResult(int day, String exerciseName) async {
     try {
       await dbHelper.insertExerciseResult(day, exerciseName);
@@ -164,8 +184,12 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
   Widget build(BuildContext context) {
     return Consumer<WorkoutProvider>(
       builder: (context, provider, child) {
-        final weeks = _groupWorkoutsByWeek(provider.workouts);
+        if (provider.workouts.isEmpty && !provider.isLoading) {
+          // Thử tải lại dữ liệu một lần nữa
+          Future.microtask(() => provider.ensureWorkoutsLoaded());
+        }
 
+        final weeks = _groupWorkoutsByWeek(provider.workouts);
         return SingleChildScrollView(
           physics: const ClampingScrollPhysics(),
           child: provider.isLoading
@@ -443,7 +467,7 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
               : InkWell(
-                  // onTap: isRestDay ? null : () => _toggleWorkoutStatus(workout),
+                  onTap: isRestDay ? null : () => _toggleWorkoutStatus(workout),
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(

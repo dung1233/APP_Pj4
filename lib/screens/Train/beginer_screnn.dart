@@ -171,23 +171,23 @@ class _BeginnerScreenState extends State<BeginerScrenn> {
             const SizedBox(height: 5),
           ] else ...[
             // Hiển thị thông tin bài tập bình thường
-            const SizedBox(height: 8),
-            Text(
-              nextWorkout!.exerciseName ?? "Bài tập không tên",
-              style: GoogleFonts.urbanist(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: Colors.orange,
-              ),
-            ),
-            const SizedBox(height: 5),
-            Text(
-              _getWorkoutDescription(nextWorkout!),
-              style: GoogleFonts.urbanist(fontSize: 18, color: Colors.white),
-            ),
+            // const SizedBox(height: 28),
+            // Text(
+            //   nextWorkout!.exerciseName ?? "Bài tập không tên",
+            //   style: GoogleFonts.urbanist(
+            //     fontSize: 20,
+            //     fontWeight: FontWeight.w600,
+            //     color: Colors.orange,
+            //   ),
+            // ),
+            // const SizedBox(height: 5),
+            // Text(
+            //   _getWorkoutDescription(nextWorkout!),
+            //   style: GoogleFonts.urbanist(fontSize: 18, color: Colors.white),
+            // ),
           ],
 
-          const SizedBox(height: 20),
+          // const SizedBox(height: 20),
 
           // Hiển thị nút "Bắt đầu" chỉ khi chưa hoàn thành bài tập hôm nay
           // và chưa hoàn thành toàn bộ chương trình

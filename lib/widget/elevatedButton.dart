@@ -14,7 +14,7 @@ class Buttonscreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
-        backgroundColor: isEnabled ? Color(0xFF5E35B1) : Colors.grey[300],
+        backgroundColor: isEnabled ? Color(0xFFFF6B00) : Colors.grey[300],
         padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 150),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(30),

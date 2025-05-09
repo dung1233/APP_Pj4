@@ -1,4 +1,5 @@
 // ignore: depend_on_referenced_packages
+import 'package:google_fonts/google_fonts.dart';
 import 'package:training_souls/providers/auth_provider.dart';
 import 'package:training_souls/providers/user_provider.dart';
 import 'package:training_souls/providers/workout_provider.dart';
@@ -30,7 +31,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   // Hàm gọi API Login
   Future<void> _login() async {
-    setState(() => _isLoading = true); // Bật loading
+    setState(() => _isLoading = true);
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final workoutProvider =
@@ -38,7 +39,6 @@ class _LoginScreenState extends State<LoginScreen> {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
 
     try {
-      // Thực hiện đăng nhập
       final success = await authProvider.login(
         _emailController.text,
         _passwordController.text,
@@ -46,11 +46,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
       print("✅ Đăng nhập thành công, token: ${authProvider.token}");
 
-      // Kiểm tra xem người dùng có dữ liệu cá nhân chưa
       final hasUserData = await userProvider.checkUserData(authProvider.token!);
 
       if (!hasUserData) {
-        // Nếu chưa có dữ liệu, chuyển hướng đến DataScreen
         if (mounted) {
           Navigator.pushReplacement(
             context,
@@ -58,8 +56,9 @@ class _LoginScreenState extends State<LoginScreen> {
           );
         }
       } else {
-        // Nếu đã có dữ liệu, đồng bộ danh sách bài tập
+        // Đồng bộ và làm mới dữ liệu
         await workoutProvider.syncWorkouts(authProvider.token!);
+        await workoutProvider.refreshAfterDatabaseChange(); // Đảm bảo làm mới
 
         if (mounted) {
           Navigator.pushReplacement(
@@ -69,11 +68,9 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       }
     } catch (e) {
-      if (kDebugMode) {
-        print("❌ Lỗi đăng nhập: $e");
-      }
+      print("❌ Lỗi đăng nhập: $e");
     }
-    setState(() => _isLoading = false); // Tắt loading
+    setState(() => _isLoading = false);
   }
 
   @override
@@ -86,10 +83,12 @@ class _LoginScreenState extends State<LoginScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text('Chào mừng',
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+                style: GoogleFonts.urbanist(
+                    fontSize: 28, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             Text('Đăng nhập để tiếp tục',
-                style: TextStyle(fontSize: 16, color: Colors.grey[600])),
+                style: GoogleFonts.urbanist(
+                    fontSize: 16, color: Colors.grey[600])),
             const SizedBox(height: 15),
             _buildTextField(
                 controller: _emailController,
@@ -109,7 +108,7 @@ class _LoginScreenState extends State<LoginScreen> {
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF5E35B1),
+                  backgroundColor: const Color(0xFFFF6B00),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
@@ -120,7 +119,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     : _login, // Nếu đang loading thì disable button
                 child: _isLoading
                     ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text('Đăng nhập'),
+                    : Text(
+                        'Đăng nhập',
+                        style: GoogleFonts.urbanist(fontSize: 15),
+                      ),
               ),
             ),
 
@@ -128,7 +130,7 @@ class _LoginScreenState extends State<LoginScreen> {
             TextButton(
               onPressed: () {},
               child: Text('Quên mật khẩu?',
-                  style: TextStyle(
+                  style: GoogleFonts.urbanist(
                       color: Colors.grey[600],
                       decoration: TextDecoration.underline)),
             ),
@@ -139,14 +141,14 @@ class _LoginScreenState extends State<LoginScreen> {
               },
               child: RichText(
                 text: TextSpan(
-                  style: TextStyle(color: Colors.grey[600]),
+                  style: GoogleFonts.urbanist(color: Colors.grey[600]),
                   // ignore: prefer_const_literals_to_create_immutables
                   children: [
                     TextSpan(text: 'Chưa có tài khoản? '),
                     TextSpan(
                       text: 'Đăng ký ngay',
-                      style: TextStyle(
-                          color: Color(0xFF5E35B1),
+                      style: GoogleFonts.urbanist(
+                          color: Color(0xFFFF6B00),
                           fontWeight: FontWeight.bold),
                     ),
                   ],

@@ -1,3 +1,4 @@
+import 'package:google_fonts/google_fonts.dart';
 import 'package:training_souls/APi/user_service.dart';
 import 'package:training_souls/screens/Login/login.dart';
 import 'package:flutter/material.dart';
@@ -90,16 +91,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
               const SizedBox(height: 60),
 
               // Tiêu đề
-              const Text(
+              Text(
                 'Tạo tài khoản mới',
-                style: TextStyle(
+                style: GoogleFonts.urbanist(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
                     color: Colors.black87),
               ),
               const SizedBox(height: 8),
               Text('Nhập thông tin để đăng ký',
-                  style: TextStyle(fontSize: 16, color: Colors.grey[600])),
+                  style: GoogleFonts.urbanist(
+                      fontSize: 16, color: Colors.grey[600])),
               const SizedBox(height: 40),
 
               // Họ và tên
@@ -137,7 +139,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 width: double.infinity,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF5E35B1),
+                    backgroundColor: Color(0xFFFF6B00),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
@@ -157,13 +159,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     MaterialPageRoute(builder: (context) => LoginScreen())),
                 child: RichText(
                   text: TextSpan(
-                    style: TextStyle(color: Colors.grey[600]),
-                    children: const [
+                    style: GoogleFonts.urbanist(color: Colors.grey[600]),
+                    children: [
                       TextSpan(text: 'Đã có tài khoản? '),
                       TextSpan(
                         text: 'Đăng nhập ngay',
-                        style: TextStyle(
-                            color: Color(0xFF5E35B1),
+                        style: GoogleFonts.urbanist(
+                            color: Color(0xFFFF6B00),
                             fontWeight: FontWeight.bold),
                       ),
                     ],

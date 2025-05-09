@@ -1,3 +1,4 @@
+import 'package:google_fonts/google_fonts.dart';
 import 'package:training_souls/data/local_storage.dart';
 import 'package:training_souls/screens/Information/activity_screen.dart';
 import 'package:training_souls/widget/elevatedButton.dart';
@@ -83,13 +84,13 @@ class _KgScreenState extends State<KgScreen> {
         child: Column(
           children: [
             const SizedBox(height: 20),
-            const Center(
+            Center(
               child: SizedBox(
                 height: 100,
                 width: 220,
                 child: Text(
                   "Please enter your weight (kg)", // Sửa câu từ cho tự nhiên hơn
-                  style: TextStyle(
+                  style: GoogleFonts.urbanist(
                     color: Colors.black,
                     fontSize: 25,
                     fontWeight: FontWeight.w300,
