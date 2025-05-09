@@ -59,8 +59,9 @@ class _BeginnerScreenState extends State<BeginerScrenn> {
 
     final int currentProgramDay =
         today.difference(programStartDate!).inDays + 1;
-    if (kDebugMode)
+    if (kDebugMode) {
       print("📅 Ngày hiện tại trong chương trình: $currentProgramDay");
+    }
 
     // Tìm workout của ngày hiện tại
     final todayWorkout = allWorkouts.firstWhere(
