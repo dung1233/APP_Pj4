@@ -5,6 +5,7 @@ import 'package:syncfusion_flutter_datepicker/datepicker.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:training_souls/data/DatabaseHelper.dart';
+import 'package:training_souls/models/work_history.dart';
 import 'package:training_souls/providers/workout_data_service.dart';
 // Import service
 
@@ -35,6 +36,9 @@ class _OnlineScreenState extends State<OnlineScreen> {
   }
 
   // Hiển thị chi tiết workout cho ngày đã chọn
+// Trong OnlineScreen.dart
+
+// Cập nhật phương thức _buildWorkoutDetails
   Widget _buildWorkoutDetails(
       BuildContext context, WorkoutDataService service) {
     // Nếu đang loading dữ liệu
@@ -106,7 +110,7 @@ class _OnlineScreenState extends State<OnlineScreen> {
             itemCount: service.selectedDateWorkouts.length,
             itemBuilder: (context, index) {
               final workout = service.selectedDateWorkouts[index];
-              return _buildWorkoutItem(workout);
+              return _buildWorkoutItemFromHistory(workout);
             },
           ),
         ),
@@ -114,32 +118,12 @@ class _OnlineScreenState extends State<OnlineScreen> {
     );
   }
 
-  // Widget hiển thị một hoạt động tập luyện - Được cập nhật để phù hợp với dữ liệu thực tế
-  Widget _buildWorkoutItem(Map<String, dynamic> workout) {
-    // Lấy thông tin từ workout map theo cấu trúc thực tế từ database
-    final int id = workout['id'] ?? 0;
-    final int dayNumber = workout['day_number'] ?? 0;
-    final String exerciseName = workout['exercise_name'] ?? 'Không có tên';
-
-    // Fix: Đảm bảo chuyển đổi về int khi cần
-    final int setsCompleted = _safeParseInt(workout['sets_completed']);
-    final int repsCompleted = _safeParseInt(workout['reps_completed']);
-
-    // Fix: Sử dụng double cho khoảng cách
-    final double distanceCompleted =
-        _safeParseDouble(workout['distance_completed']);
-
-    // Fix: Đảm bảo chuyển đổi về int cho thời gian
-    final int durationCompleted = _safeParseInt(workout['duration_completed']);
-
-    final String completedDate = workout['completed_date'] ?? '';
-
-    // Xử lý định dạng ngày giờ nếu cần
+// Phương thức mới để hiển thị WorkoutHistory
+  Widget _buildWorkoutItemFromHistory(WorkoutHistory workout) {
+    // Tìm thời gian từ createdAt
     DateTime? parsedDate;
     try {
-      if (completedDate.isNotEmpty) {
-        parsedDate = DateTime.parse(completedDate);
-      }
+      parsedDate = DateTime.parse(workout.createdAt);
     } catch (e) {
       if (kDebugMode) {
         print('Lỗi parse ngày: $e');
@@ -160,14 +144,14 @@ class _OnlineScreenState extends State<OnlineScreen> {
               children: [
                 Expanded(
                   child: Text(
-                    exerciseName,
+                    workout.exerciseName,
                     style: GoogleFonts.urbanist(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
-                _buildExerciseTypeIcon(exerciseName),
+                _buildExerciseTypeIcon(workout.exerciseName),
               ],
             ),
             const SizedBox(height: 8),
@@ -176,7 +160,8 @@ class _OnlineScreenState extends State<OnlineScreen> {
               children: [
                 const Icon(Icons.repeat, size: 16, color: Colors.grey),
                 const SizedBox(width: 4),
-                Text('$setsCompleted set × $repsCompleted lần',
+                Text(
+                    '${workout.setsCompleted} set × ${workout.repsCompleted} lần',
                     style: GoogleFonts.urbanist(color: Colors.grey)),
               ],
             ),
@@ -184,17 +169,17 @@ class _OnlineScreenState extends State<OnlineScreen> {
             // Hiển thị thông tin khoảng cách và thời gian
             Row(
               children: [
-                if (distanceCompleted > 0) ...[
+                if (workout.distanceCompleted > 0) ...[
                   const Icon(Icons.straighten, size: 16, color: Colors.grey),
                   const SizedBox(width: 4),
-                  Text('${distanceCompleted.toStringAsFixed(1)} km',
+                  Text('${workout.distanceCompleted.toStringAsFixed(2)} km',
                       style: GoogleFonts.urbanist(color: Colors.grey)),
                   const SizedBox(width: 16),
                 ],
-                if (durationCompleted > 0) ...[
+                if (workout.durationCompleted >= 0) ...[
                   const Icon(Icons.timer, size: 16, color: Colors.grey),
                   const SizedBox(width: 4),
-                  Text('$durationCompleted phút',
+                  Text('${workout.durationCompleted} phút',
                       style: GoogleFonts.urbanist(color: Colors.grey)),
                 ],
               ],
@@ -216,7 +201,7 @@ class _OnlineScreenState extends State<OnlineScreen> {
                   onPressed: () {
                     // TODO: Thêm code để sửa workout
                     if (kDebugMode) {
-                      print('Sửa bài tập ID: $id');
+                      print('Sửa bài tập: ${workout.exerciseName}');
                     }
                   },
                 ),
@@ -226,7 +211,7 @@ class _OnlineScreenState extends State<OnlineScreen> {
                   onPressed: () {
                     // TODO: Thêm code để xóa workout
                     if (kDebugMode) {
-                      print('Xóa bài tập ID: $id');
+                      print('Xóa bài tập: ${workout.exerciseName}');
                     }
                   },
                 ),

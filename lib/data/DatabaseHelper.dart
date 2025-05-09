@@ -1,5 +1,7 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
+import 'package:intl/intl.dart';
 import 'package:training_souls/api/user_service.dart';
 import 'package:training_souls/models/user.dart';
 import 'package:training_souls/models/user_response.dart';
@@ -465,19 +467,27 @@ class DatabaseHelper {
     }
   }
 
-  Future<List<Map<String, dynamic>>> getWorkoutsForDate(
-      String dateString) async {
-    final db = await database;
+// Trong DatabaseHelper.dart
+  Future<List<Map<String, dynamic>>> getWorkoutsForDate(String date) async {
+    try {
+      // Giả sử bạn có một API endpoint hoặc một phương thức database để lấy workouts trong ngày
+      // Thêm logic filter theo date ở đây, ví dụ:
+      List<Map<String, dynamic>> allWorkouts = await getAllWorkoutResults();
 
-    // Tìm tất cả kết quả tập luyện có ngày hoàn thành là ngày được chọn
-    // Chúng ta tìm kiếm bằng cách so sánh phần đầu của chuỗi ngày (YYYY-MM-DD)
-    final List<Map<String, dynamic>> results = await db.rawQuery('''
-    SELECT * FROM workout_results 
-    WHERE completed_date LIKE '$dateString%'
-    ORDER BY completed_date DESC
-  ''');
-
-    return results;
+      // Lọc theo ngày (chỉ so sánh phần ngày-tháng-năm, không quan tâm giờ)
+      return allWorkouts.where((workout) {
+        if (workout['createdAt'] == null) return false;
+        try {
+          DateTime createdDate = DateTime.parse(workout['createdAt']);
+          return DateFormat('yyyy-MM-dd').format(createdDate) == date;
+        } catch (e) {
+          return false;
+        }
+      }).toList();
+    } catch (e) {
+      debugPrint("Error in getWorkoutsForDate: $e");
+      return [];
+    }
   }
 
   // Lấy tất cả kết quả từ bảng workout_results
