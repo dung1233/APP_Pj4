@@ -1,409 +1,309 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:training_souls/data/DatabaseHelper.dart';
 import 'dart:convert';
 
 import 'package:training_souls/data/local_storage.dart';
 
 class EatScreen extends StatefulWidget {
-  const EatScreen({Key? key}) : super(key: key);
+  const EatScreen({super.key});
 
   @override
-  _EatScreenState createState() => _EatScreenState();
+  State<EatScreen> createState() => _EatScreenState();
 }
 
 class _EatScreenState extends State<EatScreen> {
-  String? userName;
-  bool isLoading = true;
-  Map<String, dynamic> userData = {};
+  final DatabaseHelper dbHelper = DatabaseHelper();
+  Map<String, dynamic> _userProfile = {};
+  List<Map<String, dynamic>> _meals = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _printDatabaseContent(DatabaseHelper());
+    _loadUserProfile();
   }
 
-  Future<void> _printDatabaseContent(DatabaseHelper dbHelper) async {
-    final db = await dbHelper.database;
-
-    final userProfiles = await db.query('user_profile');
-
-    if (userProfiles.isNotEmpty) {
+  Future<void> _loadUserProfile() async {
+    try {
+      final db = await dbHelper.database;
+      final profiles = await db.query('user_profile');
+      if (profiles.isNotEmpty) {
+        setState(() {
+          _userProfile = profiles.first;
+          _generateMealPlan();
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      print("❌ Lỗi khi tải thông tin người dùng: $e");
       setState(() {
-        userData = userProfiles.first; // Gán vào state
-        isLoading = false;
+        _isLoading = false;
       });
     }
-
-    // In ra để kiểm tra
-    print("❓ Dữ liệu bảng user_profile:");
-    userProfiles.forEach((profile) {
-      print(profile);
-    });
   }
 
-  // Define colors
-  final Color primaryColor = const Color(0xFFFF6B00);
-  final Color textColor = const Color(0xFF333333);
-  final Color backgroundColor = const Color(0xFFF5F5F5);
+  void _generateMealPlan() {
+    final double bmi = _userProfile['bmi'] ?? 0;
+    final double bodyFat = _userProfile['bodyFatPercentage'] ?? 0;
+    final double muscleMass = _userProfile['muscleMassPercentage'] ?? 0;
+    final String level = _userProfile['level'] ?? 'Beginer';
+
+    // Tính toán calo cần thiết dựa trên BMI và mục tiêu
+    double baseCalories = 2000; // Calo cơ bản
+    if (bmi < 18.5) {
+      baseCalories *= 1.2; // Tăng calo cho người thiếu cân
+    } else if (bmi > 25) {
+      baseCalories *= 0.9; // Giảm calo cho người thừa cân
+    }
+
+    // Điều chỉnh calo dựa trên tỷ lệ mỡ và cơ
+    if (bodyFat > 20) {
+      baseCalories *= 0.9; // Giảm calo nếu tỷ lệ mỡ cao
+    }
+    if (muscleMass < 70) {
+      baseCalories *= 1.1; // Tăng calo nếu tỷ lệ cơ thấp
+    }
+
+    // Tạo kế hoạch bữa ăn
+    _meals = [
+      {
+        "name": "Breakfast",
+        "time": "7:00 AM",
+        "meals": _getBreakfastMeals(baseCalories * 0.3, level),
+        "calories": (baseCalories * 0.3).round(),
+      },
+      {
+        "name": "Lunch",
+        "time": "12:30 PM",
+        "meals": _getLunchMeals(baseCalories * 0.35, level),
+        "calories": (baseCalories * 0.35).round(),
+      },
+      {
+        "name": "Snack",
+        "time": "4:00 PM",
+        "meals": _getSnackMeals(baseCalories * 0.15, level),
+        "calories": (baseCalories * 0.15).round(),
+      },
+      {
+        "name": "Dinner",
+        "time": "7:00 PM",
+        "meals": _getDinnerMeals(baseCalories * 0.2, level),
+        "calories": (baseCalories * 0.2).round(),
+      },
+    ];
+  }
+
+  List<String> _getBreakfastMeals(double calories, String level) {
+    if (level == 'Beginer') {
+      return [
+        "Yến mạch với sữa tươi và chuối",
+        "Trứng luộc (2 quả)",
+        "Sữa chua Hy Lạp",
+      ];
+    } else {
+      return [
+        "Yến mạch với whey protein",
+        "Trứng ốp la (3 quả)",
+        "Bánh mì ngũ cốc nguyên hạt",
+      ];
+    }
+  }
+
+  List<String> _getLunchMeals(double calories, String level) {
+    if (level == 'Beginer') {
+      return [
+        "Cơm gạo lứt",
+        "Ức gà nướng",
+        "Rau xanh trộn",
+      ];
+    } else {
+      return [
+        "Cơm gạo lứt",
+        "Cá hồi nướng",
+        "Rau củ hấp",
+        "Salad rau xanh",
+      ];
+    }
+  }
+
+  List<String> _getSnackMeals(double calories, String level) {
+    if (level == 'Beginer') {
+      return [
+        "Sữa chua trái cây",
+        "Hạt hạnh nhân",
+      ];
+    } else {
+      return [
+        "Whey protein shake",
+        "Chuối",
+        "Hạt mix",
+      ];
+    }
+  }
+
+  List<String> _getDinnerMeals(double calories, String level) {
+    if (level == 'Beginer') {
+      return [
+        "Cơm gạo lứt",
+        "Thịt bò xào rau",
+        "Canh rau",
+      ];
+    } else {
+      return [
+        "Khoai lang",
+        "Ức gà nướng",
+        "Rau xanh",
+        "Súp rau",
+      ];
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
     return Scaffold(
-      backgroundColor: backgroundColor,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildAppBar(),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    _buildUserCard(),
-                    const SizedBox(height: 16),
-                    _buildProgressCard(),
-                    const SizedBox(height: 16),
-                    _buildMealPlanCard(),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {},
-        backgroundColor: primaryColor,
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
-    );
-  }
-
-  Widget _buildAppBar() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: textColor.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      backgroundColor: Colors.black,
+      body: ListView(
         children: [
-          Text(
-            "🍽️ Meal Planner",
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: primaryColor,
-            ),
-          ),
-          Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.notifications_outlined),
-                onPressed: () {},
-                color: primaryColor,
-              ),
-              IconButton(
-                icon: const Icon(Icons.settings_outlined),
-                onPressed: () {},
-                color: primaryColor,
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildUserCard() {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              primaryColor,
-              primaryColor.withOpacity(0.8),
-            ],
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Row(
-            children: [
-              Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 3),
-                ),
-                child: CircleAvatar(
-                  radius: 35,
-                  backgroundColor: Colors.white,
-                  child: ClipOval(
-                    child: Image.asset(
-                      'assets/img/avatar.jpg',
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 20),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      userName ?? '',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Text(
-                      "${userData["gender"] ?? "Unknown"}, ${userData["age"] ?? "?"} years old",
-                      style:
-                          const TextStyle(color: Colors.white70, fontSize: 16),
-                    ),
-                    const SizedBox(height: 15),
-                    _buildInfoRow(
-                        "Starting weight", "${userData["weight"] ?? "?"} kg",
-                        isWhite: true),
-                    _buildInfoRow(
-                        "Target weight", "${userData["height"] ?? "?"} cm",
-                        isWhite: true),
-                    _buildInfoRow(
-                        "Fitness Goal", "${userData["fitnessGoal"] ?? "?"}",
-                        isWhite: true),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildProgressCard() {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "Progress Tracking",
-                  style: TextStyle(
-                    fontSize: 20,
+                  'Kế hoạch dinh dưỡng',
+                  style: GoogleFonts.urbanist(
+                    color: Color(0xFFFF6B00),
+                    fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: primaryColor,
                   ),
                 ),
-                TextButton(
-                  onPressed: () {},
-                  child: Text(
-                    "View Details",
-                    style: TextStyle(color: primaryColor),
+                const SizedBox(height: 10),
+                Text(
+                  'Dựa trên thông tin của bạn:',
+                  style: GoogleFonts.urbanist(
+                    color: Colors.grey,
+                    fontSize: 16,
                   ),
                 ),
+                const SizedBox(height: 5),
+                _buildUserInfo(),
+                const SizedBox(height: 20),
+                ..._meals.map((meal) => _buildMealSection(meal)),
               ],
             ),
-            const SizedBox(height: 15),
-            _buildProgressRow(
-              "BMI",
-              "${(userData["bmi"] as double?)?.toStringAsFixed(1) ?? "?"}",
-              Icons.monitor_weight_outlined,
-            ),
-            _buildProgressRow(
-              "BodyFatPercentage",
-              "${(userData["bodyFatPercentage"] as double?)?.toStringAsFixed(1) ?? "?"}%",
-              Icons.fitness_center,
-            ),
-            _buildProgressRow(
-              "MuscleMassPercentage",
-              "${(userData["muscleMassPercentage"] as double?)?.toStringAsFixed(1) ?? "?"}%",
-              Icons.accessibility_new,
-            ),
-            _buildProgressRow(
-              "Beginer",
-              "${(userData["Beginer"] as double?)?.toStringAsFixed(1) ?? "?"}%",
-              Icons.accessibility_new,
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildMealPlanCard() {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
+  Widget _buildUserInfo() {
+    return Container(
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: const Color.fromARGB(255, 26, 25, 25),
+        borderRadius: BorderRadius.circular(15),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "Today's Meal Plan",
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: primaryColor,
-              ),
-            ),
-            const SizedBox(height: 15),
-            _buildMealItem("Breakfast", "Oatmeal with fruits", "7:00 AM"),
-            _buildMealItem("Lunch", "Grilled chicken salad", "12:30 PM"),
-            _buildMealItem("Snack", "Protein shake", "4:00 PM"),
-            _buildMealItem("Dinner", "Salmon with vegetables", "7:00 PM"),
-          ],
-        ),
+      child: Column(
+        children: [
+          _buildInfoRow(
+              "BMI", "${_userProfile['bmi']?.toStringAsFixed(1) ?? 'N/A'}"),
+          _buildInfoRow("Tỷ lệ mỡ",
+              "${_userProfile['bodyFatPercentage']?.toStringAsFixed(1) ?? 'N/A'}%"),
+          _buildInfoRow("Tỷ lệ cơ",
+              "${_userProfile['muscleMassPercentage']?.toStringAsFixed(1) ?? 'N/A'}%"),
+          _buildInfoRow("Cấp độ", _userProfile['level'] ?? 'N/A'),
+        ],
       ),
     );
   }
 
-  Widget _buildInfoRow(String label, String value, {bool isWhite = false}) {
+  Widget _buildInfoRow(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
             label,
-            style: TextStyle(
-              color: isWhite ? Colors.white70 : textColor.withOpacity(0.7),
-              fontSize: 14,
-            ),
-          ),
-          Text(
-            value,
-            style: TextStyle(
-              color: isWhite ? Colors.white : textColor,
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildProgressRow(String label, String value, IconData icon,
-      {String? change}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          Icon(icon, color: primaryColor, size: 20),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              label,
-              style: TextStyle(
-                color: textColor.withOpacity(0.7),
-                fontSize: 16,
-              ),
-            ),
-          ),
-          Text(
-            value,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
+            style: GoogleFonts.urbanist(
+              color: Colors.grey,
               fontSize: 16,
-              color: textColor,
             ),
           ),
-          if (change != null) ...[
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: change.startsWith('+')
-                    ? primaryColor.withOpacity(0.1)
-                    : Colors.red.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                change,
-                style: TextStyle(
-                  color: change.startsWith('+') ? primaryColor : Colors.red,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                ),
-              ),
+          Text(
+            value,
+            style: GoogleFonts.urbanist(
+              color: Color(0xFFFF6B00),
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
             ),
-          ],
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildMealItem(String meal, String food, String time) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
+  Widget _buildMealSection(Map<String, dynamic> meal) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: const Color.fromARGB(255, 26, 25, 25),
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: primaryColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(Icons.restaurant, color: primaryColor),
-          ),
-          const SizedBox(width: 15),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  meal,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: textColor,
-                  ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                meal['name'],
+                style: GoogleFonts.urbanist(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
                 ),
-                Text(
-                  food,
-                  style: TextStyle(
-                    color: textColor.withOpacity(0.7),
-                    fontSize: 14,
-                  ),
+              ),
+              Text(
+                meal['time'],
+                style: GoogleFonts.urbanist(
+                  color: Colors.grey,
+                  fontSize: 16,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
+          const SizedBox(height: 10),
+          ...(meal['meals'] as List<String>).map((food) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 5),
+                child: Row(
+                  children: [
+                    const Icon(Icons.circle, size: 8, color: Color(0xFFFF6B00)),
+                    const SizedBox(width: 10),
+                    Text(
+                      food,
+                      style: GoogleFonts.urbanist(
+                        color: Colors.white,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              )),
+          const SizedBox(height: 10),
           Text(
-            time,
-            style: TextStyle(
-              color: textColor.withOpacity(0.7),
+            "${meal['calories']} calories",
+            style: GoogleFonts.urbanist(
+              color: Colors.green,
               fontSize: 14,
+              fontWeight: FontWeight.bold,
             ),
           ),
         ],
