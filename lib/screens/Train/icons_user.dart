@@ -183,7 +183,7 @@ class _IconsUserState extends State<IconsUser> {
                             color: Colors.black),
                       ),
                       Text(
-                        userName ?? 'aa',
+                        userName ?? '',
                         style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
