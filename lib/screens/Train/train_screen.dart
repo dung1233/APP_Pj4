@@ -23,7 +23,7 @@ class _TrainScreenState extends State<TrainScreen> {
   final GlobalKey _showcaseBeginnerKey = GlobalKey();
   final GlobalKey _showcaseMediumKey = GlobalKey();
   final GlobalKey _showcaseHardKey = GlobalKey();
-  final GlobalKey _showcasetaskKey = GlobalKey();
+  final GlobalKey _showcaseTaskKey = GlobalKey();
 
   bool _isShowcaseActive = false;
   bool _hasSeenTutorial = false;
@@ -129,8 +129,9 @@ class _TrainScreenState extends State<TrainScreen> {
     return ShowCaseWidget(
       builder: (context) => Scaffold(
         appBar: AppBar(
+          automaticallyImplyLeading: false,
           title: Text(
-            "Danh sách bài tập",
+            "Tải Lại Danh sách bài tập",
             style: GoogleFonts.urbanist(fontWeight: FontWeight.bold),
           ),
           actions: [
@@ -165,7 +166,7 @@ class _TrainScreenState extends State<TrainScreen> {
             children: [
               IconsUser(),
               Showcase(
-                key: _showcasetaskKey,
+                key: _showcaseTaskKey,
                 description: "Task.",
                 child: Wellcome(),
               ),
@@ -222,7 +223,7 @@ class _TrainScreenState extends State<TrainScreen> {
 
     debugPrint('🚀 Starting Showcase...');
     showcase.startShowCase([
-      _showcasetaskKey,
+      _showcaseTaskKey,
       _showcaseBeginnerKey,
       _showcaseMediumKey,
       _showcaseHardKey,

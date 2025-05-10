@@ -1,3 +1,4 @@
+import 'package:google_fonts/google_fonts.dart';
 import 'package:training_souls/data/local_storage.dart';
 import 'package:training_souls/screens/Information/birthday.dart';
 
@@ -64,13 +65,13 @@ class _DataState extends State<Datascreen> {
         child: Column(
           children: [
             const SizedBox(height: 20),
-            const Center(
+            Center(
               child: SizedBox(
                 height: 100,
                 width: 120,
                 child: Text(
                   "What's your gender?",
-                  style: TextStyle(
+                  style: GoogleFonts.urbanist(
                       color: Colors.black,
                       fontSize: 25,
                       fontWeight: FontWeight.w300),
@@ -114,7 +115,7 @@ class _DataState extends State<Datascreen> {
                           const SizedBox(width: 16),
                           Text(
                             options[index]["title"]!,
-                            style: TextStyle(
+                            style: GoogleFonts.urbanist(
                                 color: selectedOption == index
                                     ? Colors.black
                                     : Colors.black,

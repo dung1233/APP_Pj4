@@ -1,3 +1,4 @@
+import 'package:google_fonts/google_fonts.dart';
 import 'package:training_souls/data/local_storage.dart';
 import 'package:training_souls/screens/Information/fitness_goal.dart';
 import 'package:training_souls/widget/elevatedButton.dart';
@@ -62,13 +63,13 @@ class _ActivityScreenState extends State<ActivityScreen> {
         child: Column(
           children: [
             const SizedBox(height: 20),
-            const Center(
+            Center(
               child: SizedBox(
                 height: 100,
                 width: 220,
                 child: Text(
                   "What is your activity level ?",
-                  style: TextStyle(
+                  style: GoogleFonts.urbanist(
                       color: Colors.black,
                       fontSize: 25,
                       fontWeight: FontWeight.w300),
@@ -112,7 +113,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
                           const SizedBox(width: 16),
                           Text(
                             options[index]["title"]!,
-                            style: TextStyle(
+                            style: GoogleFonts.urbanist(
                                 color: selectedOption == index
                                     ? Colors.black
                                     : Colors.black,

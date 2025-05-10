@@ -1,7 +1,6 @@
 import 'dart:math';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:training_souls/data/DatabaseHelper.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:training_souls/models/work_out.dart';
@@ -15,8 +14,14 @@ class BeginnerDataWidget extends StatefulWidget {
 }
 
 class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
-  List<List<Workout>> weeks = [];
-  Map<int, bool> expandedDays = {};
+  final List<List<Workout>> weeks = [];
+  final Map<int, bool> expandedDays = {};
+  final dbHelper = DatabaseHelper();
+  bool isUpdating = false;
+
+  // Cache cho trạng thái hoàn thành
+  final Map<String, bool> _completionCache = {};
+
   final List<String> workoutBackgrounds = [
     "assets/img/run.jpg",
     "assets/img/gapbung.jpg",
@@ -30,59 +35,102 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
     return workoutBackgrounds[random.nextInt(workoutBackgrounds.length)];
   }
 
-  @override
-  void initState() {
-    super.initState();
-    // Không cần tải dữ liệu ở đây vì WorkoutProvider đã tải trong constructor
-  }
-
   Future<bool> checkExerciseCompletion(int day, String exerciseName) async {
-    final dbHelper = DatabaseHelper();
-    final results = await dbHelper.getExerciseResults(day);
-
-    for (var result in results) {
-      if (result['exercise_name'] == exerciseName) {
-        return true;
-      }
+    // Sử dụng cache để tránh truy vấn DB nhiều lần
+    final cacheKey = "$day-$exerciseName";
+    if (_completionCache.containsKey(cacheKey)) {
+      return _completionCache[cacheKey]!;
     }
-    return false;
+
+    try {
+      final results = await dbHelper.getExerciseResults(day);
+      final isCompleted =
+          results.any((result) => result['exercise_name'] == exerciseName);
+
+      // Lưu vào cache
+      _completionCache[cacheKey] = isCompleted;
+      return isCompleted;
+    } catch (e) {
+      debugPrint("Error checking exercise completion: $e");
+      return false;
+    }
   }
 
   Future<void> _updateCompletionStatus(List<Workout> workouts) async {
-    final dbHelper = DatabaseHelper();
-    bool anyChange = false;
+    if (isUpdating) return;
 
-    for (var workout in workouts) {
-      if (workout.day != null &&
-          workout.exerciseName != null &&
-          workout.id != null) {
-        bool isCompleted =
-            await checkExerciseCompletion(workout.day!, workout.exerciseName!);
+    setState(() {
+      isUpdating = true;
+    });
 
-        if (isCompleted && workout.status != "COMPLETED") {
-          await dbHelper.updateWorkoutStatus(workout.id!, "COMPLETED");
-          workout.status = "COMPLETED";
-          anyChange = true;
+    try {
+      bool anyChange = false;
+
+      for (var workout in workouts) {
+        if (workout.day != null &&
+            workout.exerciseName != null &&
+            workout.id != null) {
+          bool isCompleted = await checkExerciseCompletion(
+              workout.day!, workout.exerciseName!);
+
+          if (isCompleted && workout.status != "COMPLETED") {
+            await dbHelper.updateWorkoutStatus(workout.id!, "COMPLETED");
+            workout.status = "COMPLETED";
+            anyChange = true;
+          }
         }
       }
-    }
 
-    if (mounted && anyChange) {
-      setState(() {});
+      if (mounted && anyChange) {
+        setState(() {});
+      }
+    } catch (e) {
+      debugPrint("Error updating completion status: $e");
+    } finally {
+      if (mounted) {
+        setState(() {
+          isUpdating = false;
+        });
+      }
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Đảm bảo dữ liệu được tải khi widget khởi tạo
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _ensureDataLoaded();
+    });
+  }
+
+  Future<void> _ensureDataLoaded() async {
+    // Lấy provider từ context
+    final provider = Provider.of<WorkoutProvider>(context, listen: false);
+
+    // Kiểm tra và tải dữ liệu nếu cần
+    if (provider.workouts.isEmpty && !provider.isLoading) {
+      debugPrint("DEBUG: BeginnerDataWidget triggering workout reload");
+      await provider.loadWorkoutsFromSQLite();
     }
   }
 
   Future<void> saveExerciseResult(int day, String exerciseName) async {
-    final dbHelper = DatabaseHelper();
-    await dbHelper.insertExerciseResult(day, exerciseName);
-    await _updateCompletionStatus(context.read<WorkoutProvider>().workouts);
+    try {
+      await dbHelper.insertExerciseResult(day, exerciseName);
+
+      // Cập nhật cache
+      _completionCache["$day-$exerciseName"] = true;
+
+      await _updateCompletionStatus(context.read<WorkoutProvider>().workouts);
+    } catch (e) {
+      debugPrint("Error saving exercise result: $e");
+    }
   }
 
   List<List<Workout>> _groupWorkoutsByWeek(List<Workout> allWorkouts) {
     if (allWorkouts.isEmpty) {
-      if (kDebugMode) {
-        print("⚠️ Không có dữ liệu bài tập.");
-      }
+      debugPrint("⚠️ Không có dữ liệu bài tập.");
       return [];
     }
 
@@ -107,19 +155,41 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
       }
     }
 
-    print("DEBUG: Grouped ${groupedWeeks.length} weeks with days: $sortedDays");
     return groupedWeeks;
+  }
+
+  // Tính toán số ngày đã hoàn thành trong tuần
+  int _getCompletedDaysInWeek(List<Workout> weekWorkouts) {
+    final Map<int, List<Workout>> workoutsByDay = {};
+    for (var workout in weekWorkouts) {
+      if (workout.day != null) {
+        workoutsByDay.putIfAbsent(workout.day!, () => []).add(workout);
+      }
+    }
+
+    int completedDays = 0;
+    for (var day in workoutsByDay.keys) {
+      final workouts = workoutsByDay[day]!;
+      final completedAll = workouts.every((w) =>
+          w.status == "COMPLETED" ||
+          (w.exerciseName?.toLowerCase().contains("nghỉ ngơi") ?? false));
+
+      if (completedAll) completedDays++;
+    }
+
+    return completedDays;
   }
 
   @override
   Widget build(BuildContext context) {
     return Consumer<WorkoutProvider>(
       builder: (context, provider, child) {
-        // Nhóm dữ liệu từ provider.workouts
-        weeks = _groupWorkoutsByWeek(provider.workouts);
-        print(
-            "DEBUG: Rendering BeginnerDataWidget with ${provider.workouts.length} workouts");
+        if (provider.workouts.isEmpty && !provider.isLoading) {
+          // Thử tải lại dữ liệu một lần nữa
+          Future.microtask(() => provider.ensureWorkoutsLoaded());
+        }
 
+        final weeks = _groupWorkoutsByWeek(provider.workouts);
         return SingleChildScrollView(
           physics: const ClampingScrollPhysics(),
           child: provider.isLoading
@@ -138,6 +208,11 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
                                 .add(workout);
                           }
                         }
+
+                        // Tính số ngày đã hoàn thành
+                        final completedDays = _getCompletedDaysInWeek(weekData);
+                        final totalDays = workoutsByDay.length;
+
                         return Padding(
                           padding: const EdgeInsets.symmetric(
                               vertical: 5.0, horizontal: 10),
@@ -169,7 +244,7 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
                                     ),
                                     const SizedBox(width: 10),
                                     Text(
-                                      '0/6 Days',
+                                      '$completedDays/$totalDays Days',
                                       style: GoogleFonts.urbanist(
                                           color: Colors.grey, fontSize: 14),
                                     ),
@@ -180,7 +255,8 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
                               workoutsByDay.isEmpty
                                   ? Center(
                                       child: Text(
-                                          "Không có bài tập trong tuần này"))
+                                          "Không có bài tập trong tuần này"),
+                                    )
                                   : ListView.builder(
                                       shrinkWrap: true,
                                       physics:
@@ -198,168 +274,8 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
                                         final isExpanded =
                                             expandedDays[day] ?? false;
 
-                                        return Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                              vertical: 10.0),
-                                          child: Column(
-                                            children: [
-                                              GestureDetector(
-                                                onTap: () {
-                                                  setState(() {
-                                                    expandedDays[day] =
-                                                        !isExpanded;
-                                                  });
-                                                },
-                                                child: Container(
-                                                  width: MediaQuery.of(context)
-                                                          .size
-                                                          .width *
-                                                      0.93,
-                                                  height: MediaQuery.of(context)
-                                                          .size
-                                                          .height *
-                                                      0.15,
-                                                  padding: const EdgeInsets
-                                                      .symmetric(
-                                                      horizontal: 20,
-                                                      vertical: 15),
-                                                  decoration: BoxDecoration(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            20),
-                                                    boxShadow: const [
-                                                      BoxShadow(
-                                                          color: Colors.black26,
-                                                          offset: Offset(0, 5),
-                                                          blurRadius: 10),
-                                                    ],
-                                                    image: DecorationImage(
-                                                      image: AssetImage(
-                                                          getRandomImageForDay(
-                                                              day)),
-                                                      fit: BoxFit.cover,
-                                                      colorFilter:
-                                                          ColorFilter.mode(
-                                                        Colors.black
-                                                            .withOpacity(0.6),
-                                                        BlendMode.multiply,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  child: Row(
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment
-                                                            .spaceBetween,
-                                                    children: [
-                                                      Column(
-                                                        crossAxisAlignment:
-                                                            CrossAxisAlignment
-                                                                .start,
-                                                        mainAxisAlignment:
-                                                            MainAxisAlignment
-                                                                .center,
-                                                        children: [
-                                                          Text(
-                                                            "Ngày $day",
-                                                            style: GoogleFonts
-                                                                .urbanist(
-                                                                    fontSize:
-                                                                        26,
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .bold,
-                                                                    color: Colors
-                                                                        .white),
-                                                          ),
-                                                          const SizedBox(
-                                                              height: 8),
-                                                          Container(
-                                                            padding:
-                                                                const EdgeInsets
-                                                                    .symmetric(
-                                                                    horizontal:
-                                                                        10,
-                                                                    vertical:
-                                                                        4),
-                                                            decoration:
-                                                                BoxDecoration(
-                                                              color: Colors
-                                                                  .orange
-                                                                  .withOpacity(
-                                                                      0.8),
-                                                              borderRadius:
-                                                                  BorderRadius
-                                                                      .circular(
-                                                                          12),
-                                                            ),
-                                                            child: Text(
-                                                              "$completedCount/${dayWorkouts.length} bài hoàn thành",
-                                                              style: GoogleFonts
-                                                                  .urbanist(
-                                                                fontSize: 14,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .w500,
-                                                                color: Colors
-                                                                    .white,
-                                                              ),
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                      CircleAvatar(
-                                                        backgroundColor:
-                                                            Colors.black45,
-                                                        radius: 18,
-                                                        child: Icon(
-                                                          isExpanded
-                                                              ? Icons
-                                                                  .expand_less
-                                                              : Icons
-                                                                  .expand_more,
-                                                          color: Colors.white,
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              ),
-                                              if (isExpanded)
-                                                Container(
-                                                  width: MediaQuery.of(context)
-                                                          .size
-                                                          .width *
-                                                      0.9,
-                                                  margin: const EdgeInsets.only(
-                                                      top: 8),
-                                                  padding:
-                                                      const EdgeInsets.all(12),
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.white,
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            16),
-                                                    boxShadow: [
-                                                      BoxShadow(
-                                                        color: Colors.black
-                                                            .withOpacity(0.1),
-                                                        blurRadius: 8,
-                                                        offset:
-                                                            const Offset(0, 3),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                  child: Column(
-                                                    children: dayWorkouts
-                                                        .map((workout) =>
-                                                            _buildWorkoutItem(
-                                                                workout))
-                                                        .toList(),
-                                                  ),
-                                                ),
-                                            ],
-                                          ),
-                                        );
+                                        return _buildDayCard(day, dayWorkouts,
+                                            completedCount, isExpanded);
                                       },
                                     ),
                             ],
@@ -369,6 +285,117 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
                     ),
         );
       },
+    );
+  }
+
+  // Tách biệt widget cho từng ngày để code rõ ràng hơn
+  Widget _buildDayCard(
+      int day, List<Workout> dayWorkouts, int completedCount, bool isExpanded) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10.0),
+      child: Column(
+        children: [
+          GestureDetector(
+            onTap: () {
+              setState(() {
+                expandedDays[day] = !isExpanded;
+              });
+            },
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.93,
+              height: MediaQuery.of(context).size.height * 0.15,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Colors.black26,
+                    offset: Offset(0, 5),
+                    blurRadius: 10,
+                  ),
+                ],
+                image: DecorationImage(
+                  image: AssetImage(getRandomImageForDay(day)),
+                  fit: BoxFit.cover,
+                  colorFilter: ColorFilter.mode(
+                    Colors.black.withOpacity(0.6),
+                    BlendMode.multiply,
+                  ),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        "Ngày $day",
+                        style: GoogleFonts.urbanist(
+                          fontSize: 26,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _getCompletionColor(
+                              completedCount, dayWorkouts.length),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          "$completedCount/${dayWorkouts.length} bài hoàn thành",
+                          style: GoogleFonts.urbanist(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  CircleAvatar(
+                    backgroundColor: Colors.black45,
+                    radius: 18,
+                    child: Icon(
+                      isExpanded ? Icons.expand_less : Icons.expand_more,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (isExpanded)
+            Container(
+              width: MediaQuery.of(context).size.width * 0.9,
+              margin: const EdgeInsets.only(top: 8),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: dayWorkouts
+                    .map((workout) => _buildWorkoutItem(workout))
+                    .toList(),
+              ),
+            ),
+        ],
+      ),
     );
   }
 
@@ -409,14 +436,17 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
                   ),
                 ),
                 const SizedBox(height: 5),
-                if (workout.sets! > 0 && workout.reps! > 0)
+                if (workout.sets != null &&
+                    workout.reps != null &&
+                    workout.sets! > 0 &&
+                    workout.reps! > 0)
                   Text(
                     "${workout.sets} hiệp × ${workout.reps} lần",
                     style: GoogleFonts.urbanist(color: Colors.grey[600]),
                   ),
-                if (workout.duration! > 0)
+                if (workout.duration != null && workout.duration! > 0)
                   Text(
-                    "${workout.duration} phút${workout.distance! > 0 ? ' - ${workout.distance}km' : ''}",
+                    "${workout.duration} phút${workout.distance != null && workout.distance! > 0 ? ' - ${workout.distance}km' : ''}",
                     style: GoogleFonts.urbanist(color: Colors.grey[600]),
                   ),
                 const SizedBox(height: 4),
@@ -430,27 +460,33 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
               ],
             ),
           ),
-          InkWell(
-            onTap: isRestDay ? null : () => _toggleWorkoutStatus(workout),
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: displayStatus == "COMPLETED"
-                    ? Colors.green.withOpacity(0.1)
-                    : Colors.grey.withOpacity(0.1),
-              ),
-              child: Icon(
-                displayStatus == "COMPLETED"
-                    ? Icons.check_circle
-                    : Icons.radio_button_unchecked,
-                color: displayStatus == "COMPLETED"
-                    ? const Color.fromARGB(255, 14, 228, 50)
-                    : Colors.grey,
-                size: 25,
-              ),
-            ),
-          ),
+          isUpdating && workout.id != null
+              ? const SizedBox(
+                  width: 25,
+                  height: 25,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : InkWell(
+                  onTap: isRestDay ? null : () => _toggleWorkoutStatus(workout),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: displayStatus == "COMPLETED"
+                          ? Colors.green.withOpacity(0.1)
+                          : Colors.grey.withOpacity(0.1),
+                    ),
+                    child: Icon(
+                      displayStatus == "COMPLETED"
+                          ? Icons.check_circle
+                          : Icons.radio_button_unchecked,
+                      color: displayStatus == "COMPLETED"
+                          ? const Color.fromARGB(255, 14, 228, 50)
+                          : Colors.grey,
+                      size: 25,
+                    ),
+                  ),
+                ),
         ],
       ),
     );
@@ -482,39 +518,74 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
     }
   }
 
+  // Hàm trả về màu dựa trên số lượng bài tập đã hoàn thành
+  Color _getCompletionColor(int completedCount, int totalCount) {
+    if (completedCount == 0) {
+      return Colors.red.withOpacity(0.8); // Chưa hoàn thành bài nào thì màu đỏ
+    } else if (completedCount >= 4) {
+      return Colors.green
+          .withOpacity(0.8); // Hoàn thành từ 4 bài trở lên thì màu xanh
+    } else {
+      return Colors.orange.withOpacity(0.8); // Hoàn thành 1-3 bài thì màu vàng
+    }
+  }
+
   void _toggleWorkoutStatus(Workout workout) async {
     if (workout.id == null) {
-      print("❌ Không thể cập nhật trạng thái: Workout ID is null");
+      debugPrint("❌ Không thể cập nhật trạng thái: Workout ID is null");
       return;
     }
 
-    final dbHelper = DatabaseHelper();
-    final newStatus =
-        workout.status == "COMPLETED" ? "NOT_STARTED" : "COMPLETED";
-
-    await dbHelper.updateWorkoutStatus(workout.id!, newStatus);
-
+    // Hiển thị loader trong quá trình cập nhật
     setState(() {
-      workout.status = newStatus;
+      isUpdating = true;
     });
 
-    // Cập nhật trạng thái trong WorkoutProvider
-    final provider = context.read<WorkoutProvider>();
-    final updatedWorkouts = provider.workouts.map((w) {
-      if (w.id == workout.id) {
-        return Workout(
-          id: w.id,
-          exerciseName: w.exerciseName,
-          status: newStatus,
-          day: w.day,
-          sets: w.sets,
-          reps: w.reps,
-          duration: w.duration,
-          distance: w.distance,
-        );
+    try {
+      final newStatus =
+          workout.status == "COMPLETED" ? "NOT_STARTED" : "COMPLETED";
+
+      // Thực hiện cập nhật trong DB
+      await dbHelper.updateWorkoutStatus(workout.id!, newStatus);
+
+      // Cập nhật cache nếu cần
+      if (workout.day != null && workout.exerciseName != null) {
+        final cacheKey = "${workout.day}-${workout.exerciseName}";
+        _completionCache[cacheKey] = newStatus == "COMPLETED";
       }
-      return w;
-    }).toList();
-    provider.updateWorkouts(updatedWorkouts);
+
+      // Cập nhật UI
+      setState(() {
+        workout.status = newStatus;
+      });
+
+      // Cập nhật trong Provider
+      final provider = context.read<WorkoutProvider>();
+      final updatedWorkouts = provider.workouts.map((w) {
+        if (w.id == workout.id) {
+          return Workout(
+            id: w.id,
+            exerciseName: w.exerciseName,
+            status: newStatus,
+            day: w.day,
+            sets: w.sets,
+            reps: w.reps,
+            duration: w.duration,
+            distance: w.distance,
+          );
+        }
+        return w;
+      }).toList();
+      provider.updateWorkouts(updatedWorkouts);
+    } catch (e) {
+      debugPrint("❌ Lỗi khi cập nhật trạng thái bài tập: $e");
+    } finally {
+      // Tắt loader
+      if (mounted) {
+        setState(() {
+          isUpdating = false;
+        });
+      }
+    }
   }
 }

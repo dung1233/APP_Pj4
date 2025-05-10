@@ -16,25 +16,33 @@ class Rest extends StatefulWidget {
 class _RestState extends State<Rest> {
   int seconds = 30;
   Timer? timer;
-  bool _isLoading = false; // Thêm biến kiểm soát trạng thái loading
+  bool _isLoading = false;
+  final DatabaseHelper _dbHelper = DatabaseHelper();
+
+  // Colors
+  static const Color primaryColor = Color(0xFFFF6B00);
+  static const Color secondaryColor = Color(0xFF333333);
+  static const Color backgroundColor = Color(0xFFF5F5F5);
 
   @override
   void initState() {
     super.initState();
-    startTimer();
-    _loadWorkoutData();
+    _initializeScreen();
+  }
+
+  Future<void> _initializeScreen() async {
+    await _loadWorkoutData();
+    if (mounted) {
+      startTimer();
+    }
   }
 
   Future<void> _loadWorkoutData() async {
-    if (mounted) {
-      setState(() => _isLoading = true);
-    }
-
+    if (!mounted) return;
+    
+    setState(() => _isLoading = true);
     try {
-      final dbHelper = DatabaseHelper();
-      final results = await dbHelper.getAllWorkoutResults();
-
-      // Debug log
+      final results = await _dbHelper.getAllWorkoutResults();
       debugPrint("Workout results: $results");
     } catch (e) {
       debugPrint("Error loading workout data: $e");
@@ -46,6 +54,7 @@ class _RestState extends State<Rest> {
   }
 
   void startTimer() {
+    timer?.cancel(); // Clear any existing timer
     timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!mounted) {
         timer.cancel();
@@ -64,13 +73,11 @@ class _RestState extends State<Rest> {
   }
 
   Future<void> _goToNextScreen() async {
-    if (_isLoading) return; // Ngăn chặn chuyển trang khi đang loading
+    if (_isLoading || !mounted) return;
 
-    if (!mounted) return;
-
-    // Thêm delay nhỏ để đảm bảo animation hoàn tất
+    timer?.cancel(); // Clear timer before navigation
+    
     await Future.delayed(const Duration(milliseconds: 300));
-
     if (!mounted) return;
 
     Navigator.pushReplacement(
@@ -87,10 +94,6 @@ class _RestState extends State<Rest> {
     super.dispose();
   }
 
-  Color primaryColor = Color(0xFFFF6B00); // Cam sáng hiện đại
-  Color secondaryColor = Color(0xFF333333); // Màu nền hoặc chữ phụ
-  Color backgroundColor = Color(0xFFF5F5F5); // Màu nền nhẹ
-
   String get timerText {
     int minutes = seconds ~/ 60;
     int remainingSeconds = seconds % 60;
@@ -104,6 +107,7 @@ class _RestState extends State<Rest> {
         body: Center(child: CircularProgressIndicator()),
       );
     }
+
     return Scaffold(
       body: Column(
         children: [
@@ -117,8 +121,7 @@ class _RestState extends State<Rest> {
                     borderRadius: BorderRadius.circular(20),
                     child: Image.asset(
                       'assets/img/dayoff.jpg',
-
-                      // Thêm frame rate cố định
+                      fit: BoxFit.cover,
                     ),
                   ),
                 ),
@@ -130,43 +133,9 @@ class _RestState extends State<Rest> {
             color: Colors.white,
             child: Column(
               children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          '',
-                          style: GoogleFonts.urbanist(
-                            color: secondaryColor,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 26,
-                          ),
-                        ),
-                      ),
-                      Container(
-                        width: 24,
-                        height: 24,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Center(
-                          child: Text(
-                            '',
-                            style: TextStyle(
-                              color: Colors.blue,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
                 const SizedBox(height: 30),
                 Text(
-                  'Nghỉ  Ngơi',
+                  'Nghỉ Ngơi',
                   style: GoogleFonts.urbanist(
                     color: secondaryColor,
                     fontWeight: FontWeight.bold,
@@ -176,7 +145,7 @@ class _RestState extends State<Rest> {
                 const SizedBox(height: 10),
                 Text(
                   timerText,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: secondaryColor,
                     fontFamily: 'RobotoMono',
                     fontWeight: FontWeight.bold,
@@ -186,10 +155,11 @@ class _RestState extends State<Rest> {
                 const SizedBox(height: 60),
                 OutlinedButton(
                   style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: Colors.black),
-                    minimumSize: Size(300, 50),
+                    side: const BorderSide(color: Colors.black),
+                    minimumSize: const Size(300, 50),
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25)),
+                      borderRadius: BorderRadius.circular(25),
+                    ),
                   ),
                   onPressed: () {
                     if (mounted) {
@@ -209,7 +179,7 @@ class _RestState extends State<Rest> {
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: primaryColor,
-                    minimumSize: Size(300, 50),
+                    minimumSize: const Size(300, 50),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
