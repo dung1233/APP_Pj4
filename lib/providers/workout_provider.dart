@@ -33,22 +33,45 @@ class WorkoutProvider extends ChangeNotifier {
   Future<void> syncWorkouts(String token) async {
     _isLoading = true;
     notifyListeners();
-
     try {
       List<Workout> fetchedWorkouts =
           await _apiService.getWorkouts("Bearer $token");
       print("DEBUG: Fetched ${fetchedWorkouts.length} workouts from API");
 
-      await _dbHelper.clearWorkouts();
-      await _dbHelper
-          .insertMultipleWorkouts(fetchedWorkouts); // Sử dụng phương thức mới
+      // Chỉ xóa bảng workouts, giữ lại workout_results
+      await _dbHelper.clearWorkoutsOnly();
+
+      await _dbHelper.insertMultipleWorkouts(fetchedWorkouts);
       _workouts = fetchedWorkouts;
       print("✅ Đã đồng bộ ${_workouts.length} bài tập mới vào SQLite!");
-
-      await refreshAfterDatabaseChange(); // Làm mới sau khi lưu
+      await refreshAfterDatabaseChange();
     } catch (e) {
       print("❌ Lỗi khi đồng bộ bài tập: $e");
-      await refreshAfterDatabaseChange(); // Vẫn làm mới để đảm bảo dữ liệu
+      await refreshAfterDatabaseChange();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> resetAllData(String token) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      List<Workout> fetchedWorkouts =
+          await _apiService.getWorkouts("Bearer $token");
+
+      // Xóa tất cả dữ liệu (cả workouts và workout_results)
+      await _dbHelper.clearAllData();
+
+      await _dbHelper.insertMultipleWorkouts(fetchedWorkouts);
+      _workouts = fetchedWorkouts;
+      print(
+          "✅ Đã reset và đồng bộ ${_workouts.length} bài tập mới vào SQLite!");
+      await refreshAfterDatabaseChange();
+    } catch (e) {
+      print("❌ Lỗi khi reset dữ liệu: $e");
+      await refreshAfterDatabaseChange();
     } finally {
       _isLoading = false;
       notifyListeners();

@@ -73,6 +73,7 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
           bool isCompleted = await checkExerciseCompletion(
               workout.day!, workout.exerciseName!);
 
+          // Kiểm tra nếu trong bảng workout_results có bản ghi cho bài tập này
           if (isCompleted && workout.status != "COMPLETED") {
             await dbHelper.updateWorkoutStatus(workout.id!, "COMPLETED");
             workout.status = "COMPLETED";
