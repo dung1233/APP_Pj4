@@ -31,7 +31,7 @@ class _TrainhomeState extends State<Trainhome> {
       ExploreScreen(),
       ReportScreen(),
       ShopScreen(),
-      UserProfilePage()
+      UserProfilePage(),
     ];
   }
 

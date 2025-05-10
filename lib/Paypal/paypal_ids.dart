@@ -1,0 +1,4 @@
+class PayPalData{
+  static String client_id="AedSI6RNn6tJKtT5d2BzI-hNqk6tvg7GOBMyvJVCsW_r7jscFtP2k76qOLIkNFRqy13sdyjvkU06v8tI";
+  static String secret_id="ECVuqfLoEI1al7b_J73YdVUABdk9JtCfMkJkFrbyVyFyoxmIFAwUT6YikMBS5cZi-2VPUsWuzpEhzhWA";
+}

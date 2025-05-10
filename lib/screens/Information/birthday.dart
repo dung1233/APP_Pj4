@@ -1,3 +1,4 @@
+import 'package:google_fonts/google_fonts.dart';
 import 'package:training_souls/data/local_storage.dart';
 import 'package:training_souls/screens/Information/hight.dart';
 
@@ -104,13 +105,13 @@ class _BirthDateScreenState extends State<BirthDateScreen> {
         child: Column(
           children: [
             const SizedBox(height: 20),
-            const Center(
+            Center(
               child: SizedBox(
                 height: 80,
                 width: 150,
                 child: Text(
                   "Birthday your ?",
-                  style: TextStyle(
+                  style: GoogleFonts.urbanist(
                       color: Colors.black,
                       fontSize: 25,
                       fontWeight: FontWeight.w300),
@@ -120,11 +121,10 @@ class _BirthDateScreenState extends State<BirthDateScreen> {
             ),
             Text(
               "$_calculatedAge Age",
-              style: const TextStyle(
-                fontSize: 35,
-                fontWeight: FontWeight.bold,
-                color: Colors.purple,
-              ),
+              style: GoogleFonts.urbanist(
+                  fontSize: 35,
+                  fontWeight: FontWeight.bold,
+                  color: Color.fromARGB(255, 0, 0, 0)),
             ),
             const SizedBox(height: 25),
             Padding(
@@ -152,13 +152,13 @@ class _BirthDateScreenState extends State<BirthDateScreen> {
                 padding: const EdgeInsets.only(top: 8.0),
                 child: Text(
                   errorMessage!,
-                  style: const TextStyle(color: Colors.red),
+                  style: GoogleFonts.urbanist(color: Colors.red),
                 ),
               ),
             const Spacer(),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Color(0xFF5E35B1),
+                backgroundColor: Color(0xFFFF6B00),
                 padding:
                     const EdgeInsets.symmetric(vertical: 15, horizontal: 150),
                 shape: RoundedRectangleBorder(
@@ -186,7 +186,7 @@ class _BirthDateScreenState extends State<BirthDateScreen> {
                   : null,
               child: Text(
                 "Next",
-                style: TextStyle(
+                style: GoogleFonts.urbanist(
                   color: Colors.white,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,

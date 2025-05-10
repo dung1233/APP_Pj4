@@ -9,13 +9,27 @@ class AuthProvider extends ChangeNotifier {
   String? _token;
   String? get token => _token;
 
-  final AuthService _authService; // API Service
+  final AuthService _authService;
 
-  AuthProvider(this._authService);
+  AuthProvider(this._authService) {
+    _loadToken(); // Tải token khi khởi tạo
+  }
+
+  // Tải token từ LocalStorage
+  Future<void> _loadToken() async {
+    try {
+      _token = await LocalStorage.getToken();
+      print("🔑 Token loaded from LocalStorage: $_token");
+      notifyListeners();
+    } catch (e) {
+      print("❌ Lỗi khi tải token: $e");
+      _token = null;
+    }
+  }
 
   Future<void> login(String email, String password) async {
     _isLoading = true;
-    notifyListeners(); // 🔄 Cập nhật UI
+    notifyListeners();
 
     try {
       final response = await _authService
@@ -23,19 +37,22 @@ class AuthProvider extends ChangeNotifier {
 
       print("📡 API Response: ${response.token}");
 
-      if (response.token != null) {
+      if (response.token != null && response.token!.isNotEmpty) {
         await LocalStorage.saveToken(response.token!);
         _token = response.token!;
-        notifyListeners();
         print("🔑 Token đã lưu: $_token");
       } else {
-        throw Exception("API không trả về token!");
+        throw Exception("API không trả về token hợp lệ!");
       }
     } catch (e) {
       print("❌ Lỗi đăng nhập: $e");
+      _token = null;
+      // Xóa token nếu đăng nhập thất bại
     }
 
     _isLoading = false;
-    notifyListeners(); // 🔄 Cập nhật lại UI
+    notifyListeners();
   }
+
+  // Hàm đăng xuất
 }

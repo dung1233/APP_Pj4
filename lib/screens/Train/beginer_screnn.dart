@@ -1,31 +1,35 @@
+import 'package:google_fonts/google_fonts.dart';
 import 'package:training_souls/data/DatabaseHelper.dart';
 import 'package:training_souls/models/work_out.dart';
-import 'package:training_souls/screens/Test.dart';
-import 'package:training_souls/screens/UI/Beginer/trainbeginer.dart';
+import 'package:training_souls/screens/start/Test.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class BeginerScrenn extends StatefulWidget {
-  const BeginerScrenn({Key? key}) : super(key: key);
+  const BeginerScrenn({super.key});
 
   @override
-  _BeginerScrennState createState() => _BeginerScrennState();
+  // ignore: library_private_types_in_public_api
+  _BeginnerScreenState createState() => _BeginnerScreenState();
 }
 
-class _BeginerScrennState extends State<BeginerScrenn> {
-  List<List<Workout>> weeks = []; // ✅ Dữ liệu từ Hive
-  bool isLoading = true; // ✅ Trạng thái tải dữ liệu
+class _BeginnerScreenState extends State<BeginerScrenn> {
+  List<List<Workout>> weeks = [];
+  bool isLoading = true;
+  Workout? nextWorkout; // Bài tập tiếp theo cần thực hiện
+  bool showCompletionMessage = false; // Bài tập tiếp theo cần thực hiện
+  bool allWorkoutsCompleted =
+      false; // Flag để biết khi tất cả bài tập đã hoàn thành
+  DateTime? programStartDate;
   @override
   void initState() {
     super.initState();
-    _loadWorkoutsFromSQLite(); // ✅ Tải dữ liệu từ Hive khi widget khởi tạo
+    _loadWorkoutsFromSQLite();
   }
 
   Future<void> _loadWorkoutsFromSQLite() async {
-    final dbHelper =
-        DatabaseHelper(); // 🛠 Sử dụng DatabaseHelper để truy cập SQLite
-    final List<Workout> allWorkouts =
-        await dbHelper.getWorkouts(); // 📦 Lấy dữ liệu từ SQLite
+    final dbHelper = DatabaseHelper();
+    final List<Workout> allWorkouts = await dbHelper.getWorkouts();
 
     if (allWorkouts.isEmpty) {
       if (kDebugMode) {
@@ -35,37 +39,92 @@ class _BeginerScrennState extends State<BeginerScrenn> {
       return;
     }
 
-    // ✅ Chia bài tập thành danh sách tuần
-    List<List<Workout>> groupedWeeks = [];
-    for (var i = 0; i < allWorkouts.length; i += 7) {
-      groupedWeeks.add(allWorkouts.sublist(
-          i, (i + 7) > allWorkouts.length ? allWorkouts.length : (i + 7)));
+    // Xác định ngày hiện tại
+    final DateTime now = DateTime.now();
+    final DateTime today = DateTime(now.year, now.month, now.day);
+
+    // Ngày bắt đầu chương trình dựa vào workoutDate
+    programStartDate ??= allWorkouts
+        .map((e) => e.workoutDate)
+        .whereType<String>()
+        .map((s) => DateTime.tryParse(s))
+        .whereType<DateTime>()
+        .reduce((a, b) => a.isBefore(b) ? a : b);
+
+    if (programStartDate == null) {
+      if (kDebugMode) print("⚠️ Không có ngày bắt đầu chương trình");
+      setState(() => isLoading = false);
+      return;
+    }
+
+    final int currentProgramDay =
+        today.difference(programStartDate!).inDays + 1;
+    if (kDebugMode) {
+      print("📅 Ngày hiện tại trong chương trình: $currentProgramDay");
+    }
+
+    // Tìm workout của ngày hiện tại
+    final todayWorkout = allWorkouts.firstWhere(
+      (w) => w.day == currentProgramDay,
+      orElse: () => Workout(),
+    );
+
+    if (todayWorkout.exerciseName == null) {
+      // fallback nếu không tìm thấy bài hôm nay
+      setState(() {
+        isLoading = false;
+        nextWorkout = allWorkouts.firstWhere(
+          (w) => w.status == "NOT_COMPLETED",
+          orElse: () => allWorkouts.first,
+        );
+      });
+      return;
+    }
+
+    // Kiểm tra bài hôm nay đã hoàn thành chưa
+    bool isCompletedToday = false;
+    if (todayWorkout.status == "COMPLETED" &&
+        todayWorkout.completionDate != null) {
+      final completionDate = DateTime.parse(todayWorkout.completionDate!);
+      if (completionDate.year == today.year &&
+          completionDate.month == today.month &&
+          completionDate.day == today.day) {
+        isCompletedToday = true;
+      }
     }
 
     setState(() {
-      weeks = groupedWeeks; // 🛠 Cập nhật UI với dữ liệu từ SQLite
+      nextWorkout = todayWorkout;
+      showCompletionMessage = isCompletedToday;
       isLoading = false;
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    if (isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (nextWorkout == null) {
+      return const Center(child: Text("Không có bài tập nào"));
+    }
+
     return Container(
-      width: MediaQuery.of(context).size.width * 0.8,
-      height: 200,
+      width: MediaQuery.of(context).size.width * 0.9,
+      height: 250,
       padding: const EdgeInsets.only(left: 25, top: 10),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20), // 🔥 Tăng độ bo góc
-        boxShadow: [
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: const [
           BoxShadow(color: Colors.black26, offset: Offset(0, 4), blurRadius: 8),
         ],
         image: DecorationImage(
-          image: AssetImage("assets/img/situp.jpg"),
+          image: AssetImage("assets/img/run.jpg"),
           fit: BoxFit.cover,
           colorFilter: ColorFilter.mode(
-            const Color.fromARGB(255, 0, 0, 0)
-                .withOpacity(0.5), // 🔥 Overlay màu cam nhẹ
+            Colors.black.withOpacity(0.5),
             BlendMode.multiply,
           ),
         ),
@@ -73,49 +132,119 @@ class _BeginerScrennState extends State<BeginerScrenn> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            "Day 3",
-            style: TextStyle(
-                fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            "Squat & Sit-up",
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              color: Colors.orange,
-            ),
-          ),
-          const SizedBox(height: 5),
-          Text(
-            "Khởi động sức mạnh",
-            style: TextStyle(fontSize: 18, color: Colors.white),
-          ),
-          Spacer(),
-          OutlinedButton(
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-              side: BorderSide(color: Colors.white, width: 1), // Viền trắng
-              backgroundColor: Color.fromARGB(255, 255, 255, 255), // 🔥 Nền cam
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30)), // 🔥 Bo góc
-            ),
-            onPressed: () {
-              Navigator.push(
-                  context, MaterialPageRoute(builder: (context) => Test()));
-            },
+          const Spacer(),
+
+          Padding(
+            padding: const EdgeInsets.all(3.0),
             child: Text(
-              "Start",
-              style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold),
+              allWorkoutsCompleted
+                  ? "Bài tập đã hoàn thành!"
+                  : "Ngày ${nextWorkout!.day ?? '1'}",
+              style: GoogleFonts.urbanist(
+                  fontSize: 30,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white),
             ),
           ),
-          Spacer(),
+
+          if (showCompletionMessage) ...[
+            // Thông báo đã hoàn thành bài tập hôm nay
+            const SizedBox(height: 8),
+            Text(
+              "Đã hoàn thành bài tập hôm nay",
+              style: GoogleFonts.urbanist(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: Colors.orange,
+              ),
+            ),
+          ] else if (allWorkoutsCompleted) ...[
+            // Thông báo đã hoàn thành toàn bộ chương trình
+            const SizedBox(height: 8),
+            Text(
+              "Bạn đã hoàn thành bài tập ngày ${nextWorkout!.day ?? '1'}",
+              style: GoogleFonts.urbanist(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: Colors.orange,
+              ),
+            ),
+            const SizedBox(height: 5),
+          ] else ...[
+            // Hiển thị thông tin bài tập bình thường
+            // const SizedBox(height: 28),
+            // Text(
+            //   nextWorkout!.exerciseName ?? "Bài tập không tên",
+            //   style: GoogleFonts.urbanist(
+            //     fontSize: 20,
+            //     fontWeight: FontWeight.w600,
+            //     color: Colors.orange,
+            //   ),
+            // ),
+            // const SizedBox(height: 5),
+            // Text(
+            //   _getWorkoutDescription(nextWorkout!),
+            //   style: GoogleFonts.urbanist(fontSize: 18, color: Colors.white),
+            // ),
+          ],
+
+          // const SizedBox(height: 20),
+
+          // Hiển thị nút "Bắt đầu" chỉ khi chưa hoàn thành bài tập hôm nay
+          // và chưa hoàn thành toàn bộ chương trình
+          if (!allWorkoutsCompleted) ...[
+            const SizedBox(height: 20),
+            if (showCompletionMessage)
+              Text(
+                "✅ Bạn đã hoàn thành bài tập hôm nay",
+                style: GoogleFonts.urbanist(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.green,
+                ),
+              )
+            else
+              OutlinedButton(
+                style: OutlinedButton.styleFrom(
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 12, horizontal: 30),
+                  side: const BorderSide(color: Colors.white, width: 1),
+                  backgroundColor: const Color(0xFFFF6F00),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30)),
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => Test()),
+                  );
+                },
+                child: Text(
+                  "Bắt đầu",
+                  style: GoogleFonts.urbanist(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+          ],
+
+          const Spacer(),
         ],
       ),
     );
+  }
+
+  String _getWorkoutDescription(Workout workout) {
+    if (workout.sets != null &&
+        workout.sets! > 0 &&
+        workout.reps != null &&
+        workout.reps! > 0) {
+      return "${workout.sets} hiệp × ${workout.reps} lần";
+    } else if (workout.duration != null && workout.duration! > 0) {
+      return "${workout.duration} phút${workout.distance != null && workout.distance! > 0 ? ' - ${workout.distance}km' : ''}";
+    }
+    return "Khởi động sức mạnh"; // Mặc định
   }
 }

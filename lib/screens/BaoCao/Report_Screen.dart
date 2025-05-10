@@ -21,6 +21,16 @@ class _ReportScreenState extends State<ReportScreen> {
   late DateRangePickerController _datePickerController;
 
   bool showAvg = false;
+  DateTime? selectedDate;
+  List<Map<String, dynamic>> selectedWorkouts = [];
+
+  void _handleDateSelection(
+      DateTime date, List<Map<String, dynamic>> workouts) {
+    setState(() {
+      selectedDate = date;
+      selectedWorkouts = workouts;
+    });
+  }
 
   double getWidthPercentage(BuildContext context, double percentage) {
     return MediaQuery.of(context).size.width * percentage;

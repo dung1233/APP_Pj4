@@ -16,12 +16,23 @@ class Item {
 
   final String description;
 
+  final double price;
+
+  @JsonKey(name: 'durationInDays')
+  final int durationInDays;
+
+  @JsonKey(name: 'itemType')
+  final String itemType;
+
   Item({
     required this.id,
     required this.name,
     required this.points,
     required this.quantity,
     required this.description,
+    required this.price,
+    required this.durationInDays,
+    required this.itemType,
   });
 
   // Tạo factory constructor để chuyển đổi từ JSON sang Dart object
@@ -33,6 +44,6 @@ class Item {
   // Có thể thêm phương thức toString() để debug tiện hơn
   @override
   String toString() {
-    return 'Item{id: $id, name: $name, points: $points, quantity: $quantity, description: $description}';
+    return 'Item{id: $id, name: $name, points: $points, quantity: $quantity, description: $description, price: $price, durationInDays: $durationInDays, itemType: $itemType}';
   }
 }

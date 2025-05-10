@@ -1,3 +1,4 @@
+import 'package:google_fonts/google_fonts.dart';
 import 'package:training_souls/data/local_storage.dart';
 import 'package:training_souls/screens/Information/medical_conditions.dart';
 import 'package:training_souls/widget/elevatedButton.dart';
@@ -59,13 +60,13 @@ class _FitnessGoalState extends State<FitnessGoal> {
         child: Column(
           children: [
             const SizedBox(height: 20),
-            const Center(
+            Center(
               child: SizedBox(
                 height: 100,
                 width: 220,
                 child: Text(
                   "What is your main fitness goal?",
-                  style: TextStyle(
+                  style: GoogleFonts.urbanist(
                       color: Colors.black,
                       fontSize: 25,
                       fontWeight: FontWeight.w300),
@@ -109,7 +110,7 @@ class _FitnessGoalState extends State<FitnessGoal> {
                           const SizedBox(width: 16),
                           Text(
                             options[index]["title"]!,
-                            style: TextStyle(
+                            style: GoogleFonts.urbanist(
                                 color: selectedOption == index
                                     ? Colors.black
                                     : Colors.black,

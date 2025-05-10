@@ -1,66 +1,165 @@
 import 'dart:math';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:hive/hive.dart';
+import 'package:training_souls/api/api_service.dart';
+import 'package:training_souls/data/DatabaseHelper.dart';
+import 'package:intl/intl.dart';
+import 'package:training_souls/screens/trainhome.dart';
 
-class Ol extends StatelessWidget {
+class Ol extends StatefulWidget {
   const Ol({super.key});
 
   @override
+  State<StatefulWidget> createState() => _OlViewState();
+}
+
+late final ApiService apiService;
+
+class _OlViewState extends State<Ol> {
+  final dbHelper = DatabaseHelper();
+  List<Map<String, dynamic>> _results = [];
+  Map<String, dynamic> _userProfile = {};
+  late final ApiService apiService; // Chuyển vào trong class
+
+  @override
+  void initState() {
+    super.initState();
+
+    final dio = Dio();
+    apiService = ApiService(dio);
+
+    displayWorkoutResults();
+    _printDatabaseContent(dbHelper);
+    _loadUserProfile(dbHelper);
+  }
+
+  void displayWorkoutResults() async {
+    try {
+      var box = await Hive.openBox('userBox');
+      final token = box.get('token');
+
+      if (token == null) {
+        throw Exception("Token không tồn tại, vui lòng đăng nhập lại");
+      }
+
+      final workouts = await apiService.getWorkoutHistory("Bearer $token");
+      print("🎯 Dữ liệu trả về từ API:");
+      for (var w in workouts) {
+        print(w.toJson());
+      }
+      setState(() {
+        _results = workouts.map((w) => w.toJson()).toList();
+      });
+    } catch (e) {
+      print("❌ Lỗi khi gọi API workout history: $e");
+    }
+  }
+
+  Future<void> _printDatabaseContent(DatabaseHelper dbHelper) async {
+    final db = await dbHelper.database;
+
+    // Lấy và in thông tin user_profile
+    final userProfiles = await db.query('user_profile');
+    print("❓ Dữ liệu bảng user_profile:");
+    userProfiles.forEach((profile) {
+      print(profile);
+    });
+  }
+
+  Future<void> _loadUserProfile(DatabaseHelper dbHelper) async {
+    final db = await dbHelper.database;
+    final profiles = await db.query('user_profile');
+    if (profiles.isNotEmpty) {
+      setState(() {
+        _userProfile = profiles.first;
+      });
+    }
+  }
+
+  // Trong màn hình hoặc widget muốn hiển thị kết quả
+
+  @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        backgroundColor: Colors.black,
-        body: ListView(
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(left: 15.0, top: 8),
-                  child: Text(
-                    'Acivity',
-                    style: TextStyle(
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: ListView(
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(left: 15.0, right: 15.0, top: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.home, color: Colors.white),
+                      onPressed: () {
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(builder: (context) => Trainhome()),
+                          (Route<dynamic> route) => false,
+                        );
+                      },
+                    ),
+                    Text(
+                      'Activity',
+                      style: GoogleFonts.urbanist(
                         color: Colors.white,
                         fontSize: 25,
-                        fontWeight: FontWeight.bold),
-                  ),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.refresh, color: Colors.white),
+                      onPressed: () {
+                        displayWorkoutResults();
+                      },
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 20), // Đẩy lên cao hơn
-                Center(
-                  child: ActivityRingsWidget(
-                    moveProgress: 171 / 270,
-                    exerciseProgress: 26 / 30,
-                    standProgress: 4 / 12,
-                  ),
+              ),
+              const SizedBox(height: 20), // Đẩy lên cao hơn
+              Center(
+                child: ActivityRingsWidget(
+                  strength: _userProfile['strength'] ?? 0,
+                  agility: _userProfile['agility'] ?? 0,
+                  endurance: _userProfile['endurance'] ?? 0,
+                  health: _userProfile['health'] ?? 0,
                 ),
-                const SizedBox(height: 30), // Khoảng cách giữa hai phần
-                WorkoutsWidget(),
-                const SizedBox(height: 20), // Khoảng cách trước phần Awards
-                AwardsWidget(),
-              ],
-            ),
-          ],
-        ),
+              ),
+              const SizedBox(height: 30), // Khoảng cách giữa hai phần
+              WorkoutsWidget(results: _results),
+              const SizedBox(height: 20), // Khoảng cách trước phần Awards
+              AwardsWidget(),
+            ],
+          ),
+        ],
       ),
-    );
+    ); // ✅ thêm dấu ;
   }
 }
 
 class ActivityRingsWidget extends StatelessWidget {
-  final double moveProgress;
-  final double exerciseProgress;
-  final double standProgress;
+  final int strength;
+  final int agility;
+  final int endurance;
+  final int health;
 
   const ActivityRingsWidget({
     super.key,
-    required this.moveProgress,
-    required this.exerciseProgress,
-    required this.standProgress,
+    required this.strength,
+    required this.agility,
+    required this.endurance,
+    required this.health,
   });
 
   @override
   Widget build(BuildContext context) {
+    final int maxStat = 100;
     return Column(
       children: [
         Container(
@@ -78,18 +177,10 @@ class ActivityRingsWidget extends StatelessWidget {
                   padding: const EdgeInsets.only(top: 30.0),
                   child: Column(
                     children: [
-                      _buildActivityText(
-                          "Move",
-                          "${(moveProgress * 270).toInt()}/270 CAL",
-                          Colors.red),
-                      _buildActivityText(
-                          "Exercise",
-                          "${(exerciseProgress * 30).toInt()}/30 MIN",
-                          Colors.green),
-                      _buildActivityText(
-                          "Stand",
-                          "${(standProgress * 12).toInt()}/12 HRS",
-                          Colors.blue),
+                      _buildStatText("Strength", strength, Colors.red),
+                      _buildStatText("Agility", agility, Colors.yellow),
+                      _buildStatText("Endurance", endurance, Colors.blue),
+                      _buildStatText("Health", health, Colors.green),
                     ],
                   ),
                 ),
@@ -100,9 +191,10 @@ class ActivityRingsWidget extends StatelessWidget {
                     CustomPaint(
                       size: const Size(150, 150),
                       painter: ActivityRingPainter(
-                        moveProgress,
-                        exerciseProgress,
-                        standProgress,
+                        strength / maxStat,
+                        agility / maxStat,
+                        endurance / maxStat,
+                        health / maxStat,
                       ),
                     ),
                   ],
@@ -121,11 +213,28 @@ class ActivityRingsWidget extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(title, style: TextStyle(color: Colors.white, fontSize: 16)),
+          Text(title,
+              style: GoogleFonts.urbanist(color: Colors.white, fontSize: 16)),
           const SizedBox(width: 8),
           Text(value,
-              style: TextStyle(
+              style: GoogleFonts.urbanist(
                   color: color, fontSize: 16, fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatText(String label, int value, Color color) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: [
+          Text(label,
+              style: GoogleFonts.urbanist(color: Colors.white, fontSize: 14)),
+          const SizedBox(width: 8),
+          Text("$value",
+              style: GoogleFonts.urbanist(
+                  color: color, fontSize: 14, fontWeight: FontWeight.bold)),
         ],
       ),
     );
@@ -133,21 +242,27 @@ class ActivityRingsWidget extends StatelessWidget {
 }
 
 class ActivityRingPainter extends CustomPainter {
-  final double moveProgress;
-  final double exerciseProgress;
-  final double standProgress;
+  final double strengthProgress;
+  final double agilityProgress;
+  final double enduranceProgress;
+  final double healthProgress;
 
   ActivityRingPainter(
-      this.moveProgress, this.exerciseProgress, this.standProgress);
+    this.strengthProgress,
+    this.agilityProgress,
+    this.enduranceProgress,
+    this.healthProgress,
+  );
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2;
 
-    _drawRing(canvas, center, radius - 10, Colors.red, moveProgress);
-    _drawRing(canvas, center, radius - 20, Colors.green, exerciseProgress);
-    _drawRing(canvas, center, radius - 30, Colors.blue, standProgress);
+    _drawRing(canvas, center, radius - 10, Colors.red, strengthProgress);
+    _drawRing(canvas, center, radius - 20, Colors.yellow, agilityProgress);
+    _drawRing(canvas, center, radius - 30, Colors.blue, enduranceProgress);
+    _drawRing(canvas, center, radius - 40, Colors.green, healthProgress);
   }
 
   void _drawRing(Canvas canvas, Offset center, double radius, Color color,
@@ -178,12 +293,9 @@ class ActivityRingPainter extends CustomPainter {
 }
 
 class WorkoutsWidget extends StatelessWidget {
-  final List<Map<String, String>> workouts = [
-    {"title": "Push-Up Training", "value": "136 CAL", "day": "Today"},
-    {"title": "Runner", "value": "2.02 MI", "day": "Thursday"},
-    {"title": "Sit-Up", "value": "83 CAL", "day": "Wednesday"},
-    {"title": "Squat", "value": "83 CAL", "day": "Wednesday"},
-  ];
+  final List<Map<String, dynamic>> results;
+
+  const WorkoutsWidget({super.key, required this.results});
 
   @override
   Widget build(BuildContext context) {
@@ -196,28 +308,67 @@ class WorkoutsWidget extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text("Workouts",
-                  style: TextStyle(
+                  style: GoogleFonts.urbanist(
                       color: Colors.white,
                       fontSize: 20,
                       fontWeight: FontWeight.bold)),
               Text("Show More",
-                  style: TextStyle(color: Colors.green, fontSize: 16)),
+                  style:
+                      GoogleFonts.urbanist(color: Colors.green, fontSize: 16)),
             ],
           ),
         ),
         const SizedBox(height: 10),
-        Column(
-          children: workouts.map((workout) => WorkoutCard(workout)).toList(),
-        ),
+        ...results.map((r) {
+          final name = (r['exerciseName'] ?? '').toString().toLowerCase();
+          final isRun = name.contains('run') || name.contains('chạy');
+          String value;
+
+          if (isRun) {
+            // Xử lý cho bài tập chạy bộ
+            final rawDistance = (r['distanceCompleted'] ?? 0.0);
+            final rawDuration = (r['durationCompleted'] ?? 0.0);
+
+            value = "$rawDistance m - $rawDuration p";
+          } else {
+            // Xử lý cho các bài tập khác
+            value =
+                "${r['setsCompleted'] ?? 0} sets - ${r['repsCompleted'] ?? 0} reps";
+          }
+
+          // Xử lý ngày hoàn thành
+          String day = r['completionDate'] ?? 'Hôm nay';
+
+          return WorkoutCard(
+            title: r['exerciseName'] ?? 'No Name',
+            value: value,
+            day: day,
+          );
+        }),
       ],
     );
   }
 }
 
 class WorkoutCard extends StatelessWidget {
-  final Map<String, String> workout;
+  final String title;
+  final String value;
+  final String day;
 
-  const WorkoutCard(this.workout, {super.key});
+  const WorkoutCard({
+    super.key,
+    required this.title,
+    required this.value,
+    required this.day,
+  });
+  String _formatDate(String raw) {
+    try {
+      final date = DateTime.parse(raw);
+      return DateFormat('dd/MM/yyyy').format(date);
+    } catch (_) {
+      return raw;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -228,15 +379,15 @@ class WorkoutCard extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         child: ListTile(
           leading: Icon(Icons.fitness_center, color: Colors.green),
-          title: Text(workout["title"]!,
-              style: TextStyle(color: Colors.white, fontSize: 16)),
-          subtitle: Text(workout["value"]!,
-              style: TextStyle(
+          title: Text(title,
+              style: GoogleFonts.urbanist(color: Colors.white, fontSize: 16)),
+          subtitle: Text(value,
+              style: GoogleFonts.urbanist(
                   color: Colors.green,
                   fontSize: 14,
                   fontWeight: FontWeight.bold)),
-          trailing: Text(workout["day"]!,
-              style: TextStyle(color: Colors.grey, fontSize: 14)),
+          trailing: Text(_formatDate(day),
+              style: GoogleFonts.urbanist(color: Colors.grey, fontSize: 14)),
         ),
       ),
     );
@@ -261,12 +412,13 @@ class AwardsWidget extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text("Awards",
-                  style: TextStyle(
+                  style: GoogleFonts.urbanist(
                       color: Colors.white,
                       fontSize: 20,
                       fontWeight: FontWeight.bold)),
               Text("Show More",
-                  style: TextStyle(color: Colors.green, fontSize: 16)),
+                  style:
+                      GoogleFonts.urbanist(color: Colors.green, fontSize: 16)),
             ],
           ),
         ),
@@ -296,9 +448,9 @@ class AwardCard extends StatelessWidget {
           Icon(Icons.emoji_events, color: Colors.yellow, size: 50),
           const SizedBox(height: 5),
           Text(award["title"]!,
-              style: TextStyle(color: Colors.white, fontSize: 14)),
+              style: GoogleFonts.urbanist(color: Colors.white, fontSize: 14)),
           Text(award["subtitle"]!,
-              style: TextStyle(color: Colors.grey, fontSize: 12)),
+              style: GoogleFonts.urbanist(color: Colors.grey, fontSize: 12)),
         ],
       ),
     );

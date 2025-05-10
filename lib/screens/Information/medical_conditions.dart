@@ -1,3 +1,4 @@
+import 'package:google_fonts/google_fonts.dart';
 import 'package:training_souls/data/local_storage.dart';
 import 'package:training_souls/screens/Information/level_data.dart';
 
@@ -64,13 +65,13 @@ class _MedicalConditionsState extends State<MedicalConditions> {
         child: Column(
           children: [
             const SizedBox(height: 20),
-            const Center(
+            Center(
               child: SizedBox(
                 height: 100,
                 width: 120,
                 child: Text(
                   "Tiền sử bệnh lý ?",
-                  style: TextStyle(
+                  style: GoogleFonts.urbanist(
                       color: Colors.black,
                       fontSize: 25,
                       fontWeight: FontWeight.w300),
@@ -114,7 +115,7 @@ class _MedicalConditionsState extends State<MedicalConditions> {
                           const SizedBox(width: 16),
                           Text(
                             options[index]["title"]!,
-                            style: TextStyle(
+                            style: GoogleFonts.urbanist(
                                 color: selectedOption == index
                                     ? Colors.black
                                     : Colors.black,

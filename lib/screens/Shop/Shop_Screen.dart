@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:training_souls/Paypal/paypal_payment.dart';
 import 'package:training_souls/api/api_service.dart';
 import 'package:training_souls/models/item.dart';
 import 'package:training_souls/models/purchase_response.dart';
@@ -130,35 +131,120 @@ class _ShopScreenState extends State<ShopScreen>
     );
   }
 
+  // paypal
+  void _startPaypalCheckout(Item item) async {
+    final token = await getToken();
+    if (token == null || token.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vui lòng đăng nhập để thanh toán')),
+      );
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PaypalPaymentDemo(
+          itemId: item.id,
+          userToken: token,
+        ),
+      ),
+    );
+  }
+
   void _showPurchaseConfirmation(Item item) {
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Confirm Purchase'),
-        content: Column(
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(item.name),
-            const SizedBox(height: 8),
-            Text('Price: 1000 points'),
-            const SizedBox(height: 8),
-            Text('Your points: 99999'),
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+            Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.asset(
+                    'assets/splash/slaper.png', // đường dẫn tới icon gói sản phẩm
+                    width: 48,
+                    height: 48,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  // ignore: prefer_const_constructors
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      // ignore: prefer_const_constructors
+                      Text('Tài Khoản : Premium',
+                          style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold)),
+                      SizedBox(height: 4),
+                      Text('Các bài tập tại nhà',
+                          style: TextStyle(color: Colors.grey)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Ngày bắt đầu hôm nay'),
+                Text(' 120 USD/Tháng',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
+              ],
+            ),
+            SizedBox(height: 4),
+            Text('+ thuế', style: TextStyle(color: Colors.grey)),
+            SizedBox(height: 16),
+            Divider(),
+            Icon(Icons.info_outline, size: 18, color: Colors.grey),
+            SizedBox(height: 4),
+            Text('• Bạn chưa đáp ứng điều kiện dùng thử miễn phí'),
+            SizedBox(height: 4),
+            Text(
+                '• Hủy bất kỳ lúc nào trong phần Gói thuê bao trên Google Play'),
+            SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _startPaypalCheckout(item); // hoặc xử lý mua hàng
+              },
+              style: ElevatedButton.styleFrom(
+                minimumSize: Size.fromHeight(48),
+                backgroundColor: Color(0xFFFF6B00),
+              ),
+              child: Text(
+                'Thanh toán',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+            SizedBox(height: 8),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Hủy'),
+            ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _handlePurchase(item);
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-            child: const Text('Confirm'),
-          ),
-        ],
       ),
     );
   }
@@ -167,6 +253,7 @@ class _ShopScreenState extends State<ShopScreen>
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const Scaffold(
+        backgroundColor: Colors.white,
         body: Center(child: CircularProgressIndicator()),
       );
     }
@@ -174,6 +261,7 @@ class _ShopScreenState extends State<ShopScreen>
     if (_errorMessage != null) {
       return Scaffold(
         appBar: AppBar(title: const Text('Shop')),
+        backgroundColor: Colors.white,
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -192,6 +280,7 @@ class _ShopScreenState extends State<ShopScreen>
 
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Colors.white,
         title: const Text('Shop'),
         bottom: TabBar(
           controller: _tabController,
@@ -214,30 +303,33 @@ class _ShopScreenState extends State<ShopScreen>
       ),
       body: RefreshIndicator(
         onRefresh: _loadInitialData,
-        child: TabBarView(
-          controller: _tabController,
-          children: categories.map((category) {
-            final categoryItems = _getItemsByCategory(category);
+        child: Container(
+          color: Colors.white,
+          child: TabBarView(
+            controller: _tabController,
+            children: categories.map((category) {
+              final categoryItems = _getItemsByCategory(category);
 
-            if (categoryItems.isEmpty) {
-              return const Center(child: Text('No items available'));
-            }
+              if (categoryItems.isEmpty) {
+                return const Center(child: Text('No items available'));
+              }
 
-            return GridView.builder(
-              padding: const EdgeInsets.all(8),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 8,
-                mainAxisSpacing: 8,
-                childAspectRatio: 0.7,
-              ),
-              itemCount: categoryItems.length,
-              itemBuilder: (context, index) {
-                final item = categoryItems[index];
-                return _buildItemCard(item);
-              },
-            );
-          }).toList(),
+              return GridView.builder(
+                padding: const EdgeInsets.all(8),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 8,
+                  childAspectRatio: 0.7,
+                ),
+                itemCount: categoryItems.length,
+                itemBuilder: (context, index) {
+                  final item = categoryItems[index];
+                  return _buildItemCard(item);
+                },
+              );
+            }).toList(),
+          ),
         ),
       ),
     );
@@ -245,6 +337,7 @@ class _ShopScreenState extends State<ShopScreen>
 
   Widget _buildItemCard(Item item) {
     return Card(
+      color: Colors.white,
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
@@ -279,12 +372,7 @@ class _ShopScreenState extends State<ShopScreen>
               ),
               const SizedBox(height: 4),
               Row(
-                children: [
-                  const Icon(Icons.monetization_on,
-                      size: 16, color: Colors.amber),
-                  const SizedBox(width: 4),
-                  Text('1000 points'),
-                ],
+                children: [],
               ),
               if (item.description.isNotEmpty) ...[
                 const SizedBox(height: 4),

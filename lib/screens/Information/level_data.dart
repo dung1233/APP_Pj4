@@ -1,3 +1,4 @@
+import 'package:google_fonts/google_fonts.dart';
 import 'package:training_souls/data/local_storage.dart';
 
 import 'package:training_souls/screens/Information/themloading.dart';
@@ -62,13 +63,13 @@ class _LeverdataState extends State<Leverdata> {
         child: Column(
           children: [
             const SizedBox(height: 20),
-            const Center(
+            Center(
               child: SizedBox(
                 height: 100,
                 width: 120,
                 child: Text(
                   "Choose your Level ?",
-                  style: TextStyle(
+                  style: GoogleFonts.urbanist(
                       color: Colors.black,
                       fontSize: 25,
                       fontWeight: FontWeight.w300),
@@ -112,7 +113,7 @@ class _LeverdataState extends State<Leverdata> {
                           const SizedBox(width: 16),
                           Text(
                             options[index]["title"]!,
-                            style: TextStyle(
+                            style: GoogleFonts.urbanist(
                                 color: selectedOption == index
                                     ? Colors.black
                                     : Colors.black,

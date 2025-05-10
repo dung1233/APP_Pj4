@@ -13,7 +13,8 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   void _nextPage() async {
-    String? token = await LocalStorage.getToken();
+    String? token = await LocalStorage.getValidToken();
+    debugPrint("🔥 TOKEN: $token");
 
     Widget nextScreen =
         (token != null && token.isNotEmpty) ? Localloading() : LoginScreen();
@@ -64,7 +65,7 @@ class _HomePageState extends State<HomePage> {
 
             // Dòng mô tả
             Text(
-              "Let train your souls",
+              "Let's train your souls",
               style: TextStyle(
                 fontSize: 16,
                 color: Colors.grey[600],
