@@ -519,27 +519,42 @@ class _AwardsWidgetState extends State<AwardsWidget> {
         streak++;
         box.put('currentStreak', streak);
 
-        // Cập nhật điểm
-        int points = box.get('totalPoints') ?? 0;
-        points += 10; // Mặc định +10 điểm khi điểm danh
-        box.put('totalPoints', points);
+        // Cập nhật điểm trong database
+        final db = await dbHelper.database;
+        final userInfo = await db.query('user_info');
+        if (userInfo.isNotEmpty) {
+          final currentPoints = userInfo.first['points'] as int? ?? 0;
+          final newPoints = currentPoints + 100; // Cộng thêm 100 điểm
 
-        setState(() {
-          _checkInStatus = "Đã điểm danh hôm nay";
-          _currentStreak = streak;
-          _totalPoints = points;
-        });
+          // Cập nhật điểm trong database
+          await db.update(
+            'user_info',
+            {'points': newPoints},
+            where: 'userID = ?',
+            whereArgs: [userInfo.first['userID']],
+          );
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Điểm danh thành công! +10 điểm"),
-            backgroundColor: Colors.green,
-          ),
-        );
+          // Cập nhật điểm trong box
+          box.put('totalPoints', newPoints);
 
-        // Kiểm tra và nhận thưởng nếu đạt điều kiện
-        if (_currentStreak % 3 == 0) {
-          await _checkAndClaimRewards();
+          setState(() {
+            _checkInStatus = "Đã điểm danh hôm nay";
+            _currentStreak = streak;
+            _totalPoints = newPoints;
+          });
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                  "Điểm danh thành công! +100 điểm (Streak: ${streak * 100} điểm)"),
+              backgroundColor: Colors.green,
+            ),
+          );
+
+          // Kiểm tra và nhận thưởng nếu đạt điều kiện
+          if (_currentStreak % 3 == 0) {
+            await _checkAndClaimRewards();
+          }
         }
       } else if (response.contains("đã điểm danh")) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -717,8 +732,8 @@ class _AwardsWidgetState extends State<AwardsWidget> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _buildStatItem(
-                      "Streak", "$_currentStreak ngày", Colors.orange),
+                  _buildStatItem("Streak",
+                      "${(_totalPoints / 100).floor()} ngày", Colors.orange),
                   _buildStatItem("Điểm", "$_totalPoints", Colors.green),
                 ],
               ),

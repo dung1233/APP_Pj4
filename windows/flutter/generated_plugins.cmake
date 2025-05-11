@@ -3,12 +3,14 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
+  agora_rtc_engine
   desktop_webview_auth
   file_selector_windows
   firebase_auth
   firebase_core
   flutter_inappwebview_windows
   geolocator_windows
+  iris_method_channel
   permission_handler_windows
 )
 

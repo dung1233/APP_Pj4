@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:training_souls/models/post.dart';
 import 'package:training_souls/screens/Khampha/Eat_Screen.dart';
+import 'package:training_souls/screens/Khampha/teacher_screen.dart';
 import 'package:training_souls/screens/ol.dart';
 import 'package:flutter/material.dart';
 import 'package:training_souls/api/api_service.dart';
@@ -79,34 +80,34 @@ class _ExploreScreenState extends State<ExploreScreen> {
             ),
           ),
           _buildCoachSection(context),
-          const Padding(
-            padding: EdgeInsets.all(15.0),
-            child: Text(
-              'Khởi Động & Warm Up',
-              style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold),
-            ),
-          ),
-          SizedBox(
-            height: 200,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              children: const [
-                WarmupCard(
-                  imagePath: 'assets/img/warmup.jpg',
-                  title: 'Làm nóng cơ thể',
-                  subtitle: 'warmup',
-                ),
-                WarmupCard(
-                  imagePath: 'assets/img/warmupa.jpg',
-                  title: 'Kéo giãn cơ',
-                  subtitle: 'warmup',
-                ),
-              ],
-            ),
-          )
+          // const Padding(
+          //   padding: EdgeInsets.all(15.0),
+          //   child: Text(
+          //     'Khởi Động & Warm Up',
+          //     style: TextStyle(
+          //         color: Colors.black,
+          //         fontSize: 20,
+          //         fontWeight: FontWeight.bold),
+          //   ),
+          // ),
+          // SizedBox(
+          //   height: 200,
+          //   child: ListView(
+          //     scrollDirection: Axis.horizontal,
+          //     children: const [
+          //       WarmupCard(
+          //         imagePath: 'assets/img/warmup.jpg',
+          //         title: 'Làm nóng cơ thể',
+          //         subtitle: 'warmup',
+          //       ),
+          //       WarmupCard(
+          //         imagePath: 'assets/img/warmupa.jpg',
+          //         title: 'Kéo giãn cơ',
+          //         subtitle: 'warmup',
+          //       ),
+          //     ],
+          //   ),
+          // )
         ],
       ),
     );
@@ -120,17 +121,17 @@ class _ExploreScreenState extends State<ExploreScreen> {
         children: const [
           CoachCard(
             imagePath: 'assets/img/coach.jpg',
-            title: 'Huấn luyện Thể lực',
+            title: 'Huấn luyện Viên Sức Mạnh',
             subtitle: 'Satima Training',
           ),
           CoachCard(
             imagePath: 'assets/img/coachrun.jpg',
-            title: 'Huấn luyện Tốc Độ',
+            title: 'Huấn luyện Viên Tốc Độ',
             subtitle: 'Speed Training',
           ),
           CoachCard(
             imagePath: 'assets/img/coachpush.jpg',
-            title: 'Huấn luyện Sức Mạnh',
+            title: 'Huấn luyện Viên Sức Mạnh',
             subtitle: 'Strength Training',
           ),
         ],
@@ -146,13 +147,13 @@ class _ExploreScreenState extends State<ExploreScreen> {
         children: const [
           StrongCard(
             imagePath: 'assets/img/strong.jpg',
-            title: 'Push-UP hard',
-            subtitle: 'Push UP',
+            title: 'Phòng tập 1-1 sức mạnh',
+            subtitle: 'Lớp bắt đầu',
           ),
           StrongCard(
             imagePath: 'assets/img/runhard.jpg',
-            title: 'Runner hard',
-            subtitle: 'Long Run',
+            title: 'Phòng tập 1-1 tốc độ',
+            subtitle: 'Lớp bắt đầu',
           ),
         ],
       ),
@@ -334,25 +335,293 @@ class CoachCard extends StatelessWidget {
     required this.subtitle,
   }) : super(key: key);
 
+  void _showTrainerInfoDialog(BuildContext context) {
+    // Thông tin chi tiết của từng giáo viên
+    Map<String, dynamic> trainerInfo = {
+      'assets/img/coach.jpg': {
+        'name': 'Nguyễn Văn An',
+        'specialty': 'Huấn luyện viên Thể lực',
+        'experience': '5 năm kinh nghiệm',
+        'certifications': [
+          'Chứng chỉ huấn luyện viên quốc tế',
+          'Chứng chỉ dinh dưỡng thể thao',
+        ],
+        'achievements': [
+          'Huấn luyện viên xuất sắc 2023',
+          'Top 10 HLV thể lực hàng đầu',
+        ],
+        'description':
+            'Chuyên gia về cải thiện thể lực và sức bền, có kinh nghiệm làm việc với vận động viên chuyên nghiệp.',
+      },
+      'assets/img/coachrun.jpg': {
+        'name': 'Trần Thị Bích',
+        'specialty': 'Huấn luyện viên Tốc độ',
+        'experience': '4 năm kinh nghiệm',
+        'certifications': [
+          'Chứng chỉ huấn luyện tốc độ',
+          'Chứng chỉ phục hồi chấn thương',
+        ],
+        'achievements': [
+          'Đào tạo nhiều vận động viên chạy bộ',
+          'Chuyên gia về kỹ thuật chạy',
+        ],
+        'description':
+            'Chuyên gia về cải thiện tốc độ và kỹ thuật chạy, giúp học viên đạt được mục tiêu cá nhân.',
+      },
+      'assets/img/coachpush.jpg': {
+        'name': 'Lê Văn Cường',
+        'specialty': 'Huấn luyện viên Sức mạnh',
+        'experience': '6 năm kinh nghiệm',
+        'certifications': [
+          'Chứng chỉ huấn luyện sức mạnh',
+          'Chứng chỉ CrossFit Level 2',
+        ],
+        'achievements': [
+          'Huấn luyện viên sức mạnh xuất sắc',
+          'Top 5 HLV CrossFit',
+        ],
+        'description':
+            'Chuyên gia về phát triển sức mạnh và cơ bắp, có kinh nghiệm với nhiều môn thể thao khác nhau.',
+      },
+    };
+
+    final info = trainerInfo[imagePath] ?? {};
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.8,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(15),
+                    child: Image.asset(
+                      imagePath,
+                      height: 200,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    info['name'] ?? '',
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    info['specialty'] ?? '',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  const SizedBox(height: 15),
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.work_history, color: Colors.orange),
+                        const SizedBox(width: 10),
+                        Text(
+                          info['experience'] ?? '',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 15),
+                  const Text(
+                    'Chứng chỉ',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  ...(info['certifications'] as List<String>? ?? [])
+                      .map((cert) => Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 5),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.check_circle,
+                                    color: Colors.green, size: 20),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    cert,
+                                    style: const TextStyle(fontSize: 16),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )),
+                  const SizedBox(height: 15),
+                  const Text(
+                    'Thành tích',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  ...(info['achievements'] as List<String>? ?? [])
+                      .map((achievement) => Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 5),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.emoji_events,
+                                    color: Colors.amber, size: 20),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    achievement,
+                                    style: const TextStyle(fontSize: 16),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )),
+                  const SizedBox(height: 15),
+                  Text(
+                    info['description'] ?? '',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => VideoCallScreen(),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.video_call, color: Colors.white),
+                        label: const Text('Bắt đầu học'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFF6B00),
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        child: const Text('Đóng'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(left: 15, right: 10),
       child: GestureDetector(
-        onTap: () {},
+        onTap: () => _showTrainerInfoDialog(context),
         child: Column(
           children: [
             Container(
               width: 220,
               decoration: BoxDecoration(
-                  color: Colors.black, borderRadius: BorderRadius.circular(10)),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(5),
-                child: Image.asset(
-                  imagePath,
-                  fit: BoxFit.cover,
-                  height: 130,
-                ),
+                color: Colors.black,
+                borderRadius: BorderRadius.circular(10),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(5),
+                    child: Image.asset(
+                      imagePath,
+                      fit: BoxFit.cover,
+                      height: 130,
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 8, horizontal: 12),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.bottomCenter,
+                          end: Alignment.topCenter,
+                          colors: [
+                            Colors.black.withOpacity(0.8),
+                            Colors.transparent,
+                          ],
+                        ),
+                        borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.circular(5),
+                          bottomRight: Radius.circular(5),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            subtitle,
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             Container(
@@ -365,24 +634,25 @@ class CoachCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 16,
+                  const Text(
+                    "Huấn luyện viên chuyên nghiệp",
+                    style: TextStyle(
+                      fontSize: 14,
                       fontWeight: FontWeight.bold,
+                      color: Color(0xFFFF6B00),
                     ),
                   ),
-                  const SizedBox(height: 5),
+                  const SizedBox(height: 4),
                   Text(
-                    subtitle,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.black54,
+                    "Nhấn để xem thông tin chi tiết",
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
                     ),
                   ),
                 ],
               ),
-            )
+            ),
           ],
         ),
       ),
@@ -407,42 +677,188 @@ class StrongCard extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(left: 15, right: 10),
       child: GestureDetector(
-        onTap: () {},
+        onTap: () {
+          _showTrainerCallDialog(context);
+        },
         child: Column(
           children: [
             Container(
               width: 220,
-              decoration:
-                  BoxDecoration(borderRadius: BorderRadius.circular(10)),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(5),
-                child: Image.asset(
-                  imagePath,
-                  fit: BoxFit.cover,
-                  height: 130,
-                ),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(5),
+                    child: Image.asset(
+                      imagePath,
+                      fit: BoxFit.cover,
+                      height: 130,
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 8, horizontal: 12),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.bottomCenter,
+                          end: Alignment.topCenter,
+                          colors: [
+                            Colors.black.withOpacity(0.8),
+                            Colors.transparent,
+                          ],
+                        ),
+                        borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.circular(5),
+                          bottomRight: Radius.circular(5),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                title,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                subtitle,
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.green,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Icon(
+                              Icons.video_call,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             Container(
               width: 220,
               height: 70,
               padding: const EdgeInsets.all(5.0),
-              decoration: BoxDecoration(borderRadius: BorderRadius.circular(5)),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(5),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.bold),
+                  const Text(
+                    "Huấn luyện viên 1-1",
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green,
+                    ),
                   ),
-                  Text(subtitle)
+                  const SizedBox(height: 4),
+                  Text(
+                    "Nhận hướng dẫn trực tiếp từ chuyên gia",
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                    ),
+                  ),
                 ],
               ),
-            )
+            ),
           ],
         ),
       ),
+    );
+  }
+
+  void _showTrainerCallDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Bắt đầu buổi tập 1-1'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CircleAvatar(
+                radius: 40,
+                backgroundImage: AssetImage('assets/img/coach.jpg'),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Huấn luyện viên chuyên nghiệp',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Nhận hướng dẫn trực tiếp và phản hồi tức thì',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.grey),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => VideoCallScreen()));
+                    },
+                    icon: const Icon(Icons.video_call, color: Colors.white),
+                    label: const Text('Bắt đầu'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Color(0xFFFF6B00),
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    child: const Text('Hủy'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
