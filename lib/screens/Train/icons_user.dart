@@ -5,6 +5,7 @@ import 'package:training_souls/data/DatabaseHelper.dart';
 import 'package:training_souls/data/local_storage.dart';
 
 import '../../Stripe/UpgradeAccountPage.dart';
+import '../../Stripe/account_type_dialog.dart';
 
 class IconsUser extends StatefulWidget {
   const IconsUser({super.key});
@@ -253,14 +254,37 @@ class _IconsUserState extends State<IconsUser>  with AutomaticKeepAliveClientMix
               ),
             ),
             GestureDetector(
+            // Trong onTap của container
               onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) =>UpgradeAccountPage(
-                    currentAccountType: accountType,
-                  )),
+                showGeneralDialog(
+                  context: context,
+                  barrierLabel: 'Dismiss', // ✅ thêm dòng này để hợp lệ
+                  barrierColor: Colors.black.withOpacity(0.5),
+                  transitionDuration: const Duration(milliseconds: 300),
+                  pageBuilder: (_, __, ___) {
+                    return AccountTypePopup(
+                      selectedOption: accountType,
+                      options: ['Basic', 'Premium'],
+                      onSelected: (value) {
+                        print("👉 Người dùng chọn: $value");
+                        // TODO: thực hiện điều hướng nếu cần
+                      },
+                    );
+                  },
+                  transitionBuilder: (_, animation, __, child) {
+                    return Transform.scale(
+                      scale: animation.value,
+                      child: Opacity(
+                        opacity: animation.value,
+                        child: child,
+                      ),
+                    );
+                  },
                 );
               },
+
+
+
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 decoration: BoxDecoration(
