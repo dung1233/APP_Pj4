@@ -258,20 +258,31 @@ class _IconsUserState extends State<IconsUser>  with AutomaticKeepAliveClientMix
               onTap: () {
                 showGeneralDialog(
                   context: context,
-                  barrierLabel: 'Dismiss', // ✅ thêm dòng này để hợp lệ
+                  barrierLabel: 'Dismiss',
                   barrierColor: Colors.black.withOpacity(0.5),
                   transitionDuration: const Duration(milliseconds: 300),
                   pageBuilder: (_, __, ___) {
                     return AccountTypePopup(
                       selectedOption: accountType,
                       options: ['Basic', 'Premium'],
-                      onSelected: (value) {
-                        print("👉 Người dùng chọn: $value");
-                        // TODO: thực hiện điều hướng nếu cần
+                      onConfirmed: (selectedAccount, selectedPaymentMethod) {
+                        print("👉 Gói được chọn: $selectedAccount");
+                        print("👉 Phương thức thanh toán: $selectedPaymentMethod");
+
+                        // Tùy vào `selectedPaymentMethod`, bạn xử lý thanh toán Stripe hoặc PayPal ở đây
+                        if (selectedAccount == 'Premium') {
+                          if (selectedPaymentMethod == 'Stripe') {
+                            // gọi StripePaymentDemo(...)
+                          } else if (selectedPaymentMethod == 'PayPal') {
+                            // gọi PayPalPaymentScreen(...)
+                          }
+                        }
                       },
                     );
+
                   },
-                  transitionBuilder: (_, animation, __, child) {
+
+                transitionBuilder: (_, animation, __, child) {
                     return Transform.scale(
                       scale: animation.value,
                       child: Opacity(

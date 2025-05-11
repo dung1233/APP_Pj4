@@ -1,101 +1,74 @@
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
 import 'package:dio/dio.dart';
-import 'package:training_souls/api/api_service.dart';
-import 'package:training_souls/models/item.dart';
-import 'package:training_souls/Stripe/stripe_checkout_screen.dart';
+import '../api/api_service.dart';
+import '../models/item.dart';
 
 class AccountTypePopup extends StatefulWidget {
   final List<String> options;
   final String selectedOption;
-  final Function(String) onSelected;
+  final Function(String, String) onConfirmed;
 
   const AccountTypePopup({
     super.key,
     required this.options,
     required this.selectedOption,
-    required this.onSelected,
+    required this.onConfirmed,
   });
 
   @override
   State<AccountTypePopup> createState() => _AccountTypePopupState();
 }
 
-class _AccountTypePopupState extends State<AccountTypePopup>
-    with SingleTickerProviderStateMixin {
-  late String _currentSelection;
+class _AccountTypePopupState extends State<AccountTypePopup> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
 
-  List<Item> _premiumItems = [];
-  bool _isLoading = true;
+  String _currentStage = 'account'; // account → payment
+  late String _currentSelection;
+  Item? _premiumItem;
+  bool _isLoading = false;
+
+  final List<String> _paymentOptions = ['Stripe', 'PayPal'];
+  String? _selectedPayment;
 
   @override
   void initState() {
     super.initState();
     _currentSelection = widget.selectedOption;
-
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 250),
-    );
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 250));
     _scaleAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeOutBack);
     _controller.forward();
 
-    _loadPremiumItems();
-  }
-
-  Future<void> _loadPremiumItems() async {
-    try {
-      final api = ApiService(Dio());
-      final items = await api.getItems();
-      setState(() {
-        _premiumItems = items.where((e) => e.itemType == "SUBSCRIPTION").toList();
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() => _isLoading = false);
-      debugPrint("❌ Lỗi khi tải gói premium: $e");
+    if (widget.options.contains('Premium')) {
+      _loadPremiumItem();
     }
   }
 
-  Future<void> _handleConfirm() async {
-    widget.onSelected(_currentSelection);
-    if (_currentSelection == "Premium") {
-      if (_premiumItems.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Không tìm thấy gói premium.")),
-        );
-        return;
+  Future<void> _loadPremiumItem() async {
+    setState(() => _isLoading = true);
+    final apiService = ApiService(Dio());
+    try {
+      final items = await apiService.getItems();
+      final premiums = items.where((i) => i.itemType == 'SUBSCRIPTION').toList();
+      if (premiums.isNotEmpty) {
+        setState(() => _premiumItem = premiums.first);
       }
+    } catch (e) {
+      print("❌ Lỗi tải gói Premium: $e");
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
 
-      final selectedItem = _premiumItems.first;
-      final box = await Hive.openBox('userBox');
-      final token = box.get('token');
-
-      if (token == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Vui lòng đăng nhập.")),
-        );
-        return;
-      }
-
-      Navigator.pop(context); // đóng dialog
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => StripePaymentDemo(
-            itemId: selectedItem.id,
-            userToken: token,
-          ),
-        ),
-      );
+  void _handleConfirm() {
+    if (_currentStage == 'account' && _currentSelection == 'Premium') {
+      setState(() {
+        _currentStage = 'payment';
+        _selectedPayment = _paymentOptions.first;
+      });
     } else {
-      Navigator.pop(context); // đóng dialog
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Bạn đã chọn gói Basic")),
-      );
-      // TODO: gọi API để chuyển về gói Basic nếu cần
+      widget.onConfirmed(_currentSelection, _selectedPayment ?? '');
+      Navigator.of(context).pop();
     }
   }
 
@@ -106,42 +79,51 @@ class _AccountTypePopupState extends State<AccountTypePopup>
   }
 
   Widget _buildOption(String option) {
-    Widget subtitle = const SizedBox.shrink();
+    final isSelected = (_currentStage == 'account' && _currentSelection == option) ||
+        (_currentStage == 'payment' && _selectedPayment == option);
 
-    if (option == "Premium") {
-      if (_isLoading) {
-        subtitle = const Text("Đang tải...", textAlign: TextAlign.center);
-      } else if (_premiumItems.isNotEmpty) {
-        final item = _premiumItems.first;
-        subtitle = Text(
-          "${item.price.toStringAsFixed(0)}đ / ${item.durationInDays} ngày",
-          textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 12, color: Colors.grey),
-        );
-      } else {
-        subtitle = const Text("Không có dữ liệu", textAlign: TextAlign.center);
-      }
-    }
+    final subtitle = (_currentStage == 'account' && option == 'Premium' && _premiumItem != null)
+        ? "${_premiumItem!.price.toStringAsFixed(0)}đ / ${_premiumItem!.durationInDays} ngày"
+        : (_currentStage == 'account' && option == 'Basic')
+        ? "Miễn phí - Giới hạn tính năng"
+        : null;
 
     return ListTile(
       title: Center(
         child: Text(
           option,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
         ),
       ),
-      subtitle: subtitle,
-      trailing: _currentSelection == option
-          ? const Icon(Icons.check, color: Colors.orange)
+      subtitle: subtitle != null
+          ? Center(
+        child: Padding(
+          padding: const EdgeInsets.only(top: 4.0),
+          child: Text(
+            subtitle,
+            style: const TextStyle(fontSize: 12, color: Colors.grey),
+          ),
+        ),
+      )
           : null,
+      trailing: isSelected ? const Icon(Icons.check, color: Colors.orange) : null,
       onTap: () {
-        setState(() => _currentSelection = option);
+        setState(() {
+          if (_currentStage == 'account') {
+            _currentSelection = option;
+          } else {
+            _selectedPayment = option;
+          }
+        });
       },
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final stageTitle = _currentStage == 'account' ? "Chọn gói" : "Chọn phương thức thanh toán";
+    final options = _currentStage == 'account' ? widget.options : _paymentOptions;
+
     return Scaffold(
       backgroundColor: Colors.black.withOpacity(0.3),
       body: Stack(
@@ -161,13 +143,16 @@ class _AccountTypePopupState extends State<AccountTypePopup>
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Text(
-                        "Chọn gói",
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.orange),
+                      Text(
+                        stageTitle,
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.orange),
                       ),
                       const SizedBox(height: 12),
-                      ...widget.options.map(_buildOption),
-                      const SizedBox(height: 8),
+                      if (_isLoading)
+                        const CircularProgressIndicator()
+                      else
+                        ...options.map(_buildOption).toList(),
+                      const SizedBox(height: 12),
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
@@ -191,7 +176,7 @@ class _AccountTypePopupState extends State<AccountTypePopup>
             ),
           ),
           Positioned(
-            bottom: 180,
+            bottom: 200,
             left: MediaQuery.of(context).size.width / 2 - 25,
             child: GestureDetector(
               onTap: () => Navigator.pop(context),
@@ -200,10 +185,12 @@ class _AccountTypePopupState extends State<AccountTypePopup>
                 height: 40,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.transparent, // nền trong suốt
-                  border: Border.all(color: Colors.white, width: 1), // viền trắng
+                  border: Border.all(color: Colors.white, width: 2),
+                  color: Colors.transparent,
                 ),
-                child: const Icon(Icons.close_sharp, color: Colors.white),
+                child: const Center(
+                  child: Icon(Icons.close, color: Colors.white, size: 24),
+                ),
               ),
             ),
           )
