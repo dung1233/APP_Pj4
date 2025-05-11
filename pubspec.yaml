@@ -87,8 +87,11 @@ dependencies:
   flutter_paypal_payment: ^1.0.8
   youtube_player_flutter: ^9.1.1
   intl: ^0.19.0
-  #Stripe
+  cached_network_image: ^3.4.1
+  agora_rtc_engine: ^6.5.0
+  #stripe
   flutter_stripe: ^9.5.0
+
 
 flutter_launcher_icons:
   android: true
@@ -108,7 +111,7 @@ dev_dependencies:
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^4.0.0
+  flutter_lints: ^5.0.0
   freezed: ^2.4.1
   build_runner: ^2.4.7
   json_serializable: ^6.8.0

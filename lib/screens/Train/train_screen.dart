@@ -4,13 +4,13 @@ import 'package:training_souls/data/DatabaseHelper.dart';
 import 'package:training_souls/screens/Train/icons_user.dart';
 import 'package:training_souls/screens/UI/Beginer/beginerdata.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart'; // Thêm import Provider
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:showcaseview/showcaseview.dart';
 import 'package:training_souls/screens/Train/beginer_screnn.dart';
 import 'package:training_souls/screens/Train/wellcome.dart';
-import 'package:training_souls/providers/workout_provider.dart'; // Import WorkoutProvider
-import 'package:training_souls/providers/auth_provider.dart'; // Import AuthProvider
+import 'package:training_souls/providers/workout_provider.dart';
+import 'package:training_souls/providers/auth_provider.dart';
 
 class TrainScreen extends StatefulWidget {
   const TrainScreen({super.key});
@@ -80,9 +80,8 @@ class _TrainScreenState extends State<TrainScreen> {
     debugPrint('🎯 Tutorial status loaded: $_hasSeenTutorial');
   }
 
-  // Hàm xử lý khi nhấn nút cập nhật
-  // Trong _TrainScreenState
-  void _refreshWorkouts() async {
+  // Hàm xử lý khi làm mới dữ liệu
+  Future<void> _refreshWorkouts() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final workoutProvider =
         Provider.of<WorkoutProvider>(context, listen: false);
@@ -129,21 +128,23 @@ class _TrainScreenState extends State<TrainScreen> {
     return ShowCaseWidget(
       builder: (context) => Scaffold(
         appBar: AppBar(
-          automaticallyImplyLeading: false,
-          title: Text(
-            "Tải Lại Danh sách bài tập",
-            style: GoogleFonts.urbanist(fontWeight: FontWeight.bold),
-          ),
-          actions: [
-            // Nút cập nhật
-            Consumer<WorkoutProvider>(
-              builder: (context, provider, child) => IconButton(
-                icon: Icon(Icons.refresh),
-                onPressed: provider.isLoading ? null : _refreshWorkouts,
-                tooltip: 'Cập nhật bài tập',
-              ),
-            ),
-          ],
+          backgroundColor: Colors.white,
+          toolbarHeight: 5,
+          // automaticallyImplyLeading: false,
+          // title: Text(
+          //   "Danh sách bài tập",
+          //   style: GoogleFonts.urbanist(fontWeight: FontWeight.bold),
+          // ),
+          // actions: [
+          //   // Vẫn giữ lại nút refresh ở AppBar nếu cần
+          //   Consumer<WorkoutProvider>(
+          //     builder: (context, provider, child) => IconButton(
+          //       icon: Icon(Icons.refresh),
+          //       onPressed: provider.isLoading ? null : _refreshWorkouts,
+          //       tooltip: 'Cập nhật bài tập',
+          //     ),
+          //   ),
+          // ],
         ),
         body: _isDataReady
             ? _buildMainContent(context)
@@ -159,30 +160,47 @@ class _TrainScreenState extends State<TrainScreen> {
     }
 
     return Builder(
-      builder: (context) => SingleChildScrollView(
-        child: Container(
-          color: const Color.fromARGB(255, 255, 255, 255),
-          child: Column(
-            children: [
-              IconsUser(),
-              Showcase(
-                key: _showcaseTaskKey,
-                description: "Task.",
-                child: Wellcome(),
-              ),
-              SizedBox(height: 20),
-              Column(
+      builder: (context) => RefreshIndicator(
+        // Thêm RefreshIndicator ở đây
+        onRefresh: () async {
+          // Gọi hàm _refreshWorkouts khi người dùng kéo xuống để refresh
+          await _refreshWorkouts();
+        },
+        child: SingleChildScrollView(
+          // Cần bọc SingleChildScrollView vào một widget có kích thước cố định
+          // để RefreshIndicator hoạt động đúng
+          physics: AlwaysScrollableScrollPhysics(),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: MediaQuery.of(context).size.height -
+                  AppBar().preferredSize.height -
+                  MediaQuery.of(context).padding.top,
+            ),
+            child: Container(
+              color: const Color.fromARGB(255, 255, 255, 255),
+              child: Column(
                 children: [
+                  IconsUser(),
                   Showcase(
-                    key: _showcaseBeginnerKey,
-                    description: "Bài tập.",
-                    child: BeginerScrenn(),
+                    key: _showcaseTaskKey,
+                    description: "Task.",
+                    child: Wellcome(),
                   ),
-                  _buildSection("Beginner Section", BeginnerDataWidget()),
-                  // _buildSection("Medium Section", MediumDataWidget())
+                  SizedBox(height: 20),
+                  Column(
+                    children: [
+                      Showcase(
+                        key: _showcaseBeginnerKey,
+                        description: "Bài tập.",
+                        child: BeginerScrenn(),
+                      ),
+                      _buildSection("Beginner Section", BeginnerDataWidget()),
+                      // _buildSection("Medium Section", MediumDataWidget())
+                    ],
+                  ),
                 ],
               ),
-            ],
+            ),
           ),
         ),
       ),

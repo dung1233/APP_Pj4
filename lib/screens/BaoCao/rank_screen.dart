@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_datagrid/datagrid.dart';
 import 'package:syncfusion_flutter_datepicker/datepicker.dart';
+import 'package:training_souls/api/api_service.dart';
+import 'dart:async';
+import 'package:training_souls/models/rank.dart';
+// Import ApiService
+import 'package:dio/dio.dart';
 
 class RankScreen extends StatefulWidget {
   const RankScreen({super.key});
@@ -11,6 +16,11 @@ class RankScreen extends StatefulWidget {
 
 class _RankScreenState extends State<RankScreen> {
   late DateRangePickerController _datePickerController;
+  late Future<List<Rank>> _ranksFuture;
+  late RankDataSource _rankDataSource;
+  bool _isLoading = true;
+  late ApiService _apiService;
+
   double getWidthPercentage(BuildContext context, double percentage) {
     return MediaQuery.of(context).size.width * percentage;
   }
@@ -24,6 +34,40 @@ class _RankScreenState extends State<RankScreen> {
     super.initState();
     _datePickerController = DateRangePickerController();
     _datePickerController.displayDate = DateTime.now();
+    _rankDataSource = RankDataSource([]);
+
+    // Khởi tạo ApiService
+    final dio = Dio();
+    _apiService = ApiService(dio);
+
+    _loadRanks();
+  }
+
+  Future<void> _loadRanks() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Sử dụng ApiService để gọi API
+      _ranksFuture = _apiService.getRanks();
+      List<Rank> ranks = await _ranksFuture;
+
+      setState(() {
+        _rankDataSource.updateRanks(ranks);
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      // Hiển thị thông báo lỗi cho người dùng
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Không thể tải dữ liệu: ${e.toString()}')),
+        );
+      }
+    }
   }
 
   @override
@@ -33,52 +77,67 @@ class _RankScreenState extends State<RankScreen> {
       child: Container(
         decoration: BoxDecoration(
             color: Colors.white, borderRadius: BorderRadius.circular(16)),
-        child: SfDataGrid(
-          source: RankDataSource(),
-          columnWidthMode: ColumnWidthMode.fill,
-          columns: <GridColumn>[
-            GridColumn(
-              columnName: 'rank',
-              label: const Center(child: Text('Rank')),
-            ),
-            GridColumn(
-              columnName: 'name',
-              label: const Center(child: Text('Name')),
-            ),
-            GridColumn(
-              columnName: 'score',
-              label: const Center(child: Text('Score')),
-            ),
-            GridColumn(
-              columnName: 'total',
-              label: const Center(child: Text('total')),
-            ),
-          ],
-        ),
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : SfDataGrid(
+                source: _rankDataSource,
+                columnWidthMode: ColumnWidthMode.fill,
+                columns: <GridColumn>[
+                  GridColumn(
+                    columnName: 'rank',
+                    label: const Center(child: Text('Rank')),
+                  ),
+                  GridColumn(
+                    columnName: 'name',
+                    label: const Center(child: Text('Name')),
+                  ),
+                  GridColumn(
+                    columnName: 'score',
+                    label: const Center(child: Text('Score')),
+                  ),
+                  GridColumn(
+                    columnName: 'totalScore',
+                    label: const Center(child: Text('Total')),
+                  ),
+                ],
+              ),
       ),
     );
   }
 }
 
 class RankDataSource extends DataGridSource {
+  List<DataGridRow> _rankData = [];
+
+  RankDataSource(List<Rank> ranks) {
+    updateRanks(ranks);
+  }
+
+  void updateRanks(List<Rank> ranks) {
+    _rankData = ranks
+        .map<DataGridRow>((rank) => DataGridRow(
+              cells: [
+                DataGridCell<int>(columnName: 'rank', value: rank.rank),
+                DataGridCell<String>(columnName: 'name', value: rank.userName),
+                DataGridCell<String>(
+                    columnName: 'score',
+                    value: rank.totalScore.toStringAsFixed(2)),
+                DataGridCell<String>(
+                    columnName: 'totalScore',
+                    value:
+                        '${rank.strengthScore + rank.enduranceScore + rank.healthScore + rank.agilityScore - rank.deathpoints}'),
+              ],
+            ))
+        .toList();
+    notifyListeners();
+  }
+
   @override
   List<DataGridRow> get rows => _rankData;
 
-  final List<DataGridRow> _rankData = List<DataGridRow>.generate(
-    10,
-    (index) => DataGridRow(
-      cells: [
-        DataGridCell<int>(columnName: 'rank', value: index + 1),
-        DataGridCell<String>(columnName: 'name', value: 'User ${index + 1}'),
-        DataGridCell<int>(columnName: 'score', value: 100 - index * 5),
-        DataGridCell<int>(columnName: 'total', value: 100 - index * 5),
-      ],
-    ),
-  );
-
   @override
   DataGridRowAdapter buildRow(DataGridRow row) {
-    int rank = row.getCells()[0].value as int; // Lấy thứ hạng từ cột rank
+    int rank = row.getCells()[0].value as int;
     IconData? cupIcon;
 
     if (rank == 1) {
@@ -95,13 +154,11 @@ class RankDataSource extends DataGridSource {
           return Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Hiển thị thứ hạng
               Icon(cupIcon,
                   color: rank == 1
                       ? Colors.amber
                       : (rank == 2 ? Colors.grey : Colors.brown),
                   size: 16),
-
               Padding(
                 padding: const EdgeInsets.only(left: 5.0),
                 child: Text(cell.value.toString()),

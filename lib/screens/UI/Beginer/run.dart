@@ -6,6 +6,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:training_souls/data/DatabaseHelper.dart';
+import 'package:training_souls/providers/auth_provider.dart';
 import 'package:training_souls/providers/workout_provider.dart';
 import 'package:training_souls/screens/ol.dart';
 import 'package:provider/provider.dart';
@@ -60,6 +61,7 @@ class _RunningTrackerState extends State<RunningTracker> {
       final dbHelper = DatabaseHelper();
       final workoutProvider =
           Provider.of<WorkoutProvider>(context, listen: false);
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
       // Lưu kết quả bài tập
       final workoutResult = {
@@ -88,6 +90,10 @@ class _RunningTrackerState extends State<RunningTracker> {
 
       // Chuyển hướng đến màn hình Ol
       if (mounted) {
+        // Thực hiện reset toàn bộ dữ liệu sau khi chuyển trang
+        // Chỉ thực hiện nếu cần
+        // await workoutProvider.resetAllData(authProvider.token!);
+
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => Ol()),

@@ -73,6 +73,7 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
           bool isCompleted = await checkExerciseCompletion(
               workout.day!, workout.exerciseName!);
 
+          // Kiểm tra nếu trong bảng workout_results có bản ghi cho bài tập này
           if (isCompleted && workout.status != "COMPLETED") {
             await dbHelper.updateWorkoutStatus(workout.id!, "COMPLETED");
             workout.status = "COMPLETED";
@@ -243,11 +244,11 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
                                       ),
                                     ),
                                     const SizedBox(width: 10),
-                                    Text(
-                                      '$completedDays/$totalDays Days',
-                                      style: GoogleFonts.urbanist(
-                                          color: Colors.grey, fontSize: 14),
-                                    ),
+                                    // Text(
+                                    //   '$completedDays/$totalDays Days',
+                                    //   style: GoogleFonts.urbanist(
+                                    //       color: Colors.grey, fontSize: 14),
+                                    // ),
                                   ],
                                 ),
                               ),

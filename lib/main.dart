@@ -13,11 +13,10 @@ import 'package:training_souls/providers/workout_provider.dart';
 import 'package:training_souls/hive_service.dart';
 import 'package:training_souls/screens/home/home.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // 🔐 Nhập Stripe Publishable Key tại đây
-  Stripe.publishableKey = StripeKeys.publishableKey; // Lấy từ Stripe Dashboard
+  Stripe.publishableKey = StripeKeys.publishableKey ; // <-- Thay bằng key của bạn
   // ✅ Khởi tạo Hive
   await Hive.initFlutter();
   await initHive(); // Nếu có hàm khởi tạo thêm

@@ -767,4 +767,16 @@ class DatabaseHelper {
       throw e;
     }
   }
+
+  Future<void> clearAllData() async {
+    final db = await database;
+    await db.delete('workouts');
+    await db.delete('workout_results');
+  }
+
+  // Phương thức mới - chỉ xoá bảng workouts, giữ lại kết quả
+  Future<void> clearWorkoutsOnly() async {
+    final db = await database;
+    await db.delete('workouts');
+  }
 }
