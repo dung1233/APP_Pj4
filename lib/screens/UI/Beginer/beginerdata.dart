@@ -35,6 +35,7 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
     return workoutBackgrounds[random.nextInt(workoutBackgrounds.length)];
   }
 
+  // Sửa hàm này trong file BeginnerDataWidget
   Future<bool> checkExerciseCompletion(int day, String exerciseName) async {
     // Sử dụng cache để tránh truy vấn DB nhiều lần
     final cacheKey = "$day-$exerciseName";
@@ -43,12 +44,20 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
     }
 
     try {
-      final results = await dbHelper.getExerciseResults(day);
-      final isCompleted =
-          results.any((result) => result['exercise_name'] == exerciseName);
+      // Sửa lại query để lấy kết quả từ bảng workout_results chính xác
+      final db = await dbHelper.database;
+      final results = await db.query(
+        'workout_results',
+        where: 'day_number = ? AND exercise_name = ?',
+        whereArgs: [day, exerciseName],
+      );
+
+      final isCompleted = results.isNotEmpty;
 
       // Lưu vào cache
       _completionCache[cacheKey] = isCompleted;
+      print(
+          "DEBUG: Exercise $exerciseName day $day completion status: $isCompleted");
       return isCompleted;
     } catch (e) {
       debugPrint("Error checking exercise completion: $e");
@@ -57,75 +66,88 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
   }
 
   Future<void> _updateCompletionStatus(List<Workout> workouts) async {
-    if (isUpdating) return;
-
-    setState(() {
-      isUpdating = true;
-    });
-
     try {
-      bool anyChange = false;
-
+      final db = await dbHelper.database;
       for (var workout in workouts) {
         if (workout.day != null &&
             workout.exerciseName != null &&
             workout.id != null) {
-          bool isCompleted = await checkExerciseCompletion(
-              workout.day!, workout.exerciseName!);
-
-          // Kiểm tra nếu trong bảng workout_results có bản ghi cho bài tập này
+          final results = await db.query(
+            'workout_results',
+            where: 'day_number = ? AND exercise_name = ?',
+            whereArgs: [workout.day, workout.exerciseName],
+          );
+          bool isCompleted = results.isNotEmpty;
           if (isCompleted && workout.status != "COMPLETED") {
             await dbHelper.updateWorkoutStatus(workout.id!, "COMPLETED");
             workout.status = "COMPLETED";
-            anyChange = true;
+          } else if (!isCompleted && workout.status == "COMPLETED") {
+            await dbHelper.updateWorkoutStatus(workout.id!, "NOT_STARTED");
+            workout.status = "NOT_STARTED";
           }
         }
       }
-
-      if (mounted && anyChange) {
-        setState(() {});
-      }
     } catch (e) {
       debugPrint("Error updating completion status: $e");
-    } finally {
-      if (mounted) {
-        setState(() {
-          isUpdating = false;
-        });
-      }
     }
   }
 
+  Future<void>? _dataFuture;
   @override
   void initState() {
     super.initState();
-    // Đảm bảo dữ liệu được tải khi widget khởi tạo
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _ensureDataLoaded();
-    });
+    _dataFuture = _ensureDataLoaded(); // Chỉ gọi một lần khi widget khởi tạo
+  }
+
+  // @override
+  // void initState() {
+  //   super.initState();
+  //   _completionCache.clear(); // Xóa cache khi khởi động
+  //   // Đảm bảo dữ liệu được tải khi widget khởi tạo
+  //   WidgetsBinding.instance.addPostFrameCallback((_) {
+  //     _ensureDataLoaded();
+  //   });
+  // }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Cập nhật lại trạng thái khi dependencies thay đổi
   }
 
   Future<void> _ensureDataLoaded() async {
-    // Lấy provider từ context
-    final provider = Provider.of<WorkoutProvider>(context, listen: false);
+    try {
+      final provider = Provider.of<WorkoutProvider>(context, listen: false);
+      debugPrint("DEBUG: Bắt đầu tải dữ liệu trong _ensureDataLoaded");
 
-    // Kiểm tra và tải dữ liệu nếu cần
-    if (provider.workouts.isEmpty && !provider.isLoading) {
-      debugPrint("DEBUG: BeginnerDataWidget triggering workout reload");
+      // Tải dữ liệu từ SQLite
       await provider.loadWorkoutsFromSQLite();
+      debugPrint("DEBUG: Đã tải ${provider.workouts.length} bài tập từ SQLite");
+
+      // Cập nhật trạng thái hoàn thành
+      await _updateCompletionStatus(provider.workouts);
+      debugPrint("DEBUG: Đã cập nhật trạng thái hoàn thành");
+    } catch (e) {
+      debugPrint("ERROR: Lỗi trong _ensureDataLoaded: $e");
+      rethrow;
     }
   }
 
   Future<void> saveExerciseResult(int day, String exerciseName) async {
     try {
       await dbHelper.insertExerciseResult(day, exerciseName);
+      debugPrint("DEBUG: Đã lưu kết quả cho $exerciseName ngày $day");
 
       // Cập nhật cache
-      _completionCache["$day-$exerciseName"] = true;
+      final cacheKey = "$day-$exerciseName";
+      _completionCache[cacheKey] = true;
 
-      await _updateCompletionStatus(context.read<WorkoutProvider>().workouts);
+      // Cập nhật trạng thái và UI
+      final provider = context.read<WorkoutProvider>();
+      await _updateCompletionStatus(provider.workouts);
+      if (mounted) setState(() {});
     } catch (e) {
-      debugPrint("Error saving exercise result: $e");
+      debugPrint("ERROR: Lỗi khi lưu kết quả bài tập: $e");
     }
   }
 
@@ -185,105 +207,105 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
   Widget build(BuildContext context) {
     return Consumer<WorkoutProvider>(
       builder: (context, provider, child) {
-        if (provider.workouts.isEmpty && !provider.isLoading) {
-          // Thử tải lại dữ liệu một lần nữa
-          Future.microtask(() => provider.ensureWorkoutsLoaded());
-        }
-
-        final weeks = _groupWorkoutsByWeek(provider.workouts);
-        return SingleChildScrollView(
-          physics: const ClampingScrollPhysics(),
-          child: provider.isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : weeks.isEmpty
-                  ? const Center(child: Text("Không có bài tập nào."))
-                  : Column(
-                      children: weeks.asMap().entries.map((entry) {
-                        int weekIndex = entry.key;
-                        final weekData = entry.value;
-                        final Map<int, List<Workout>> workoutsByDay = {};
-                        for (var workout in weekData) {
-                          if (workout.day != null) {
-                            workoutsByDay
-                                .putIfAbsent(workout.day!, () => [])
-                                .add(workout);
-                          }
-                        }
-
-                        // Tính số ngày đã hoàn thành
-                        final completedDays = _getCompletedDaysInWeek(weekData);
-                        final totalDays = workoutsByDay.length;
-
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 5.0, horizontal: 10),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+        return FutureBuilder<void>(
+          future: _dataFuture, // Sử dụng future đã lưu từ initState
+          builder: (context, snapshot) {
+            // Hiển thị loading khi đang tải dữ liệu
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            // Hiển thị lỗi nếu có
+            if (snapshot.hasError) {
+              debugPrint("Lỗi tải dữ liệu: ${snapshot.error}");
+              return const Center(
+                  child: Text("Đã xảy ra lỗi khi tải dữ liệu."));
+            }
+            // Kiểm tra dữ liệu rỗng
+            if (provider.workouts.isEmpty) {
+              return const Center(child: Text("Không có bài tập nào."));
+            }
+            // Xử lý và hiển thị dữ liệu
+            final weeks = _groupWorkoutsByWeek(provider.workouts);
+            return SingleChildScrollView(
+              child: Column(
+                children: weeks.asMap().entries.map((entry) {
+                  int weekIndex = entry.key;
+                  final weekData = entry.value;
+                  final Map<int, List<Workout>> workoutsByDay = {};
+                  for (var workout in weekData) {
+                    if (workout.day != null) {
+                      workoutsByDay
+                          .putIfAbsent(workout.day!, () => [])
+                          .add(workout);
+                    }
+                  }
+                  final completedDays = _getCompletedDaysInWeek(weekData);
+                  final totalDays = workoutsByDay.length;
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 5.0, horizontal: 10),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(left: 5),
+                          child: Row(
                             children: [
-                              Padding(
-                                padding: const EdgeInsets.only(left: 5),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 8, vertical: 5),
-                                      decoration: BoxDecoration(
-                                        gradient: const LinearGradient(colors: [
-                                          Color(0xFFFF6F00),
-                                          Color(0xFFFF6F00)
-                                        ]),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Text(
-                                        'Week ${weekIndex + 1}',
-                                        style: GoogleFonts.urbanist(
-                                          color: Colors.white,
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 10),
-                                    Text(
-                                      '$completedDays/$totalDays Days',
-                                      style: GoogleFonts.urbanist(
-                                          color: Colors.grey, fontSize: 14),
-                                    ),
-                                  ],
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 5),
+                                decoration: BoxDecoration(
+                                  gradient: const LinearGradient(colors: [
+                                    Color(0xFFFF6F00),
+                                    Color(0xFFFF6F00)
+                                  ]),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  'Week ${weekIndex + 1}',
+                                  style: GoogleFonts.urbanist(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
-                              const SizedBox(height: 10),
-                              workoutsByDay.isEmpty
-                                  ? Center(
-                                      child: Text(
-                                          "Không có bài tập trong tuần này"),
-                                    )
-                                  : ListView.builder(
-                                      shrinkWrap: true,
-                                      physics:
-                                          const NeverScrollableScrollPhysics(),
-                                      itemCount: workoutsByDay.keys.length,
-                                      itemBuilder: (context, index) {
-                                        final day =
-                                            workoutsByDay.keys.elementAt(index);
-                                        final dayWorkouts =
-                                            workoutsByDay[day] ?? [];
-                                        final completedCount = dayWorkouts
-                                            .where(
-                                                (w) => w.status == "COMPLETED")
-                                            .length;
-                                        final isExpanded =
-                                            expandedDays[day] ?? false;
-
-                                        return _buildDayCard(day, dayWorkouts,
-                                            completedCount, isExpanded);
-                                      },
-                                    ),
+                              const SizedBox(width: 10),
+                              // Text(
+                              //   '$completedDays/$totalDays Days',
+                              //   style: GoogleFonts.urbanist(
+                              //       color: Colors.grey, fontSize: 14),
+                              // ),
                             ],
                           ),
-                        );
-                      }).toList(),
+                        ),
+                        const SizedBox(height: 10),
+                        workoutsByDay.isEmpty
+                            ? const Center(
+                                child: Text("Không có bài tập trong tuần này"))
+                            : ListView.builder(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: workoutsByDay.keys.length,
+                                itemBuilder: (context, index) {
+                                  final day =
+                                      workoutsByDay.keys.elementAt(index);
+                                  final dayWorkouts = workoutsByDay[day] ?? [];
+                                  final completedCount = dayWorkouts
+                                      .where((w) => w.status == "COMPLETED")
+                                      .length;
+                                  final isExpanded = expandedDays[day] ?? false;
+                                  return _buildDayCard(day, dayWorkouts,
+                                      completedCount, isExpanded);
+                                },
+                              ),
+                      ],
                     ),
+                  );
+                }).toList(),
+              ),
+            );
+          },
         );
       },
     );

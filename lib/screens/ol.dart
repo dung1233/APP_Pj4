@@ -675,26 +675,29 @@ class _AwardsWidgetState extends State<AwardsWidget> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Điểm danh hằng ngày",
-                        style: GoogleFonts.urbanist(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Điểm danh hằng ngày",
+                          style: GoogleFonts.urbanist(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                      Text(
-                        _checkInStatus,
-                        style: GoogleFonts.urbanist(
-                          color: Colors.grey,
-                          fontSize: 14,
+                        Text(
+                          _checkInStatus,
+                          style: GoogleFonts.urbanist(
+                            color: Colors.grey,
+                            fontSize: 14,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
+                  const SizedBox(width: 10),
                   ElevatedButton(
                     onPressed:
                         _checkInStatus == "Đã điểm danh hôm nay" || _isLoading
@@ -706,6 +709,8 @@ class _AwardsWidgetState extends State<AwardsWidget> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),
                       ),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
                     ),
                     child: _isLoading
                         ? const SizedBox(
@@ -722,7 +727,7 @@ class _AwardsWidgetState extends State<AwardsWidget> {
                                 : "Điểm danh",
                             style: GoogleFonts.urbanist(
                                 color: Colors.white,
-                                fontSize: 16,
+                                fontSize: 14,
                                 fontWeight: FontWeight.bold),
                           ),
                   ),
