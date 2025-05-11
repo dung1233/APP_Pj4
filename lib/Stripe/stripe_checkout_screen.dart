@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:training_souls/Stripe/stripe_ids.dart';
 import 'package:training_souls/api/api_service.dart';
 import 'package:training_souls/data/DatabaseHelper.dart';
+import 'package:training_souls/models/item.dart';
 
 class StripePaymentDemo extends StatefulWidget {
   final int itemId;
@@ -23,38 +24,58 @@ class StripePaymentDemo extends StatefulWidget {
 class _StripePaymentDemoState extends State<StripePaymentDemo> {
   final Dio _dio = Dio();
 
+  // Lấy Item theo ID từ API
+  Future<Item?> fetchItemById(ApiService api, int itemId) async {
+    try {
+      final items = await api.getItems();
+      final matched = items.where((item) => item.id == itemId);
+      return matched.isNotEmpty ? matched.first : null;
+    } catch (e) {
+      log("❌ Lỗi khi lấy item từ API: $e");
+      return null;
+    }
+  }
+
   Future<void> _handleStripePayment() async {
     try {
       final api = ApiService(_dio);
+
+      // Lấy sản phẩm theo itemId
+      final item = await fetchItemById(api, widget.itemId);
+      if (item == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Không tìm thấy sản phẩm!"),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      final priceInCents = (item.price * 100).toInt(); // vì Stripe dùng cents
+      final itemName = item.name;
 
       // Gửi yêu cầu tạo Payment Intent từ Stripe
       final response = await _dio.post(
         "https://api.stripe.com/v1/payment_intents",
         options: Options(
           headers: {
-            "Authorization": "Bearer ${StripeKeys.secretKey}", // Key Stripe của bạn
+            "Authorization": "Bearer ${StripeKeys.secretKey}",
             "Content-Type": "application/x-www-form-urlencoded",
           },
         ),
         data: {
-          "amount": "12000", // $120.00 (cents)
+          "amount": priceInCents.toString(),
           "currency": "usd",
           "payment_method_types[]": "card",
         },
       );
 
-      // Log dữ liệu trả về từ Stripe để kiểm tra
       log("Stripe Response: ${response.data}");
+      final clientSecret = response.data['client_secret'];
+      final orderId = response.data['id'];
 
-      final clientSecret = response.data['client_secret']; // Client secret từ Stripe
-      final orderId = response.data['id']; // Order ID (Payment Intent ID) từ Stripe
-
-      // Log thông tin clientSecret và orderId
-      log("Client Secret: $clientSecret");
-      log("🛒 Order ID: $orderId");
-
-
-      // Khởi tạo PaymentSheet
+      // Khởi tạo Payment Sheet
       await Stripe.instance.initPaymentSheet(
         paymentSheetParameters: SetupPaymentSheetParameters(
           paymentIntentClientSecret: clientSecret,
@@ -63,14 +84,14 @@ class _StripePaymentDemoState extends State<StripePaymentDemo> {
         ),
       );
 
-      // Hiển thị Payment Sheet để người dùng thanh toán
       try {
-        await Stripe.instance.presentPaymentSheet();  // No need to capture return value here
-        log("Payment Successful");
+        await Stripe.instance.presentPaymentSheet();
+        log("✅ Payment Successful");
 
-        debugPrint("Order ID: $orderId");
+        debugPrint("🛒 Order ID: $orderId");
         debugPrint("🔐 User Token: ${widget.userToken}");
-        // Sau khi thanh toán thành công, gửi thông tin đơn hàng lên backend
+
+        // Gửi xác nhận thanh toán lên backend
         try {
           await api.confirmPayment({
             "itemId": widget.itemId,
@@ -83,20 +104,21 @@ class _StripePaymentDemoState extends State<StripePaymentDemo> {
             backgroundColor: Colors.red,
           ));
         }
+
         // Hiển thị thông báo thành công
         await showDialog(
           context: context,
           barrierDismissible: false,
           builder: (context) => AlertDialog(
             title: const Text("Thanh toán thành công 🎉"),
-            content: const Text("Cảm ơn bạn đã mua hàng!"),
+            content: Text("Cảm ơn bạn đã mua $itemName!"),
             actions: [
               TextButton(
                 onPressed: () async {
                   final db = DatabaseHelper();
                   await db.updateUserInfoFromAPI();
-                  Navigator.pop(context);
-                  Navigator.pop(context);
+                  Navigator.pop(context); // đóng dialog
+                  Navigator.pop(context); // đóng màn stripe
                 },
                 child: const Text("Về cửa hàng"),
               ),
@@ -104,9 +126,9 @@ class _StripePaymentDemoState extends State<StripePaymentDemo> {
           ),
         );
       } catch (e) {
-        log("❌ Payment Error: $e");
+        log("❌ PaymentSheet Error: $e");
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text("Lỗi thanh toán: $e"),
+          content: Text("Lỗi khi hiển thị Payment Sheet: $e"),
           backgroundColor: Colors.red,
         ));
       }

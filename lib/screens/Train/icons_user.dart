@@ -265,18 +265,9 @@ class _IconsUserState extends State<IconsUser>  with AutomaticKeepAliveClientMix
                     return AccountTypePopup(
                       selectedOption: accountType,
                       options: ['Basic', 'Premium'],
-                      onConfirmed: (selectedAccount, selectedPaymentMethod) {
-                        print("👉 Gói được chọn: $selectedAccount");
-                        print("👉 Phương thức thanh toán: $selectedPaymentMethod");
-
-                        // Tùy vào `selectedPaymentMethod`, bạn xử lý thanh toán Stripe hoặc PayPal ở đây
-                        if (selectedAccount == 'Premium') {
-                          if (selectedPaymentMethod == 'Stripe') {
-                            // gọi StripePaymentDemo(...)
-                          } else if (selectedPaymentMethod == 'PayPal') {
-                            // gọi PayPalPaymentScreen(...)
-                          }
-                        }
+                      onSelected: (selectedType) {
+                        // Xử lý nếu cần dùng selectedType, không cần điều hướng nữa
+                        print("🔶 Người dùng đã chọn gói: $selectedType");
                       },
                     );
 

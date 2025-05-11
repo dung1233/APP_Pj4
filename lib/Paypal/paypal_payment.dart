@@ -6,6 +6,7 @@ import 'package:training_souls/Paypal/paypal_ids.dart';
 import 'package:training_souls/api/api_service.dart';
 import 'package:dio/dio.dart';
 import 'package:training_souls/data/DatabaseHelper.dart';
+import 'package:training_souls/models/item.dart';
 
 class PaypalPaymentDemo extends StatelessWidget {
   final int itemId;
@@ -16,6 +17,18 @@ class PaypalPaymentDemo extends StatelessWidget {
     required this.userToken,
   });
 
+  // Hàm lấy Item theo itemId
+  Future<Item?> fetchItemById(ApiService api, int itemId) async {
+    try {
+      final items = await api.getItems();
+      final matchedItems = items.where((item) => item.id == itemId);
+      return matchedItems.isNotEmpty ? matchedItems.first : null;
+    } catch (e) {
+      log("❌ Lỗi khi lấy item từ API: $e");
+      return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -24,53 +37,69 @@ class PaypalPaymentDemo extends StatelessWidget {
           width: 350,
           child: FloatingActionButton.extended(
             onPressed: () async {
+              final api = ApiService(Dio());
+
+              // Lấy thông tin sản phẩm theo ID
+              final item = await fetchItemById(api, itemId);
+              if (item == null) {
+                debugPrint("❌ Không tìm thấy sản phẩm!");
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("Không tìm thấy sản phẩm!"),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                return;
+              }
+
+              final priceString = item.price.toString();
+              final itemName = item.name;
+
               final result = await Navigator.of(context).push(MaterialPageRoute(
                 builder: (BuildContext context) => PaypalCheckoutView(
                   sandboxMode: true,
                   clientId: PayPalData.client_id,
                   secretKey: PayPalData.secret_id,
-                  transactions: const [
+                  transactions: [
                     {
                       "amount": {
-                        "total": '120',
+                        "total": priceString,
                         "currency": "USD",
                         "details": {
-                          "subtotal": '120',
+                          "subtotal": priceString,
                           "shipping": '0',
                           "shipping_discount": 0
                         }
                       },
-                      "description": "The payment transaction description.",
+                      "description": "Giao dịch mua $itemName.",
                       "item_list": {
                         "items": [
                           {
-                            "name": "Premium Update",
+                            "name": itemName,
                             "quantity": 1,
-                            "price": '120',
+                            "price": priceString,
                             "currency": "USD"
                           },
                         ],
                       }
                     }
                   ],
-                  note: "Contact us for any questions on your order.",
+                  note: "Liên hệ nếu có bất kỳ câu hỏi nào.",
                   onSuccess: (params) async {
                     try {
-                      log("✅ PayPal Params: $params"); // Log toàn bộ dữ liệu trả về
+                      log("✅ PayPal Params: $params");
 
-                      final api = ApiService(Dio());
-
-                      // Có thể thử cả 2 cách để debug
                       final parsedParams = Map<String, dynamic>.from(params);
                       final orderId = parsedParams['cart'] ??
                           (parsedParams['data']
-                              as Map<String, dynamic>?)?['cart'];
+                          as Map<String, dynamic>?)?['cart'];
 
                       if (orderId == null) {
-                        debugPrint(
-                            "❌ Không tìm thấy orderId từ PayPal response");
-                        Navigator.pop(context,
-                            {'error': true, 'details': "Missing orderId"});
+                        debugPrint("❌ Không tìm thấy orderId");
+                        Navigator.pop(context, {
+                          'error': true,
+                          'details': "Missing orderId"
+                        });
                         return;
                       }
 
@@ -80,7 +109,7 @@ class PaypalPaymentDemo extends StatelessWidget {
                       await api.confirmPayment({
                         'itemId': itemId,
                         'orderId': orderId,
-                      }, "Bearer $userToken"); // 🧠 thêm Bearer nếu cần
+                      }, "Bearer $userToken");
 
                       Navigator.pop(context, {'data': parsedParams});
                     } catch (e, stack) {
@@ -97,7 +126,7 @@ class PaypalPaymentDemo extends StatelessWidget {
                   },
                 ),
               ));
-              // Xử lý kết quả
+
               if (result != null &&
                   result['error'] != true &&
                   result['cancelled'] != true) {
@@ -114,36 +143,26 @@ class PaypalPaymentDemo extends StatelessWidget {
                       TextButton(
                         onPressed: () async {
                           try {
-                            // Hiển thị loading dialog nếu cần
                             final DatabaseHelper _databaseHelper =
-                                DatabaseHelper();
-                            // Sử dụng phương thức trong DatabaseHelper để cập nhật từ API
+                            DatabaseHelper();
                             await _databaseHelper.updateUserInfoFromAPI();
 
-                            // Đóng dialog thông báo thanh toán thành công
-                            Navigator.of(context).pop();
-                            // Quay về trang trước
-                            Navigator.of(context).pop();
+                            Navigator.of(context).pop(); // Đóng dialog
+                            Navigator.of(context).pop(); // Quay lại
 
-                            // Hiển thị thông báo đã cập nhật
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text(
-                                    "Thông tin tài khoản đã được cập nhật!"),
+                                content:
+                                Text("Thông tin tài khoản đã được cập nhật!"),
                                 backgroundColor: Colors.green,
                               ),
                             );
                           } catch (e) {
-                            // Xử lý lỗi
-                            if (Navigator.of(context).canPop()) {
-                              Navigator.of(context).pop();
-                            }
                             Navigator.of(context).pop();
                             Navigator.of(context).pop();
-
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text("Lỗi khi cập nhật thông tin: $e"),
+                                content: Text("Lỗi cập nhật thông tin: $e"),
                                 backgroundColor: Colors.red,
                               ),
                             );
@@ -165,7 +184,7 @@ class PaypalPaymentDemo extends StatelessWidget {
             label: const Text(
               'Pay with PayPal',
               style:
-                  TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
             ),
           ),
         ));
