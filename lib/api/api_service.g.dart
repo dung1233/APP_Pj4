@@ -157,33 +157,41 @@ class _ApiService implements ApiService {
   }
 
   @override
-  Future<void> purchaseItem(
-    int itemId,
-    String token,
-  ) async {
+  Future<String> purchaseItem(
+      int itemId,
+      String token,
+      ) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{r'Authorization': token};
     _headers.removeWhere((k, v) => v == null);
     const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<void>(Options(
+
+    // Cập nhật options và gửi request
+    final _options = _setStreamType<String>(Options(
       method: 'POST',
       headers: _headers,
       extra: _extra,
     )
         .compose(
-          _dio.options,
-          '/purchase/${itemId}',
-          queryParameters: queryParameters,
-          data: _data,
-        )
+      _dio.options,
+      '/purchase/${itemId}',
+      queryParameters: queryParameters,
+      data: _data,
+    )
         .copyWith(
-            baseUrl: _combineBaseUrls(
+        baseUrl: _combineBaseUrls(
           _dio.options.baseUrl,
           baseUrl,
         )));
-    await _dio.fetch<void>(_options);
+
+    // Gửi request và lấy kết quả
+    final response = await _dio.fetch<String>(_options);
+
+    // Trả về kết quả từ server
+    return response.data ?? 'Không có phản hồi từ server';
   }
+
 
   @override
   Future<void> confirmPayment(
