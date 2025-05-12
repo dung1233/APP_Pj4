@@ -77,10 +77,10 @@ class _RunningTrackerState extends State<RunningTracker> {
         print("[DEBUG] ✅ Đã lưu kết quả chạy bộ: $workoutResult");
       }
 
-      // Đồng bộ bài tập (nếu cần)
+      // Đồng bộ bài tập
       await dbHelper.checkAndSyncWorkouts(widget.day);
 
-      // Làm mới WorkoutProvider để đảm bảo UI cập nhật
+      // Làm mới WorkoutProvider
       if (mounted) {
         await workoutProvider.refreshAfterDatabaseChange();
         if (kDebugMode) {
@@ -88,15 +88,12 @@ class _RunningTrackerState extends State<RunningTracker> {
         }
       }
 
-      // Chuyển hướng đến màn hình Ol
+      // Chuyển hướng đến màn hình Ol và đảm bảo nó được khởi tạo lại
       if (mounted) {
-        // Thực hiện reset toàn bộ dữ liệu sau khi chuyển trang
-        // Chỉ thực hiện nếu cần
-        // await workoutProvider.resetAllData(authProvider.token!);
-
-        Navigator.pushReplacement(
+        Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (_) => Ol()),
+          MaterialPageRoute(builder: (_) => const Ol()),
+          (route) => false, // Xóa tất cả các route trước đó
         );
       }
     } catch (e) {
@@ -104,7 +101,6 @@ class _RunningTrackerState extends State<RunningTracker> {
         print("[DEBUG] ❌ Lỗi khi lưu kết quả chạy bộ: $e");
       }
 
-      // Hiển thị thông báo lỗi
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Lỗi khi lưu kết quả: $e")),
