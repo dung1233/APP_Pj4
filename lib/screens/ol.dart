@@ -296,97 +296,235 @@ class WorkoutsWidget extends StatelessWidget {
 
   const WorkoutsWidget({super.key, required this.results});
 
+  // Hàm nhóm các bài tập theo ngày
+  Map<String, List<Map<String, dynamic>>> _groupWorkoutsByDate() {
+    Map<String, List<Map<String, dynamic>>> groupedWorkouts = {};
+
+    for (var workout in results) {
+      String date = workout['completionDate'] ?? workout['createdAt'];
+      try {
+        final DateTime workoutDate = DateTime.parse(date);
+        String formattedDate = DateFormat('dd/MM/yyyy').format(workoutDate);
+
+        if (!groupedWorkouts.containsKey(formattedDate)) {
+          groupedWorkouts[formattedDate] = [];
+        }
+        groupedWorkouts[formattedDate]!.add(workout);
+      } catch (e) {
+        print("Lỗi khi parse ngày: $e");
+      }
+    }
+
+    // Sắp xếp các ngày theo thứ tự mới nhất lên đầu
+    var sortedDates = groupedWorkouts.keys.toList()
+      ..sort((a, b) {
+        final dateA = DateFormat('dd/MM/yyyy').parse(a);
+        final dateB = DateFormat('dd/MM/yyyy').parse(b);
+        return dateB.compareTo(dateA);
+      });
+
+    Map<String, List<Map<String, dynamic>>> sortedWorkouts = {};
+    for (var date in sortedDates) {
+      sortedWorkouts[date] = groupedWorkouts[date]!;
+    }
+
+    return sortedWorkouts;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text("Workouts",
-                  style: GoogleFonts.urbanist(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold)),
-              Text("Show More",
-                  style:
-                      GoogleFonts.urbanist(color: Colors.green, fontSize: 16)),
-            ],
+    final screenWidth = MediaQuery.of(context).size.width;
+    final groupedWorkouts = _groupWorkoutsByDate();
+
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: screenWidth * 0.04),
+      decoration: BoxDecoration(
+        color: const Color.fromARGB(255, 26, 25, 25),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: EdgeInsets.all(screenWidth * 0.05),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.fitness_center,
+                        color: Colors.green, size: screenWidth * 0.06),
+                    SizedBox(width: screenWidth * 0.02),
+                    Text("Workouts",
+                        style: GoogleFonts.urbanist(
+                            color: Colors.white,
+                            fontSize: screenWidth * 0.055,
+                            fontWeight: FontWeight.bold)),
+                  ],
+                ),
+                TextButton.icon(
+                  onPressed: () {},
+                  icon: Icon(Icons.arrow_forward,
+                      color: Colors.green, size: screenWidth * 0.05),
+                  label: Text("Show More",
+                      style: GoogleFonts.urbanist(
+                          color: Colors.green,
+                          fontSize: screenWidth * 0.04,
+                          fontWeight: FontWeight.w600)),
+                ),
+              ],
+            ),
           ),
-        ),
-        const SizedBox(height: 10),
-        ...results.map((r) {
-          final name = (r['exerciseName'] ?? '').toString().toLowerCase();
-          final isRun = name.contains('run') || name.contains('chạy');
-          String value;
-
-          if (isRun) {
-            // Xử lý cho bài tập chạy bộ
-            final rawDistance = (r['distanceCompleted'] ?? 0.0);
-            final rawDuration = (r['durationCompleted'] ?? 0.0);
-
-            value = "$rawDistance m - $rawDuration p";
-          } else {
-            // Xử lý cho các bài tập khác
-            value =
-                "${r['setsCompleted'] ?? 0} sets - ${r['repsCompleted'] ?? 0} reps";
-          }
-
-          // Xử lý ngày hoàn thành
-          String day = r['completionDate'] ?? 'Hôm nay';
-
-          return WorkoutCard(
-            title: r['exerciseName'] ?? 'No Name',
-            value: value,
-            day: day,
-          );
-        }),
-      ],
+          const Divider(color: Colors.grey, height: 1),
+          SizedBox(height: screenWidth * 0.02),
+          ...groupedWorkouts.entries.map((entry) {
+            return WorkoutDateGroup(
+              date: entry.key,
+              workouts: entry.value,
+            );
+          }),
+          SizedBox(height: screenWidth * 0.02),
+        ],
+      ),
     );
   }
 }
 
-class WorkoutCard extends StatelessWidget {
-  final String title;
-  final String value;
-  final String day;
+class WorkoutDateGroup extends StatelessWidget {
+  final String date;
+  final List<Map<String, dynamic>> workouts;
 
-  const WorkoutCard({
+  const WorkoutDateGroup({
     super.key,
-    required this.title,
-    required this.value,
-    required this.day,
+    required this.date,
+    required this.workouts,
   });
-  String _formatDate(String raw) {
-    try {
-      final date = DateTime.parse(raw);
-      return DateFormat('dd/MM/yyyy').format(date);
-    } catch (_) {
-      return raw;
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
-      child: Card(
-        color: Colors.black,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        child: ListTile(
-          leading: Icon(Icons.fitness_center, color: Colors.green),
-          title: Text(title,
-              style: GoogleFonts.urbanist(color: Colors.white, fontSize: 16)),
-          subtitle: Text(value,
-              style: GoogleFonts.urbanist(
-                  color: Colors.green,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold)),
-          trailing: Text(_formatDate(day),
-              style: GoogleFonts.urbanist(color: Colors.grey, fontSize: 14)),
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    return Container(
+      margin: EdgeInsets.symmetric(
+        horizontal: screenWidth * 0.04,
+        vertical: screenWidth * 0.01,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+      ),
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          initiallyExpanded: false,
+          collapsedIconColor: Colors.grey,
+          iconColor: Colors.green,
+          title: Row(
+            children: [
+              Icon(Icons.calendar_today,
+                  color: Colors.green, size: screenWidth * 0.05),
+              SizedBox(width: screenWidth * 0.02),
+              Text(
+                date,
+                style: GoogleFonts.urbanist(
+                  color: Colors.white,
+                  fontSize: screenWidth * 0.045,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              SizedBox(width: screenWidth * 0.02),
+              Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: screenWidth * 0.02,
+                  vertical: screenWidth * 0.005,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.green.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  "${workouts.length} bài tập",
+                  style: GoogleFonts.urbanist(
+                    color: Colors.green,
+                    fontSize: screenWidth * 0.035,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          children: workouts.map((workout) {
+            final name =
+                (workout['exerciseName'] ?? '').toString().toLowerCase();
+            final isRun = name.contains('run') || name.contains('chạy');
+            String value;
+            IconData icon;
+
+            if (isRun) {
+              icon = Icons.directions_run;
+              final rawDistance = (workout['distanceCompleted'] ?? 0.0);
+              final rawDuration = (workout['durationCompleted'] ?? 0.0);
+              value = "$rawDistance m - $rawDuration p";
+            } else {
+              icon = Icons.fitness_center;
+              value =
+                  "${workout['setsCompleted'] ?? 0} sets - ${workout['repsCompleted'] ?? 0} reps";
+            }
+
+            return Container(
+              margin: EdgeInsets.only(
+                left: screenWidth * 0.08,
+                right: screenWidth * 0.04,
+                bottom: screenWidth * 0.02,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: ListTile(
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: screenWidth * 0.03,
+                  vertical: screenWidth * 0.01,
+                ),
+                leading: Container(
+                  padding: EdgeInsets.all(screenWidth * 0.015),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(icon,
+                      color: Colors.green, size: screenWidth * 0.045),
+                ),
+                title: Text(
+                  workout['exerciseName'] ?? 'No Name',
+                  style: GoogleFonts.urbanist(
+                    color: Colors.white,
+                    fontSize: screenWidth * 0.038,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                subtitle: Container(
+                  margin: EdgeInsets.only(top: screenWidth * 0.01),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: screenWidth * 0.02,
+                    vertical: screenWidth * 0.005,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    value,
+                    style: GoogleFonts.urbanist(
+                      color: Colors.green,
+                      fontSize: screenWidth * 0.032,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
         ),
       ),
     );
