@@ -158,9 +158,9 @@ class _ApiService implements ApiService {
 
   @override
   Future<String> purchaseItem(
-      int itemId,
-      String token,
-      ) async {
+    int itemId,
+    String token,
+  ) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{r'Authorization': token};
@@ -174,13 +174,13 @@ class _ApiService implements ApiService {
       extra: _extra,
     )
         .compose(
-      _dio.options,
-      '/purchase/${itemId}',
-      queryParameters: queryParameters,
-      data: _data,
-    )
+          _dio.options,
+          '/purchase/${itemId}',
+          queryParameters: queryParameters,
+          data: _data,
+        )
         .copyWith(
-        baseUrl: _combineBaseUrls(
+            baseUrl: _combineBaseUrls(
           _dio.options.baseUrl,
           baseUrl,
         )));
@@ -191,7 +191,6 @@ class _ApiService implements ApiService {
     // Trả về kết quả từ server
     return response.data ?? 'Không có phản hồi từ server';
   }
-
 
   @override
   Future<void> confirmPayment(

@@ -22,7 +22,8 @@ class AccountTypePopup extends StatefulWidget {
   State<AccountTypePopup> createState() => _AccountTypePopupState();
 }
 
-class _AccountTypePopupState extends State<AccountTypePopup> with SingleTickerProviderStateMixin {
+class _AccountTypePopupState extends State<AccountTypePopup>
+    with SingleTickerProviderStateMixin {
   late String _currentSelection;
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
@@ -41,7 +42,8 @@ class _AccountTypePopupState extends State<AccountTypePopup> with SingleTickerPr
       vsync: this,
       duration: const Duration(milliseconds: 250),
     );
-    _scaleAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeOutBack);
+    _scaleAnimation =
+        CurvedAnimation(parent: _controller, curve: Curves.easeOutBack);
     _controller.forward();
 
     _loadPremiumItem();
@@ -51,7 +53,8 @@ class _AccountTypePopupState extends State<AccountTypePopup> with SingleTickerPr
     try {
       final api = ApiService(Dio());
       final items = await api.getItems();
-      final premiums = items.where((i) => i.itemType == 'SUBSCRIPTION').toList();
+      final premiums =
+          items.where((i) => i.itemType == 'SUBSCRIPTION').toList();
       setState(() {
         _premiumItems = premiums;
         _selectedItem = premiums.isNotEmpty ? premiums.first : null;
@@ -72,7 +75,7 @@ class _AccountTypePopupState extends State<AccountTypePopup> with SingleTickerPr
     final token = await _getToken();
     if (token == null || _selectedItem == null) return;
 
-    Navigator.of(context).pop(); // đóng popup trước
+    Navigator.of(context).pop(); // Đóng popup trước
 
     if (method == 'Stripe') {
       Navigator.push(
@@ -106,119 +109,275 @@ class _AccountTypePopupState extends State<AccountTypePopup> with SingleTickerPr
   Widget _buildInitialOptions() {
     return Column(
       children: [
-        const Text("Chọn gói", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.orange)),
-        const SizedBox(height: 12),
+        const Text(
+          "Chọn gói",
+          style: TextStyle(
+              fontSize: 24, fontWeight: FontWeight.bold, color: Colors.orange),
+        ),
+        const SizedBox(height: 20),
         ...widget.options.map((option) {
-          return ListTile(
-            title: Center(
-              child: Text(option, style: const TextStyle(fontWeight: FontWeight.bold)),
-            ),
-            subtitle: (option == "Premium" && _selectedItem != null)
-                ? Center(
-              child: Text(
-                "${_selectedItem!.price.toStringAsFixed(0)} USD / ${_selectedItem!.durationInDays} ngày",
-                style: const TextStyle(color: Colors.grey),
+          final bool isPremium = option == "Premium";
+          return Container(
+            margin: const EdgeInsets.symmetric(vertical: 8),
+            decoration: BoxDecoration(
+              color: _currentSelection == option
+                  ? Colors.orange.withOpacity(0.1)
+                  : Colors.grey.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(15),
+              border: Border.all(
+                color: _currentSelection == option
+                    ? Colors.orange
+                    : Colors.grey.withOpacity(0.3),
+                width: 2,
               ),
-            )
-                : null,
-            trailing: _currentSelection == option ? const Icon(Icons.check, color: Colors.orange) : null,
-            onTap: () {
-              setState(() {
-                _currentSelection = option;
-              });
-            },
+            ),
+            child: Column(
+              children: [
+                ListTile(
+                  title: Center(
+                    child: Text(
+                      option,
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: _currentSelection == option
+                            ? Colors.orange
+                            : Colors.black,
+                      ),
+                    ),
+                  ),
+                  subtitle: isPremium && _selectedItem != null
+                      ? Container(
+                          margin: const EdgeInsets.only(top: 8),
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 8, horizontal: 16),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Column(
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "\$${_selectedItem!.price.toStringAsFixed(0)}",
+                                    style: const TextStyle(
+                                      color: Colors.orange,
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const Text(
+                                    " USD",
+                                    style: TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 6),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 12, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: Colors.orange,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        "${_selectedItem!.durationInDays} ngày",
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        )
+                      : null,
+                  trailing: _currentSelection == option
+                      ? const Icon(Icons.check_circle,
+                          color: Colors.orange, size: 28)
+                      : null,
+                  onTap: () {
+                    setState(() {
+                      _currentSelection = option;
+                    });
+                  },
+                ),
+                if (_currentSelection == option) ...[
+                  const Divider(height: 1),
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          isPremium ? "Quyền lợi Premium:" : "Quyền lợi Basic:",
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        ...(isPremium
+                            ? [
+                                _buildBenefitItem(
+                                    "🎯 Truy cập tất cả bài tập nâng cao"),
+                                _buildBenefitItem(
+                                    "📊 Theo dõi chi tiết tiến độ"),
+                                _buildBenefitItem(
+                                    "🎬 Video hướng dẫn chất lượng cao"),
+                                _buildBenefitItem(
+                                    "💬 Hỗ trợ 24/7 từ chuyên gia"),
+                                _buildBenefitItem("📱 Không giới hạn thiết bị"),
+                              ]
+                            : [
+                                _buildBenefitItem("🎯 Truy cập bài tập cơ bản"),
+                                _buildBenefitItem("📊 Theo dõi tiến độ cơ bản"),
+                                _buildBenefitItem("📱 Sử dụng trên 1 thiết bị"),
+                              ]),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
           );
         }),
-        const SizedBox(height: 8),
+        const SizedBox(height: 20),
         ElevatedButton(
           onPressed: () {
             widget.onSelected(_currentSelection);
             if (_currentSelection == 'Premium') {
               setState(() => _showPaymentMethods = true);
             } else {
-              Navigator.pop(context); // đóng popup nếu chọn Basic
+              Navigator.pop(context);
             }
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.orange,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+            minimumSize: const Size(double.infinity, 50),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
           ),
-          child: const Text("Xác nhận", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          child: const Text(
+            "Xác nhận",
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+            ),
+          ),
         ),
       ],
+    );
+  }
+
+  Widget _buildBenefitItem(String text) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          const Icon(Icons.check_circle_outline, color: Colors.green, size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(fontSize: 14),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildPaymentMethods() {
     return Column(
       children: [
-        const Text("Chọn phương thức thanh toán", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.orange)),
-        const SizedBox(height: 12),
-        ListTile(
-          title: const Center(child: Text("Stripe")),
-          onTap: () => _goToPayment('Stripe'),
+        const Text(
+          "Chọn phương thức thanh toán",
+          style: TextStyle(
+              fontSize: 24, fontWeight: FontWeight.bold, color: Colors.orange),
         ),
-        const Divider(),
-        ListTile(
-          title: const Center(child: Text("PayPal")),
-          onTap: () => _goToPayment('PayPal'),
+        const SizedBox(height: 20),
+        _buildPaymentMethodTile(
+          'Stripe',
+          'Thanh toán bằng thẻ tín dụng',
+          Icons.credit_card,
+          () => _goToPayment('Stripe'),
+        ),
+        const Divider(height: 1),
+        _buildPaymentMethodTile(
+          'PayPal',
+          'Thanh toán qua PayPal',
+          Icons.payment,
+          () => _goToPayment('PayPal'),
         ),
       ],
     );
   }
 
+  Widget _buildPaymentMethodTile(
+      String title, String subtitle, IconData icon, VoidCallback onTap) {
+    return ListTile(
+      leading: Icon(icon, color: Colors.orange),
+      title: Text(
+        title,
+        style: const TextStyle(fontWeight: FontWeight.bold),
+      ),
+      subtitle: Text(subtitle),
+      onTap: onTap,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black.withOpacity(0.3),
-      body: Stack(
-        children: [
-          Center(
+    return GestureDetector(
+      onTap: () {
+        // Đóng popup khi nhấn bên ngoài
+        Navigator.pop(context);
+      },
+      child: Scaffold(
+        backgroundColor: Colors.black.withOpacity(0.3),
+        body: Center(
+          child: GestureDetector(
+            onTap: () {
+              // Ngăn sự kiện nhấn bên trong nội dung popup đóng popup
+            },
             child: ScaleTransition(
               scale: _scaleAnimation,
               child: Material(
                 color: Colors.transparent,
                 child: Container(
                   width: 300,
-                  // constraints: const BoxConstraints(
-                  //   maxHeight: 1000, // ✅ Giới hạn chiều cao tối đa
-                  // ),
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: _isLoading
-                      ? const SizedBox(height: 150, child: Center(child: CircularProgressIndicator()))
-                      : SingleChildScrollView( // ✅ Cho phép cuộn khi nội dung vượt quá chiều cao
-                    child: _showPaymentMethods
-                      ? _buildPaymentMethods()
-                      : _buildInitialOptions(),
-                ),
-              ),
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: 190,
-            left: MediaQuery.of(context).size.width / 2 - 25,
-            child: GestureDetector(
-              onTap: () => Navigator.pop(context),
-              child: Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 2),
-                  color: Colors.transparent,
-                ),
-                child: const Center(
-                  child: Icon(Icons.close, color: Colors.white, size: 20),
+                      ? const SizedBox(
+                          height: 150,
+                          child: Center(child: CircularProgressIndicator()),
+                        )
+                      : SingleChildScrollView(
+                          child: _showPaymentMethods
+                              ? _buildPaymentMethods()
+                              : _buildInitialOptions(),
+                        ),
                 ),
               ),
             ),
           ),
-        ],
+        ),
       ),
     );
   }

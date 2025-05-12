@@ -564,14 +564,10 @@ class DatabaseHelper {
   }
 
   // Cập nhật trạng thái bài tập
-  Future<void> updateWorkoutStatus(int id, String newStatus) async {
+  Future<int> updateWorkoutStatus(int workoutId, String newStatus) async {
     final db = await database;
-    await db.update(
-      'workouts',
-      {'status': newStatus},
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    return await db.update('workouts', {'status': newStatus},
+        where: 'id = ?', whereArgs: [workoutId]);
   }
 
   // Thêm user info
@@ -641,14 +637,12 @@ class DatabaseHelper {
   }
 
   // Phương thức lấy kết quả cho một ngày cụ thể và tên bài tập
+// Sửa hàm này trong DatabaseHelper
+  // Sửa hàm này trong DatabaseHelper
   Future<List<Map<String, dynamic>>> getExerciseResults(int day) async {
     final db = await database;
-    final List<Map<String, dynamic>> results = await db.query(
-      'workout_results',
-      where: 'day_number = ?',
-      whereArgs: [day],
-    );
-    return results;
+    return await db
+        .query('workout_results', where: 'day_number = ?', whereArgs: [day]);
   }
 
   Future<void> insertExerciseResult(int day, String exerciseName) async {

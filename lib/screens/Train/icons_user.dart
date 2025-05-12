@@ -14,7 +14,8 @@ class IconsUser extends StatefulWidget {
   _IconsUserState createState() => _IconsUserState();
 }
 
-class _IconsUserState extends State<IconsUser>  with AutomaticKeepAliveClientMixin<IconsUser>  {
+class _IconsUserState extends State<IconsUser>
+    with AutomaticKeepAliveClientMixin<IconsUser> {
   String? userName;
   bool isLoading = true;
   Map<String, dynamic> _userInfo = {};
@@ -165,6 +166,7 @@ class _IconsUserState extends State<IconsUser>  with AutomaticKeepAliveClientMix
     //   print(permission);
     // });
   }
+
   // premium
   Future<void> _loadUserProfile(DatabaseHelper dbHelper) async {
     final db = await dbHelper.database;
@@ -177,6 +179,7 @@ class _IconsUserState extends State<IconsUser>  with AutomaticKeepAliveClientMix
       });
     }
   }
+
   String capitalize(String? text) {
     if (text == null || text.isEmpty) return "Basic";
     return text[0].toUpperCase() + text.substring(1).toLowerCase();
@@ -198,6 +201,7 @@ class _IconsUserState extends State<IconsUser>  with AutomaticKeepAliveClientMix
         );
     }
   }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -210,6 +214,7 @@ class _IconsUserState extends State<IconsUser>  with AutomaticKeepAliveClientMix
   void refreshUser() {
     _loadUserProfile(dbHelper);
   }
+
   @override
   bool get wantKeepAlive => true;
 
@@ -232,29 +237,29 @@ class _IconsUserState extends State<IconsUser>  with AutomaticKeepAliveClientMix
             isLoading
                 ? const CircularProgressIndicator()
                 : RichText(
-              text: TextSpan(
-                children: [
-                  const TextSpan(
-                    text: 'Welcome Back, ',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
+                    text: TextSpan(
+                      children: [
+                        const TextSpan(
+                          text: 'Welcome Back, ',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
+                        ),
+                        TextSpan(
+                          text: userName ?? 'aa',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  TextSpan(
-                    text: userName ?? 'aa',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
-                  ),
-                ],
-              ),
-            ),
             GestureDetector(
-            // Trong onTap của container
+              // Trong onTap của container
               onTap: () {
                 showGeneralDialog(
                   context: context,
@@ -270,10 +275,8 @@ class _IconsUserState extends State<IconsUser>  with AutomaticKeepAliveClientMix
                         print("🔶 Người dùng đã chọn gói: $selectedType");
                       },
                     );
-
                   },
-
-                transitionBuilder: (_, animation, __, child) {
+                  transitionBuilder: (_, animation, __, child) {
                     return Transform.scale(
                       scale: animation.value,
                       child: Opacity(
@@ -285,10 +288,9 @@ class _IconsUserState extends State<IconsUser>  with AutomaticKeepAliveClientMix
                 );
               },
 
-
-
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
                   gradient: getAccountGradient(accountTypeRaw),
@@ -302,10 +304,8 @@ class _IconsUserState extends State<IconsUser>  with AutomaticKeepAliveClientMix
                 ),
               ),
             ),
-
           ],
         ),
-
       ),
     );
   }
