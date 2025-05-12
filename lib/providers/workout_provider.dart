@@ -107,13 +107,23 @@ class WorkoutProvider extends ChangeNotifier {
 
     try {
       _workouts = await _dbHelper.getWorkouts();
-      if (_workouts.isNotEmpty) {
-        print("📌 Đã tải ${_workouts.length} bài tập từ SQLite!");
-      } else {
-        print("⚠️ Không có dữ liệu trong SQLite.");
+      debugPrint("📌 Đã tải ${_workouts.length} bài tập từ SQLite!");
+
+      // Đồng bộ trạng thái từ workout_results
+      for (var workout in _workouts) {
+        if (workout.day != null && workout.exerciseName != null) {
+          final isCompleted = await _dbHelper.checkExerciseCompletion(
+              workout.day!, workout.exerciseName!);
+          if (isCompleted && workout.status != "COMPLETED") {
+            workout.status = "COMPLETED";
+            if (workout.id != null) {
+              await _dbHelper.updateWorkoutStatus(workout.id!, "COMPLETED");
+            }
+          }
+        }
       }
     } catch (e) {
-      print("❌ Lỗi khi tải từ SQLite: $e");
+      debugPrint("❌ Lỗi khi tải từ SQLite: $e");
     } finally {
       _isLoading = false;
       notifyListeners();

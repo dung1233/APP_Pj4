@@ -36,7 +36,6 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
   }
 
   Future<bool> checkExerciseCompletion(int day, String exerciseName) async {
-    // Sử dụng cache để tránh truy vấn DB nhiều lần
     final cacheKey = "$day-$exerciseName";
     if (_completionCache.containsKey(cacheKey)) {
       return _completionCache[cacheKey]!;
@@ -44,10 +43,11 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
 
     try {
       final results = await dbHelper.getExerciseResults(day);
+      debugPrint(
+          "DEBUG: Results for day $day: $results"); // Kiểm tra dữ liệu trả về
       final isCompleted =
           results.any((result) => result['exercise_name'] == exerciseName);
 
-      // Lưu vào cache
       _completionCache[cacheKey] = isCompleted;
       return isCompleted;
     } catch (e) {
@@ -98,10 +98,52 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
   @override
   void initState() {
     super.initState();
+    _completionCache.clear();
     // Đảm bảo dữ liệu được tải khi widget khởi tạo
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _ensureDataLoaded();
+      _syncWorkoutStatusFromResults(); // Thêm dòng này
     });
+  }
+
+  Future<void> _syncWorkoutStatusFromResults() async {
+    try {
+      final provider = Provider.of<WorkoutProvider>(context, listen: false);
+      final workouts = provider.workouts;
+      bool hasChanges = false;
+
+      for (var workout in workouts) {
+        if (workout.day != null && workout.exerciseName != null) {
+          final isCompleted = await checkExerciseCompletion(
+              workout.day!, workout.exerciseName!);
+
+          if (isCompleted && workout.status != "COMPLETED") {
+            workout.status = "COMPLETED";
+            hasChanges = true;
+
+            // Cập nhật trạng thái trong SQLite
+            if (workout.id != null) {
+              await dbHelper.updateWorkoutStatus(workout.id!, "COMPLETED");
+            }
+
+            // Cập nhật cache
+            _completionCache["${workout.day}-${workout.exerciseName}"] = true;
+          }
+        }
+      }
+
+      // Cập nhật provider
+      if (hasChanges) {
+        provider.updateWorkouts([...workouts]);
+      }
+
+      // Cập nhật UI
+      if (hasChanges && mounted) {
+        setState(() {});
+      }
+    } catch (e) {
+      debugPrint("Error syncing status from results: $e");
+    }
   }
 
   Future<void> _ensureDataLoaded() async {
@@ -543,7 +585,29 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
       // Thực hiện cập nhật trong DB
       await dbHelper.updateWorkoutStatus(workout.id!, newStatus);
 
-      // Cập nhật cache nếu cần
+      // Cập nhật vào workout_results nếu là COMPLETED
+      if (newStatus == "COMPLETED" &&
+          workout.day != null &&
+          workout.exerciseName != null) {
+        await dbHelper.insertWorkoutResult(workout.day!, {
+          'exercise_name': workout.exerciseName,
+          'sets_completed': workout.sets,
+          'reps_completed': workout.reps,
+          'distance_completed': workout.distance,
+          'duration_completed': workout.duration,
+          'completed_date': DateTime.now().toIso8601String()
+        });
+      } else if (newStatus == "NOT_STARTED" &&
+          workout.day != null &&
+          workout.exerciseName != null) {
+        // Xóa khỏi workout_results nếu chuyển về NOT_STARTED
+        final db = await dbHelper.database;
+        await db.delete('workout_results',
+            where: 'day_number = ? AND exercise_name = ?',
+            whereArgs: [workout.day, workout.exerciseName]);
+      }
+
+      // Cập nhật cache
       if (workout.day != null && workout.exerciseName != null) {
         final cacheKey = "${workout.day}-${workout.exerciseName}";
         _completionCache[cacheKey] = newStatus == "COMPLETED";
