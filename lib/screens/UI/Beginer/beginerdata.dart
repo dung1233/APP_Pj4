@@ -243,7 +243,6 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
                                       ),
                                     ),
                                     const SizedBox(width: 10),
-
                                   ],
                                 ),
                               ),
