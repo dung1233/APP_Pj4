@@ -46,7 +46,7 @@ class _HomePageState extends State<HomePage> {
                 borderRadius: BorderRadius.circular(12),
                 image: DecorationImage(
                   image: AssetImage(
-                      "assets/img/home.jpg"), // Thay bằng ảnh của bạn
+                      "assets/splash/slapera.png"), // Thay bằng ảnh của bạn
                   fit: BoxFit.cover,
                 ),
               ),
