@@ -250,6 +250,32 @@ class _ApiService implements ApiService {
         )));
     await _dio.fetch<void>(_options);
   }
+  @override
+  Future<Response> getPurchasedItems(String token) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{r'Authorization': token};
+    _headers.removeWhere((k, v) => v == null);
+    const Map<String, dynamic>? _data = null;
+    final _options = _setStreamType<Response>(Options(
+      method: 'GET',
+      headers: _headers,
+      extra: _extra,
+    )
+        .compose(
+      _dio.options,
+      '/users/getMyPurchasedItem',
+      queryParameters: queryParameters,
+      data: _data,
+    )
+        .copyWith(
+        baseUrl: _combineBaseUrls(
+          _dio.options.baseUrl,
+          baseUrl,
+        )));
+    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
+    return _result;
+  }
 
   @override
   Future<List<WorkoutHistory>> getWorkoutHistory(String token) async {

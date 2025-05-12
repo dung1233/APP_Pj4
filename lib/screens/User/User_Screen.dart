@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:training_souls/screens/User/status.dart';
 
 import '../../data/DatabaseHelper.dart';
+import 'PurchasedItemsPage.dart';
 
 class UserProfilePage extends StatefulWidget {
   const UserProfilePage({super.key});
@@ -39,6 +40,7 @@ class _UserScreenState extends State<UserProfilePage>
   void refreshUser() {
     _loadUserProfile(dbHelper);
   }
+
 
   Future<void> _printDatabaseContent(DatabaseHelper dbHelper) async {
     final db = await dbHelper.database;
@@ -92,6 +94,13 @@ class _UserScreenState extends State<UserProfilePage>
           end: Alignment.centerRight,
         );
     }
+  }
+  // Navigate to Purchased Items Page
+  Future<void> navigateToPurchasedItemsPage() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const PurchasedItemsPage()),
+    );
   }
 
   @override
@@ -178,6 +187,11 @@ class _UserScreenState extends State<UserProfilePage>
                     leading: const Icon(Icons.language),
                     title: const Text("Ngôn ngữ"),
                     onTap: () {},
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.shopping_bag),
+                    title: const Text("Sản Phẩm Đã Mua"),
+                    onTap: navigateToPurchasedItemsPage,
                   ),
                   ListTile(
                     leading: const Icon(Icons.dark_mode),

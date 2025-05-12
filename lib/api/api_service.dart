@@ -62,4 +62,8 @@ abstract class ApiService {
 
   @POST("/reward")
   Future<String> claimRewards(@Header("Authorization") String token);
+  @GET("/users/getMyPurchasedItem")
+  Future<Response> getPurchasedItems(
+      @Header("Authorization") String token,
+      );
 }
