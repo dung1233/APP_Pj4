@@ -49,9 +49,11 @@ class _RankScreenState extends State<RankScreen> {
     });
 
     try {
-      // Sử dụng ApiService để gọi API
       _ranksFuture = _apiService.getRanks();
       List<Rank> ranks = await _ranksFuture;
+
+      // Sắp xếp theo thứ tự tăng dần của trường rank
+      ranks.sort((a, b) => a.rank.compareTo(b.rank));
 
       setState(() {
         _rankDataSource.updateRanks(ranks);
@@ -61,7 +63,6 @@ class _RankScreenState extends State<RankScreen> {
       setState(() {
         _isLoading = false;
       });
-      // Hiển thị thông báo lỗi cho người dùng
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Không thể tải dữ liệu: ${e.toString()}')),
@@ -69,6 +70,7 @@ class _RankScreenState extends State<RankScreen> {
       }
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -92,12 +94,12 @@ class _RankScreenState extends State<RankScreen> {
                     label: const Center(child: Text('Name')),
                   ),
                   GridColumn(
-                    columnName: 'score',
-                    label: const Center(child: Text('Score')),
+                    columnName: 'power',
+                    label: const Center(child: Text('Power')),
                   ),
                   GridColumn(
-                    columnName: 'totalScore',
-                    label: const Center(child: Text('Total')),
+                    columnName: 'deathpoint',
+                    label: const Center(child: Text('Deathpoint')),
                   ),
                 ],
               ),
@@ -120,12 +122,12 @@ class RankDataSource extends DataGridSource {
                 DataGridCell<int>(columnName: 'rank', value: rank.rank),
                 DataGridCell<String>(columnName: 'name', value: rank.userName),
                 DataGridCell<String>(
-                    columnName: 'score',
+                    columnName: 'power',
                     value: rank.totalScore.toStringAsFixed(2)),
                 DataGridCell<String>(
-                    columnName: 'totalScore',
+                    columnName: 'deathpoint',
                     value:
-                        '${rank.strengthScore + rank.enduranceScore + rank.healthScore + rank.agilityScore - rank.deathpoints}'),
+                        '${rank.deathpoints}'),
               ],
             ))
         .toList();
