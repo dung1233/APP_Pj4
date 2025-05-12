@@ -243,11 +243,7 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
                                       ),
                                     ),
                                     const SizedBox(width: 10),
-                                    Text(
-                                      '$completedDays/$totalDays Days',
-                                      style: GoogleFonts.urbanist(
-                                          color: Colors.grey, fontSize: 14),
-                                    ),
+
                                   ],
                                 ),
                               ),
