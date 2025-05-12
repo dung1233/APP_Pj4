@@ -89,6 +89,9 @@ dependencies:
   intl: ^0.19.0
   cached_network_image: ^3.4.1
   agora_rtc_engine: ^6.5.0
+  #stripe
+  flutter_stripe: ^9.5.0
+
 
 flutter_launcher_icons:
   android: true

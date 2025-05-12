@@ -7,6 +7,9 @@ import 'package:dio/dio.dart';
 import 'package:hive/hive.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../APi/user_service.dart';
+import '../../data/DatabaseHelper.dart';
+
 class ShopScreen extends StatefulWidget {
   const ShopScreen({super.key});
 
@@ -20,11 +23,16 @@ class _ShopScreenState extends State<ShopScreen>
   final List<String> categories = ["All", "Premium", "Clothing", "Accessories"];
   final Dio _dio = Dio();
   late ApiService _apiService;
+  final DatabaseHelper dbHelper = DatabaseHelper();
 
   List<Item> _items = [];
-  bool _isLoading = true;
+  bool _isLoading = false;
+
   String? _errorMessage;
   int _userPoints = 0; // Giả sử user có điểm này
+  Map<String, dynamic>? selectedItem;
+  String? _accountType;
+
 
   @override
   void initState() {
@@ -32,6 +40,7 @@ class _ShopScreenState extends State<ShopScreen>
     _tabController = TabController(length: categories.length, vsync: this);
     _apiService = ApiService(_dio);
     _loadInitialData();
+    _loadUserPoints();
   }
 
   Future<void> _loadInitialData() async {
@@ -82,30 +91,122 @@ class _ShopScreenState extends State<ShopScreen>
   }
 
   Future<void> _handlePurchase(Item item) async {
+    setState(() {
+      _isLoading = true;
+    });
+
     try {
-      // 1. Lấy token từ storage
       final token = await getToken();
       if (token == null || token.isEmpty) {
-        // Nếu không có token, hiển thị thông báo yêu cầu đăng nhập
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Vui lòng đăng nhập để mua hàng')),
         );
         return;
       }
 
-      // 2. Gọi API mua hàng
-      final response = await _apiService.purchaseItem(
-        item.id, // ✅ Sửa thành id
-        "Bearer $token",
-      );
+      final result = await _apiService.purchaseItem(item.id, "Bearer $token");
 
-      // 4. Cập nhật lại danh sách nếu cần
+      if (result == "Purchase Success") {
+        // Cập nhật điểm sau khi mua
+        await _loadUserPoints();
+
+        // Đóng popup trước khi hiển thị thông báo thành công
+        Navigator.pop(context);
+
+        // Hiển thị thông báo thành công
+        _showSuccessDialog();
+
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   const SnackBar(content: Text('Mua hàng thành công')),
+        // );
+      } else if (result == "Không đủ points để mua!") {
+        Navigator.pop(context); // ✅ Đóng BottomSheet trước khi hiển thị AlertDialog
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Không đủ điểm'),
+            content:Text('$result'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context); // Đóng dialog
+                  // Cập nhật lại các thông tin người dùng (ví dụ: điểm) sau khi thanh toán thành công
+                  _loadUserPoints();
+                },
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      } else {
+        Navigator.pop(context); // ✅ Đóng BottomSheet trước khi hiển thị AlertDialog
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Phản hồi không xác định:'),
+            content:Text('$result'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context); // Đóng dialog
+                  // Cập nhật lại các thông tin người dùng (ví dụ: điểm) sau khi thanh toán thành công
+                  _loadUserPoints();
+                },
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi khi mua hàng: ${e.toString()}')),
+      Navigator.pop(context); // ✅ Đóng BottomSheet trước khi hiển thị AlertDialog
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Lỗi khi mua hàng:'),
+          content:Text('${e.toString()}'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context); // Đóng dialog
+                // Cập nhật lại các thông tin người dùng (ví dụ: điểm) sau khi thanh toán thành công
+                _loadUserPoints();
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        ),
       );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
+
+  void _showSuccessDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Thanh toán thành công!'),
+        content: const Text('Giao dịch của bạn đã được xử lý thành công.'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context); // Đóng dialog
+              // Cập nhật lại các thông tin người dùng (ví dụ: điểm) sau khi thanh toán thành công
+              _loadUserPoints();
+            },
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+
+
+
 
   void _showLoginAlert() {
     showDialog(
@@ -131,6 +232,58 @@ class _ShopScreenState extends State<ShopScreen>
     );
   }
 
+  //Points
+  Future<void> _loadUserPoints() async {
+    try {
+      var box = await Hive.openBox('userBox');
+      final token = box.get('token');
+      if (token == null) return;
+
+      final dio = Dio();
+      final client = UserService(dio);
+      final dbHelper = DatabaseHelper();
+
+      try {
+        final response = await client.getMyInfo("Bearer $token");
+
+        // Kiểm tra code của response
+        if (response.code == 0) {
+          final user = response.result;
+          // ✅ Lấy point trực tiếp từ API result
+          final int point = user.points; // 🔥 Truy cập đúng kiểu
+          final String accType = user.accountType;
+
+          print("✅ Lấy thông tin user thành công");
+          print("💰 Điểm: $point");
+          print("👤 Loại tài khoản: $accType");
+          setState(() {
+            _userPoints = point;
+            _accountType = accType;
+          });
+        } else {
+          print("❌ API trả về mã lỗi: ${response.code}");
+        }
+      } catch (e) {
+        print("❌ Lỗi khi gọi API: $e");
+      }
+
+      // Load điểm từ database
+      // final db = await dbHelper.database;
+      // final userInfo = await db.query('user_info');
+      // if (userInfo.isNotEmpty) {
+      //   final points = userInfo.first['points'] as int;
+      //   final accountType = userInfo.first['accountType']as String?;
+      //   print("❓ Điểm hiện tại từ DB: $points");
+      //   setState(() {
+      //     _userPoints = points;
+      //     _accountType = accountType;
+      //   });
+      // }
+
+    } catch (e) {
+      print("❌ Lỗi khi tải trạng thái người dùng: $e");
+    }
+  }
   // paypal
   void _startPaypalCheckout(Item item) async {
     final token = await getToken();
@@ -152,7 +305,14 @@ class _ShopScreenState extends State<ShopScreen>
     );
   }
 
-  void _showPurchaseConfirmation(Item item) {
+  void _showPurchaseConfirmation() {
+    if (selectedItem == null) return;
+
+    final itemId = selectedItem!['id'];
+    final itemName = selectedItem!['name'];
+    final itemPoint = selectedItem!['points'];
+    final itemDescription = selectedItem!['description'];
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -191,14 +351,15 @@ class _ShopScreenState extends State<ShopScreen>
                   // ignore: prefer_const_constructors
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
+                    children:  [
                       // ignore: prefer_const_constructors
-                      Text('Tài Khoản : Premium',
+                      Text('Tài Khoản : ${_accountType ?? "Chưa xác định"}',
                           style: TextStyle(
                               fontSize: 16, fontWeight: FontWeight.bold)),
                       SizedBox(height: 4),
-                      Text('Các bài tập tại nhà',
+                      Text('Số Points hiện có: $_userPoints',
                           style: TextStyle(color: Colors.grey)),
+
                     ],
                   ),
                 ),
@@ -208,26 +369,26 @@ class _ShopScreenState extends State<ShopScreen>
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Ngày bắt đầu hôm nay'),
-                Text(' 120 USD/Tháng',
+                Text('$itemName'),
+                Text('$itemPoint Points',
                     style: TextStyle(fontWeight: FontWeight.bold)),
               ],
             ),
             SizedBox(height: 4),
-            Text('+ thuế', style: TextStyle(color: Colors.grey)),
+            // Text('+ thuế', style: TextStyle(color: Colors.grey)),
             SizedBox(height: 16),
             Divider(),
             Icon(Icons.info_outline, size: 18, color: Colors.grey),
             SizedBox(height: 4),
-            Text('• Bạn chưa đáp ứng điều kiện dùng thử miễn phí'),
+            Text('$itemDescription'),
             SizedBox(height: 4),
-            Text(
-                '• Hủy bất kỳ lúc nào trong phần Gói thuê bao trên Google Play'),
+            // Text(
+            //     '• Hủy bất kỳ lúc nào trong phần Gói thuê bao trên Google Play'),
             SizedBox(height: 16),
             ElevatedButton(
               onPressed: () {
-                Navigator.pop(context);
-                _startPaypalCheckout(item); // hoặc xử lý mua hàng
+                final Item item = selectedItem!['fullItem'];
+                _handlePurchase(item); // 👈 hoặc thay bằng _startPaypalCheckout(item)
               },
               style: ElevatedButton.styleFrom(
                 minimumSize: Size.fromHeight(48),
@@ -344,7 +505,18 @@ class _ShopScreenState extends State<ShopScreen>
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: () => _showPurchaseConfirmation(item),
+        onTap: () {
+          setState(() {
+            selectedItem = {
+              'id': item.id,
+              'name': item.name,
+              'points': item.points,
+              'description': item.description,
+              'fullItem': item, // 👈 Thêm dòng này
+            };
+          });
+          _showPurchaseConfirmation();
+        },
         child: Padding(
           padding: const EdgeInsets.all(8.0),
           child: Column(
@@ -371,9 +543,15 @@ class _ShopScreenState extends State<ShopScreen>
                 overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 4),
-              Row(
-                children: [],
+              Text(
+                '${item.points} points', // ✅ Giá từ API
+                style: const TextStyle(
+                  color: Colors.green,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
+              const SizedBox(height: 4),
               if (item.description.isNotEmpty) ...[
                 const SizedBox(height: 4),
                 Text(

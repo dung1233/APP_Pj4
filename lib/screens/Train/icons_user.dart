@@ -4,6 +4,9 @@ import 'package:training_souls/api/user_service.dart';
 import 'package:training_souls/data/DatabaseHelper.dart';
 import 'package:training_souls/data/local_storage.dart';
 
+import '../../Stripe/UpgradeAccountPage.dart';
+import '../../Stripe/account_type_dialog.dart';
+
 class IconsUser extends StatefulWidget {
   const IconsUser({super.key});
 
@@ -11,15 +14,19 @@ class IconsUser extends StatefulWidget {
   _IconsUserState createState() => _IconsUserState();
 }
 
-class _IconsUserState extends State<IconsUser> {
+class _IconsUserState extends State<IconsUser>
+    with AutomaticKeepAliveClientMixin<IconsUser> {
   String? userName;
   bool isLoading = true;
+  Map<String, dynamic> _userInfo = {};
+  final dbHelper = DatabaseHelper();
 
   @override
   void initState() {
     super.initState();
     fetchUserInfo();
     _loadUserData();
+    _loadUserProfile(dbHelper);
   }
 
   Future<void> _loadUserData() async {
@@ -160,8 +167,63 @@ class _IconsUserState extends State<IconsUser> {
     // });
   }
 
+  // premium
+  Future<void> _loadUserProfile(DatabaseHelper dbHelper) async {
+    final db = await dbHelper.database;
+    final name = await db.query('user_info');
+    // final profiles = await db.query('user_profile');
+    if (name.isNotEmpty) {
+      setState(() {
+        // _userProfile = profiles.first;
+        _userInfo = name.first;
+      });
+    }
+  }
+
+  String capitalize(String? text) {
+    if (text == null || text.isEmpty) return "Basic";
+    return text[0].toUpperCase() + text.substring(1).toLowerCase();
+  }
+
+  LinearGradient getAccountGradient(String accountType) {
+    switch (accountType.toLowerCase()) {
+      case 'premium':
+        return const LinearGradient(
+          colors: [Colors.orange, Colors.black],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        );
+      default:
+        return const LinearGradient(
+          colors: [Color(0xFFC0C0C0), Color(0xFF191414)],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        );
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Khi tab hiện tại được focus
+    if (ModalRoute.of(context)?.isCurrent == true) {
+      refreshUser();
+    }
+  }
+
+  void refreshUser() {
+    _loadUserProfile(dbHelper);
+  }
+
+  @override
+  bool get wantKeepAlive => true;
+
   @override
   Widget build(BuildContext context) {
+    super.build(context); // BẮT BUỘC khi dùng keepAlive
+    final accountTypeRaw = _userInfo['accountType'] ?? 'basic';
+    final accountType = capitalize(accountTypeRaw);
+
     return Padding(
       padding: const EdgeInsets.only(top: 10, left: 22, right: 20),
       child: Container(
@@ -170,28 +232,78 @@ class _IconsUserState extends State<IconsUser> {
         padding: const EdgeInsets.symmetric(horizontal: 10),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             isLoading
                 ? const CircularProgressIndicator()
-                : Row(
-                    children: [
-                      const Text(
-                        'Welcome Back, ',
-                        style: TextStyle(
+                : RichText(
+                    text: TextSpan(
+                      children: [
+                        const TextSpan(
+                          text: 'Welcome Back, ',
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: Colors.black),
-                      ),
-                      Text(
-                        userName ?? '',
-                        style: const TextStyle(
+                            color: Colors.black,
+                          ),
+                        ),
+                        TextSpan(
+                          text: userName ?? 'aa',
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: Colors.black),
-                      ),
-                    ],
+                            color: Colors.black,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-            const Icon(Icons.account_circle, size: 30, color: Colors.black),
+            GestureDetector(
+              // Trong onTap của container
+              onTap: () {
+                showGeneralDialog(
+                  context: context,
+                  barrierLabel: 'Dismiss',
+                  barrierColor: Colors.black.withOpacity(0.5),
+                  transitionDuration: const Duration(milliseconds: 300),
+                  pageBuilder: (_, __, ___) {
+                    return AccountTypePopup(
+                      selectedOption: accountType,
+                      options: ['Basic', 'Premium'],
+                      onSelected: (selectedType) {
+                        // Xử lý nếu cần dùng selectedType, không cần điều hướng nữa
+                        print("🔶 Người dùng đã chọn gói: $selectedType");
+                      },
+                    );
+                  },
+                  transitionBuilder: (_, animation, __, child) {
+                    return Transform.scale(
+                      scale: animation.value,
+                      child: Opacity(
+                        opacity: animation.value,
+                        child: child,
+                      ),
+                    );
+                  },
+                );
+              },
+
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  gradient: getAccountGradient(accountTypeRaw),
+                ),
+                child: Text(
+                  accountType,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
       ),

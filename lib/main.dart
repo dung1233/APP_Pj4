@@ -1,3 +1,4 @@
+import 'package:training_souls/Stripe/stripe_ids.dart';
 import 'package:training_souls/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -11,10 +12,11 @@ import 'package:training_souls/providers/workout_data_service.dart';
 import 'package:training_souls/providers/workout_provider.dart';
 import 'package:training_souls/hive_service.dart';
 import 'package:training_souls/screens/home/home.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
+  Stripe.publishableKey = StripeKeys.publishableKey ; // <-- Thay bằng key của bạn
   // ✅ Khởi tạo Hive
   await Hive.initFlutter();
   await initHive(); // Nếu có hàm khởi tạo thêm

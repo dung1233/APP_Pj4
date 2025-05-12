@@ -30,7 +30,7 @@ abstract class ApiService {
   Future<List<Item>> getItems();
 
   @POST("/purchase/{itemId}")
-  Future<void> purchaseItem(
+  Future<String> purchaseItem(
     @Path("itemId") int itemId,
     @Header("Authorization") String token,
   );
