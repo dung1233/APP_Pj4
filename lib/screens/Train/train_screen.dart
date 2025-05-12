@@ -130,7 +130,7 @@ class _TrainScreenState extends State<TrainScreen> {
         appBar: AppBar(
           backgroundColor: Colors.white,
           toolbarHeight: 5,
-          // automaticallyImplyLeading: false,
+          automaticallyImplyLeading: false,
           // title: Text(
           //   "Danh sách bài tập",
           //   style: GoogleFonts.urbanist(fontWeight: FontWeight.bold),
