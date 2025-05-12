@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../APi/user_service.dart';
 import '../../data/DatabaseHelper.dart';
+import '../User/PurchasedItemsPage.dart';
 
 class ShopScreen extends StatefulWidget {
   const ShopScreen({super.key});
@@ -20,7 +21,7 @@ class ShopScreen extends StatefulWidget {
 class _ShopScreenState extends State<ShopScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  final List<String> categories = ["All", "Premium", "Clothing", "Accessories"];
+  final List<String> categories = ["All", "Clothing", "Accessories"];
   final Dio _dio = Dio();
   late ApiService _apiService;
   final DatabaseHelper dbHelper = DatabaseHelper();
@@ -32,7 +33,6 @@ class _ShopScreenState extends State<ShopScreen>
   int _userPoints = 0; // Giả sử user có điểm này
   Map<String, dynamic>? selectedItem;
   String? _accountType;
-
 
   @override
   void initState() {
@@ -67,12 +67,15 @@ class _ShopScreenState extends State<ShopScreen>
   }
 
   List<Item> _getItemsByCategory(String category) {
-    if (category == "All") return _items;
+    // Lọc bỏ các sản phẩm Premium
+    final nonPremiumItems = _items
+        .where((item) => !item.name.toLowerCase().contains("premium"))
+        .toList();
 
-    return _items.where((item) {
+    if (category == "All") return nonPremiumItems;
+
+    return nonPremiumItems.where((item) {
       switch (category) {
-        case "Premium":
-          return item.name.toLowerCase().contains("premium");
         case "Clothing":
           return item.name.toLowerCase().contains("shirt") ||
               item.name.toLowerCase().contains("shoe");
@@ -120,12 +123,13 @@ class _ShopScreenState extends State<ShopScreen>
         //   const SnackBar(content: Text('Mua hàng thành công')),
         // );
       } else if (result == "Không đủ points để mua!") {
-        Navigator.pop(context); // ✅ Đóng BottomSheet trước khi hiển thị AlertDialog
+        Navigator.pop(
+            context); // ✅ Đóng BottomSheet trước khi hiển thị AlertDialog
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
             title: const Text('Không đủ điểm'),
-            content:Text('$result'),
+            content: Text('$result'),
             actions: [
               TextButton(
                 onPressed: () {
@@ -139,12 +143,13 @@ class _ShopScreenState extends State<ShopScreen>
           ),
         );
       } else {
-        Navigator.pop(context); // ✅ Đóng BottomSheet trước khi hiển thị AlertDialog
+        Navigator.pop(
+            context); // ✅ Đóng BottomSheet trước khi hiển thị AlertDialog
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
             title: const Text('Phản hồi không xác định:'),
-            content:Text('$result'),
+            content: Text('$result'),
             actions: [
               TextButton(
                 onPressed: () {
@@ -159,12 +164,13 @@ class _ShopScreenState extends State<ShopScreen>
         );
       }
     } catch (e) {
-      Navigator.pop(context); // ✅ Đóng BottomSheet trước khi hiển thị AlertDialog
+      Navigator.pop(
+          context); // ✅ Đóng BottomSheet trước khi hiển thị AlertDialog
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
           title: const Text('Lỗi khi mua hàng:'),
-          content:Text('${e.toString()}'),
+          content: Text('${e.toString()}'),
           actions: [
             TextButton(
               onPressed: () {
@@ -187,26 +193,182 @@ class _ShopScreenState extends State<ShopScreen>
   void _showSuccessDialog() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Thanh toán thành công!'),
-        content: const Text('Giao dịch của bạn đã được xử lý thành công.'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context); // Đóng dialog
-              // Cập nhật lại các thông tin người dùng (ví dụ: điểm) sau khi thanh toán thành công
-              _loadUserPoints();
-            },
-            child: const Text('OK'),
+      barrierDismissible: false,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-        ],
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Animation container
+              TweenAnimationBuilder(
+                duration: const Duration(milliseconds: 800),
+                tween: Tween<double>(begin: 0, end: 1),
+                builder: (context, double value, child) {
+                  return Transform.scale(
+                    scale: value,
+                    child: child,
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.green[50],
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.green.withOpacity(0.2),
+                        blurRadius: 10,
+                        spreadRadius: 2,
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.check_circle,
+                    color: Colors.orange,
+                    size: 80,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Title with animation
+              TweenAnimationBuilder(
+                duration: const Duration(milliseconds: 600),
+                tween: Tween<double>(begin: 0, end: 1),
+                builder: (context, double value, child) {
+                  return Opacity(
+                    opacity: value,
+                    child: Transform.translate(
+                      offset: Offset(0, 20 * (1 - value)),
+                      child: child,
+                    ),
+                  );
+                },
+                child: const Text(
+                  'Thanh toán thành công!',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.orange,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Message with animation
+              TweenAnimationBuilder(
+                duration: const Duration(milliseconds: 800),
+                tween: Tween<double>(begin: 0, end: 1),
+                builder: (context, double value, child) {
+                  return Opacity(
+                    opacity: value,
+                    child: Transform.translate(
+                      offset: Offset(0, 20 * (1 - value)),
+                      child: child,
+                    ),
+                  );
+                },
+                child: Text(
+                  'Giao dịch của bạn đã được xử lý thành công.\nCảm ơn bạn đã mua hàng!',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey[700],
+                    height: 1.5,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(height: 32),
+
+              // Buttons with animation
+              TweenAnimationBuilder(
+                duration: const Duration(milliseconds: 1000),
+                tween: Tween<double>(begin: 0, end: 1),
+                builder: (context, double value, child) {
+                  return Opacity(
+                    opacity: value,
+                    child: Transform.translate(
+                      offset: Offset(0, 20 * (1 - value)),
+                      child: child,
+                    ),
+                  );
+                },
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        child: const Text(
+                          'Đóng',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const PurchasedItemsPage(),
+                            ),
+                          );
+                          _loadUserPoints();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          elevation: 2,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        child: const Text(
+                          'Xem lịch sử',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
-
-
-
-
 
   void _showLoginAlert() {
     showDialog(
@@ -279,11 +441,11 @@ class _ShopScreenState extends State<ShopScreen>
       //     _accountType = accountType;
       //   });
       // }
-
     } catch (e) {
       print("❌ Lỗi khi tải trạng thái người dùng: $e");
     }
   }
+
   // paypal
   void _startPaypalCheckout(Item item) async {
     final token = await getToken();
@@ -351,7 +513,7 @@ class _ShopScreenState extends State<ShopScreen>
                   // ignore: prefer_const_constructors
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children:  [
+                    children: [
                       // ignore: prefer_const_constructors
                       Text('Tài Khoản : ${_accountType ?? "Chưa xác định"}',
                           style: TextStyle(
@@ -359,7 +521,6 @@ class _ShopScreenState extends State<ShopScreen>
                       SizedBox(height: 4),
                       Text('Số Points hiện có: $_userPoints',
                           style: TextStyle(color: Colors.grey)),
-
                     ],
                   ),
                 ),
@@ -388,7 +549,8 @@ class _ShopScreenState extends State<ShopScreen>
             ElevatedButton(
               onPressed: () {
                 final Item item = selectedItem!['fullItem'];
-                _handlePurchase(item); // 👈 hoặc thay bằng _startPaypalCheckout(item)
+                _handlePurchase(
+                    item); // 👈 hoặc thay bằng _startPaypalCheckout(item)
               },
               style: ElevatedButton.styleFrom(
                 minimumSize: Size.fromHeight(48),
@@ -569,15 +731,19 @@ class _ShopScreenState extends State<ShopScreen>
   }
 
   String _getImageForItem(Item item) {
-    // Logic ánh xạ ảnh tương tự như trước
-    if (item.name.toLowerCase().contains("premium")) {
-      return "assets/img/prim.jpg";
-    } else if (item.name.toLowerCase().contains("shoe")) {
-      return "assets/img/shoe.jpg";
-    } else if (item.name.toLowerCase().contains("shirt")) {
-      return "assets/img/sh.jpg";
+    // Xác định loại sản phẩm và trả về hình ảnh tương ứng
+    final name = item.name.toLowerCase();
+
+    if (name.contains("shoe")) {
+      return "assets/img/shoe.jpg"; // Giày
+    } else if (name.contains("shirt")) {
+      return "assets/img/shirt.jpg"; // Áo
+    } else if (name.contains("avatar")) {
+      return "assets/img/avatar.jpg"; // Avatar
+    } else if (name.contains("cart")) {
+      return "assets/img/cart.jpg"; // Giỏ hàng
     } else {
-      return "assets/img/prim.jpg";
+      return "assets/img/default.jpg"; // Ảnh mặc định cho các sản phẩm khác
     }
   }
 
