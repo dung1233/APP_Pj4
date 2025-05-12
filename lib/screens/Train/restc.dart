@@ -1,9 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:lottie/lottie.dart';
 import 'package:training_souls/data/DatabaseHelper.dart';
-import 'package:training_souls/screens/TEST/squat_detector_view.dart';
 import 'package:training_souls/screens/UI/Beginer/run.dart';
 import 'package:training_souls/screens/UI/Beginer/situp.dart';
 
