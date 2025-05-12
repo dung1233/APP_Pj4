@@ -118,7 +118,10 @@ class _StripePaymentDemoState extends State<StripePaymentDemo> {
                   final db = DatabaseHelper();
                   await db.updateUserInfoFromAPI();
                   Navigator.pop(context); // đóng dialog
-                  Navigator.pop(context); // đóng màn stripe
+                  Future.microtask(() {
+                    Navigator.pop(context); // đóng màn stripe SAU KHI dialog đã pop xong
+                  });
+
                 },
                 child: const Text("Về Trang chủ"),
               ),
