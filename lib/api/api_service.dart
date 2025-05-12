@@ -40,6 +40,11 @@ abstract class ApiService {
     @Body() Map<String, dynamic> body,
     @Header("Authorization") String token,
   );
+  @POST("/purchase/stripeCompleted")
+  Future<void> StripePayment(
+      @Body() Map<String, dynamic> body,
+      @Header("Authorization") String token,
+  );
 
   @GET("/workout/history")
   Future<List<WorkoutHistory>> getWorkoutHistory(

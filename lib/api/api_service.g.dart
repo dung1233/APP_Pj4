@@ -222,6 +222,35 @@ class _ApiService implements ApiService {
         )));
     await _dio.fetch<void>(_options);
   }
+  @override
+  Future<void> StripePayment(
+      Map<String, dynamic> body,
+      String token,
+      ) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{r'Authorization': token};
+    _headers.removeWhere((k, v) => v == null);
+    final _data = <String, dynamic>{};
+    _data.addAll(body);
+    final _options = _setStreamType<void>(Options(
+      method: 'POST',
+      headers: _headers,
+      extra: _extra,
+    )
+        .compose(
+      _dio.options,
+      '/purchase/stripeCompleted',
+      queryParameters: queryParameters,
+      data: _data,
+    )
+        .copyWith(
+        baseUrl: _combineBaseUrls(
+          _dio.options.baseUrl,
+          baseUrl,
+        )));
+    await _dio.fetch<void>(_options);
+  }
 
   @override
   Future<List<WorkoutHistory>> getWorkoutHistory(String token) async {
