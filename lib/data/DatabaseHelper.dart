@@ -773,4 +773,40 @@ class DatabaseHelper {
     final db = await database;
     await db.delete('workouts');
   }
+
+  Future<List<Map<String, dynamic>>> getWorkoutResults() async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query('workout_results');
+    debugPrint("📊 Đã lấy ${maps.length} kết quả từ workout_results");
+    debugPrint("Tất cả kết quả workout: $maps");
+    return maps;
+  }
+
+  Future<void> insertWorkoutResult(
+      int dayNumber, Map<String, dynamic> result) async {
+    final db = await database;
+
+    await db.insert(
+        'workout_results',
+        {
+          'day_number': dayNumber,
+          'exercise_name': result['exercise_name'],
+          'sets_completed': result['sets_completed'],
+          'reps_completed': result['reps_completed'],
+          'distance_completed': result['distance_completed'],
+          'duration_completed': result['duration_completed'],
+          'completed_date': result['completed_date']
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  Future<bool> checkExerciseCompletion(int day, String exerciseName) async {
+    final db = await database;
+    final results = await db.query(
+      'workout_results',
+      where: 'day_number = ? AND exercise_name = ?',
+      whereArgs: [day, exerciseName],
+    );
+    return results.isNotEmpty;
+  }
 }

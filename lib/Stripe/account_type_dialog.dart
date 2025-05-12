@@ -409,7 +409,7 @@ class _AccountTypePopupState extends State<AccountTypePopup>
                                       isPremium),
                                   _buildBenefitItem("Hỗ trợ 24/7 từ chuyên gia",
                                       Icons.support_agent_rounded, isPremium),
-                                  _buildBenefitItem("Không giới hạn thiết bị",
+                                  _buildBenefitItem("AI hướng dẫn check lỗi",
                                       Icons.devices_rounded, isPremium),
                                 ]
                               : [
