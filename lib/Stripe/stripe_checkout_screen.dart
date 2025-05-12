@@ -93,7 +93,7 @@ class _StripePaymentDemoState extends State<StripePaymentDemo> {
 
         // Gửi xác nhận thanh toán lên backend
         try {
-          await api.confirmPayment({
+          await api.StripePayment({
             "itemId": widget.itemId,
             "orderId": orderId,
           }, "Bearer ${widget.userToken}");
@@ -120,7 +120,7 @@ class _StripePaymentDemoState extends State<StripePaymentDemo> {
                   Navigator.pop(context); // đóng dialog
                   Navigator.pop(context); // đóng màn stripe
                 },
-                child: const Text("Về cửa hàng"),
+                child: const Text("Về Trang chủ"),
               ),
             ],
           ),
