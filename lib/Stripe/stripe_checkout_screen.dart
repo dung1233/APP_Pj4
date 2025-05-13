@@ -6,6 +6,7 @@ import 'package:training_souls/Stripe/stripe_ids.dart';
 import 'package:training_souls/api/api_service.dart';
 import 'package:training_souls/data/DatabaseHelper.dart';
 import 'package:training_souls/models/item.dart';
+import 'package:flutter/services.dart'; // ✅ THÊM DÒNG NÀY
 
 import '../screens/User/PurchasedItemsPage.dart';
 
@@ -99,7 +100,7 @@ class _StripePaymentDemoState extends State<StripePaymentDemo> {
             "itemId": widget.itemId,
             "orderId": orderId,
           }, "Bearer ${widget.userToken}");
-        } catch (e) {
+        }catch (e) {
           log("❌ Lỗi khi gọi confirmPayment: $e");
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text("Lỗi xác nhận thanh toán (confirmPayment): $e"),
@@ -286,7 +287,23 @@ class _StripePaymentDemoState extends State<StripePaymentDemo> {
             ),
           ),
         );
-      } catch (e) {
+      }on StripeException catch (e) {
+        log("❌ StripeException: ${e.error.localizedMessage}");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Đã huỷ hoặc có lỗi: ${e.error.localizedMessage}"),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }on PlatformException catch (e) {
+        log("❌ PlatformException: ${e.message}");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("⚠️ Lỗi hệ thống: ${e.message}"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }  catch (e) {
         log("❌ PaymentSheet Error: $e");
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text("Lỗi khi hiển thị Payment Sheet: $e"),
