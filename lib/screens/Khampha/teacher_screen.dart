@@ -5,7 +5,7 @@ import 'package:permission_handler/permission_handler.dart';
 
 const appId = "511a6fc43f90406faf72630968742fc6";
 const token =
-    "007eJxTYPgTemrujfvdElUXc8NjY5/tb6zj/3G7obpuK/euNONguVwFBlNDw0SztGQT4zRLAxMDs7TENHMjM2MDSzMLcxOjtGSzNCeFjIZARgbpxRqsjAwQCOKzMKSk5uYzMAAAjB0esQ==";
+    "007eJxTYFDuZAtut3nn0/CTfU51L2fl7vtTTU1dvzgrPjIWiovr6lFgMDU0TDRLSzYxTrM0MDEwS0tMMzcyMzawNLMwNzFKSzbTnqaU0RDIyJC0RImRkQECQXwWhpTU3HwGBgCDChwW";
 const channel = "demo";
 
 class VideoCallScreen extends StatefulWidget {

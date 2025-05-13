@@ -8,6 +8,8 @@ import 'package:dio/dio.dart';
 import 'package:training_souls/data/DatabaseHelper.dart';
 import 'package:training_souls/models/item.dart';
 
+import '../screens/User/PurchasedItemsPage.dart';
+
 class PaypalPaymentDemo extends StatelessWidget {
   final int itemId;
   final String userToken;
@@ -92,14 +94,12 @@ class PaypalPaymentDemo extends StatelessWidget {
                       final parsedParams = Map<String, dynamic>.from(params);
                       final orderId = parsedParams['cart'] ??
                           (parsedParams['data']
-                          as Map<String, dynamic>?)?['cart'];
+                              as Map<String, dynamic>?)?['cart'];
 
                       if (orderId == null) {
                         debugPrint("❌ Không tìm thấy orderId");
-                        Navigator.pop(context, {
-                          'error': true,
-                          'details': "Missing orderId"
-                        });
+                        Navigator.pop(context,
+                            {'error': true, 'details': "Missing orderId"});
                         return;
                       }
 
@@ -136,41 +136,181 @@ class PaypalPaymentDemo extends StatelessWidget {
                 await showDialog(
                   context: context,
                   barrierDismissible: false,
-                  builder: (context) => AlertDialog(
-                    title: const Text("Thanh toán thành công 🎉"),
-                    content: const Text("Cảm ơn bạn đã mua hàng!"),
-                    actions: [
-                      TextButton(
-                        onPressed: () async {
-                          try {
-                            final DatabaseHelper _databaseHelper =
-                            DatabaseHelper();
-                            await _databaseHelper.updateUserInfoFromAPI();
-
-                            Navigator.of(context).pop(); // Đóng dialog
-                            Navigator.of(context).pop(); // Quay lại
-
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content:
-                                Text("Thông tin tài khoản đã được cập nhật!"),
-                                backgroundColor: Colors.green,
-                              ),
-                            );
-                          } catch (e) {
-                            Navigator.of(context).pop();
-                            Navigator.of(context).pop();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text("Lỗi cập nhật thông tin: $e"),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                          }
-                        },
-                        child: const Text("Về cửa hàng"),
+                  builder: (context) => Dialog(
+                    backgroundColor: Colors.transparent,
+                    child: Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                       ),
-                    ],
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Animation container
+                          TweenAnimationBuilder(
+                            duration: const Duration(milliseconds: 800),
+                            tween: Tween<double>(begin: 0, end: 1),
+                            builder: (context, double value, child) {
+                              return Transform.scale(
+                                scale: value,
+                                child: child,
+                              );
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.all(20),
+                              decoration: BoxDecoration(
+                                color: Colors.green[50],
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.green.withOpacity(0.2),
+                                    blurRadius: 10,
+                                    spreadRadius: 2,
+                                  ),
+                                ],
+                              ),
+                              child: const Icon(
+                                Icons.check_circle,
+                                color: Colors.orange,
+                                size: 80,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+
+                          // Title with animation
+                          TweenAnimationBuilder(
+                            duration: const Duration(milliseconds: 600),
+                            tween: Tween<double>(begin: 0, end: 1),
+                            builder: (context, double value, child) {
+                              return Opacity(
+                                opacity: value,
+                                child: Transform.translate(
+                                  offset: Offset(0, 20 * (1 - value)),
+                                  child: child,
+                                ),
+                              );
+                            },
+                            child: const Text(
+                              'Thanh toán thành công!',
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.orange,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Message with animation
+                          TweenAnimationBuilder(
+                            duration: const Duration(milliseconds: 800),
+                            tween: Tween<double>(begin: 0, end: 1),
+                            builder: (context, double value, child) {
+                              return Opacity(
+                                opacity: value,
+                                child: Transform.translate(
+                                  offset: Offset(0, 20 * (1 - value)),
+                                  child: child,
+                                ),
+                              );
+                            },
+                            child: Text(
+                              'Giao dịch của bạn đã được xử lý thành công.\nCảm ơn bạn đã mua hàng!',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey[700],
+                                height: 1.5,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                          const SizedBox(height: 32),
+
+                          // Buttons with animation
+                          TweenAnimationBuilder(
+                            duration: const Duration(milliseconds: 1000),
+                            tween: Tween<double>(begin: 0, end: 1),
+                            builder: (context, double value, child) {
+                              return Opacity(
+                                opacity: value,
+                                child: Transform.translate(
+                                  offset: Offset(0, 20 * (1 - value)),
+                                  child: child,
+                                ),
+                              );
+                            },
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: TextButton(
+                                    onPressed: () {
+                                      Navigator.pop(context);
+                                      Navigator.pop(context);
+                                    },
+                                    style: TextButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 16),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                    child: const Text(
+                                      'Đóng',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: ElevatedButton(
+                                    onPressed: () {
+                                      Navigator.pop(context);
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              const PurchasedItemsPage(),
+                                        ),
+                                      );
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.orange,
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 16),
+                                      elevation: 2,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                    child: const Text(
+                                      'Xem lịch sử',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 );
               } else if (result?['cancelled'] == true) {
@@ -184,7 +324,7 @@ class PaypalPaymentDemo extends StatelessWidget {
             label: const Text(
               'Pay with PayPal',
               style:
-              TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
             ),
           ),
         ));
