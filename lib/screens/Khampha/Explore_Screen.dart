@@ -966,7 +966,6 @@ class _BlogCardState extends State<BlogCard>
   void initState() {
     super.initState();
     if (widget.videoUrls.isNotEmpty) {
-      // Khởi tạo Youtube Player không đồng bộ để không chặn main thread
       Future.microtask(() {
         if (mounted) {
           _initializeYoutube();
@@ -987,7 +986,7 @@ class _BlogCardState extends State<BlogCard>
           autoPlay: false,
           mute: false,
           enableCaption: true,
-          forceHD: false, // Không bắt buộc HD để tránh lỗi nếu không có HD
+          forceHD: false,
           loop: false,
         ),
       );
@@ -1006,28 +1005,6 @@ class _BlogCardState extends State<BlogCard>
     }
   }
 
-  void _playNextVideo() {
-    if (_currentVideoIndex < widget.videoUrls.length - 1) {
-      _currentVideoIndex++;
-      final videoId =
-          YoutubePlayer.convertUrlToId(widget.videoUrls[_currentVideoIndex]);
-      if (videoId != null) {
-        _youtubeController?.load(videoId);
-      }
-    }
-  }
-
-  void _playPreviousVideo() {
-    if (_currentVideoIndex > 0) {
-      _currentVideoIndex--;
-      final videoId =
-          YoutubePlayer.convertUrlToId(widget.videoUrls[_currentVideoIndex]);
-      if (videoId != null) {
-        _youtubeController?.load(videoId);
-      }
-    }
-  }
-
   @override
   void dispose() {
     _youtubeController?.dispose();
@@ -1041,7 +1018,7 @@ class _BlogCardState extends State<BlogCard>
     return Padding(
       padding: const EdgeInsets.only(left: 15, right: 10),
       child: GestureDetector(
-        onTap: () {},
+        onTap: () => _showContentDialog(context),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -1061,40 +1038,7 @@ class _BlogCardState extends State<BlogCard>
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(5),
-                child: Stack(
-                  children: [
-                    if (widget.videoUrls.isNotEmpty)
-                      _buildYoutubePlayer()
-                    else
-                      _buildImage(),
-                    if (isImageLoading)
-                      const Center(
-                        child: CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
-                        ),
-                      ),
-                    if (widget.videoUrls.length > 1)
-                      Positioned(
-                        right: 5,
-                        top: 5,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.7),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            '${_currentVideoIndex + 1}/${widget.videoUrls.length}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
+                child: _buildImage(),
               ),
             ),
             Container(
@@ -1136,81 +1080,6 @@ class _BlogCardState extends State<BlogCard>
     );
   }
 
-  Widget _buildYoutubePlayer() {
-    if (!_isVideoInitialized) {
-      return Container(
-        height: 115,
-        width: 220,
-        color: Colors.black,
-        child: const Center(
-          child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
-          ),
-        ),
-      );
-    }
-
-    if (hasError) {
-      return Container(
-        height: 115,
-        width: 220,
-        color: Colors.grey[300],
-        child: const Center(
-          child: Icon(
-            Icons.error_outline,
-            color: Colors.red,
-            size: 40,
-          ),
-        ),
-      );
-    }
-
-    // Sử dụng YoutubePlayerBuilder để tối ưu hiệu suất
-    return YoutubePlayer(
-      controller: _youtubeController!,
-      showVideoProgressIndicator: true,
-      progressIndicatorColor: Colors.red,
-      progressColors: const ProgressBarColors(
-        playedColor: Colors.red,
-        handleColor: Colors.redAccent,
-      ),
-      onReady: () {
-        if (mounted) {
-          setState(() {
-            isImageLoading = false;
-          });
-        }
-      },
-      onEnded: (data) {
-        _youtubeController?.pause();
-        if (_currentVideoIndex < widget.videoUrls.length - 1) {
-          _playNextVideo();
-        }
-      },
-      bottomActions: [
-        if (widget.videoUrls.length > 1)
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.skip_previous,
-                    color: Colors.white, size: 20),
-                onPressed: _currentVideoIndex > 0 ? _playPreviousVideo : null,
-              ),
-              const SizedBox(width: 20),
-              IconButton(
-                icon:
-                    const Icon(Icons.skip_next, color: Colors.white, size: 20),
-                onPressed: _currentVideoIndex < widget.videoUrls.length - 1
-                    ? _playNextVideo
-                    : null,
-              ),
-            ],
-          ),
-      ],
-    );
-  }
-
   Widget _buildImage() {
     if (widget.imagePath.startsWith('http')) {
       return CachedNetworkImage(
@@ -1218,7 +1087,6 @@ class _BlogCardState extends State<BlogCard>
         fit: BoxFit.cover,
         height: 115,
         width: 220,
-        // Sử dụng memCacheWidth và memCacheHeight để giảm bộ nhớ
         memCacheWidth: 220,
         memCacheHeight: 115,
         fadeInDuration: const Duration(milliseconds: 200),
@@ -1268,5 +1136,264 @@ class _BlogCardState extends State<BlogCard>
         },
       );
     }
+  }
+
+  void _showContentDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.all(20),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.85,
+              maxWidth: 500,
+            ),
+            child: Stack(
+              children: [
+                Column(
+                  children: [
+                    if (widget.videoUrls.isNotEmpty && _isVideoInitialized)
+                      Container(
+                        height: 220,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.vertical(
+                            top: const Radius.circular(24),
+                          ),
+                          color: Colors.black,
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.vertical(
+                            top: const Radius.circular(24),
+                          ),
+                          child: YoutubePlayer(
+                            controller: _youtubeController!,
+                            showVideoProgressIndicator: true,
+                            progressIndicatorColor: Colors.red,
+                            progressColors: const ProgressBarColors(
+                              playedColor: Colors.red,
+                              handleColor: Colors.redAccent,
+                            ),
+                          ),
+                        ),
+                      ),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context)
+                                    .primaryColor
+                                    .withOpacity(0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.play_circle_filled,
+                                color: Theme.of(context).primaryColor,
+                                size: 32,
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            Text(
+                              widget.title,
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                                height: 1.2,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 12),
+                            Container(
+                              width: 60,
+                              height: 4,
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).primaryColor,
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            Text(
+                              widget.subtitle,
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey[700],
+                                height: 1.5,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 24),
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[50],
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: Colors.grey[200]!,
+                                  width: 1,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceAround,
+                                children: [
+                                  _buildInfoItem(
+                                    icon: Icons.access_time,
+                                    label: "Thời lượng",
+                                    value: "3:45",
+                                  ),
+                                  Container(
+                                    width: 1,
+                                    height: 40,
+                                    color: Colors.grey[300],
+                                  ),
+                                  _buildInfoItem(
+                                    icon: Icons.visibility,
+                                    label: "Lượt xem",
+                                    value: "1.2K",
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 28),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: ElevatedButton(
+                                    onPressed: () {
+                                      Navigator.pop(context);
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.grey[100],
+                                      foregroundColor: Colors.black87,
+                                      elevation: 0,
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 16,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        side: BorderSide(
+                                          color: Colors.grey[300]!,
+                                          width: 1,
+                                        ),
+                                      ),
+                                    ),
+                                    child: const Text(
+                                      'Đóng',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: ElevatedButton(
+                                    onPressed: () {
+                                      // Thêm action xem thêm hoặc chia sẻ
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor:
+                                          Theme.of(context).primaryColor,
+                                      foregroundColor: Colors.white,
+                                      elevation: 0,
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 16,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                    child: const Text(
+                                      'Xem Thêm',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                Positioned(
+                  top: 12,
+                  right: 12,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.black.withOpacity(0.5),
+                    ),
+                    child: IconButton(
+                      icon: const Icon(
+                        Icons.close,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildInfoItem({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Column(
+      children: [
+        Icon(
+          icon,
+          color: Colors.grey[600],
+          size: 20,
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey[600],
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
+        ),
+      ],
+    );
   }
 }
