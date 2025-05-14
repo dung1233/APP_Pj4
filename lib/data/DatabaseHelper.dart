@@ -429,18 +429,33 @@ class DatabaseHelper {
     try {
       final db = await database;
 
-      // Lấy tất cả kết quả cho ngày này
-      final List<Map<String, dynamic>> results = await db.query(
+      // Lấy tổng số bài tập cần thiết cho ngày này
+      final List<Map<String, dynamic>> requiredExercises = await db.query(
+        'workouts',
+        where: 'day = ?',
+        whereArgs: [dayNumber],
+      );
+
+      final int totalRequiredExercises = requiredExercises.length;
+
+      if (totalRequiredExercises == 0) {
+        print("[DEBUG] ⚠️ Không tìm thấy bài tập nào cho ngày $dayNumber");
+        return;
+      }
+
+      // Lấy tất cả kết quả đã hoàn thành cho ngày này
+      final List<Map<String, dynamic>> completedResults = await db.query(
           'workout_results',
           where: 'day_number = ?',
           whereArgs: [dayNumber]);
 
-      // Nếu có đủ 4 bài tập, gửi lên API
-      if (results.length >= 4) {
-        print("[DEBUG] 🔄 Đã hoàn thành đủ bài tập, bắt đầu đồng bộ");
+      // Nếu đã hoàn thành đủ số bài tập cần thiết
+      if (completedResults.length >= totalRequiredExercises) {
+        print(
+            "[DEBUG] 🔄 Đã hoàn thành đủ bài tập (${completedResults.length}/$totalRequiredExercises), bắt đầu đồng bộ");
 
         // Định dạng lại dữ liệu theo cấu trúc API
-        final List<Map<String, dynamic>> formattedResults = results
+        final List<Map<String, dynamic>> formattedResults = completedResults
             .map((result) => {
                   "exerciseName": result['exercise_name'],
                   "setsCompleted": result['sets_completed'],
@@ -464,7 +479,8 @@ class DatabaseHelper {
 
         print("[DEBUG] ✅ Đã đồng bộ và xóa dữ liệu local");
       } else {
-        print("[DEBUG] ⏳ Chưa đủ bài tập (${results.length}/4), đợi tiếp");
+        print(
+            "[DEBUG] ⏳ Chưa đủ bài tập (${completedResults.length}/$totalRequiredExercises), đợi tiếp");
       }
     } catch (e) {
       print("[DEBUG] ❌ Lỗi khi kiểm tra và đồng bộ: $e");

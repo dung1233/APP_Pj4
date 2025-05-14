@@ -8,6 +8,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:training_souls/data/DatabaseHelper.dart';
+import 'package:training_souls/screens/Train/rest.dart';
 import 'package:training_souls/screens/Train/restb.dart';
 import 'package:training_souls/screens/Train/restc.dart';
 
@@ -94,17 +95,17 @@ class _SitUpDetectorPageState extends State<SitUpDetectorPage> {
   }
 
   void _goToNextPage() async {
-    print("[DEBUG] 💾 Đang lưu kết quả tập luyện...");
+    if (kDebugMode) {
+      print("[DEBUG] 💾 Đang lưu kết quả tập luyện...");
+    }
 
-    // Đảm bảo widget vẫn mounted trước khi showDialog
     if (!mounted) return;
 
     showDialog(
       context: context,
       barrierDismissible: false,
-      // ignore: deprecated_member_use
       builder: (context) => WillPopScope(
-        onWillPop: () async => false, // Ngăn người dùng đóng dialog
+        onWillPop: () async => false,
         child: Center(child: CircularProgressIndicator()),
       ),
     );
@@ -114,19 +115,18 @@ class _SitUpDetectorPageState extends State<SitUpDetectorPage> {
 
       if (!mounted) return;
 
-      // Đóng dialog loading trước khi chuyển trang
       Navigator.of(context, rootNavigator: true).pop();
 
-      // Chuyển trang với Navigator.pushReplacement
+      // Chuyển tới trang Rest thay vì bài tập khác
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (_) => Restc(day: widget.day),
+          builder: (_) => Rest(day: widget.day),
         ),
       );
     } catch (e) {
       if (!mounted) return;
-      Navigator.of(context).pop(); // Đóng dialog nếu có lỗi
+      Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Lỗi: $e")),
       );

@@ -126,72 +126,59 @@ class _DanhsachbaitapState extends State<Danhsachbaitap> {
     final dayWorkouts =
         (await dbHelper.getWorkouts()).where((w) => w.day == day).toList();
 
-    // Thứ tự cố định các bài tập
-    final fixedOrder = ['hít đất', 'squat', 'gập bụng', 'chạy bộ'];
-
-    // Tìm bài tập đầu tiên chưa hoàn thành theo thứ tự cố định
-    Workout? nextWorkout;
-
-    for (var exerciseType in fixedOrder) {
-      for (var workout in dayWorkouts) {
-        if (workout.status != "COMPLETED" &&
-            workout.exerciseName != null &&
-            workout.exerciseName!.toLowerCase().contains(exerciseType)) {
-          nextWorkout = workout;
-          break;
-        }
-      }
-      if (nextWorkout != null) break;
+    // Nếu không có bài tập nào, trả về
+    if (dayWorkouts.isEmpty) {
+      print("⚠️ Không có bài tập nào cho ngày $day");
+      return;
     }
 
-    // Nếu không tìm thấy bài tập nào chưa hoàn thành, lấy bài đầu tiên theo thứ tự cố định
-    if (nextWorkout == null) {
-      for (var exerciseType in fixedOrder) {
-        final foundWorkout = dayWorkouts.firstWhere(
-          (w) =>
-              w.exerciseName != null &&
-              w.exerciseName!.toLowerCase().contains(exerciseType),
-          orElse: () => Workout(), // Giả sử Workout có constructor mặc định
-        );
-
-        if (foundWorkout.exerciseName != null) {
-          nextWorkout = foundWorkout;
-          break;
-        }
-      }
-    }
-
-    // Nếu vẫn không tìm thấy, lấy bài tập đầu tiên không phải nghỉ ngơi
-    nextWorkout ??= dayWorkouts.firstWhere(
-      (w) =>
-          w.exerciseName != null &&
-          !w.exerciseName!.toLowerCase().contains("nghỉ ngơi"),
-      orElse: () => dayWorkouts.first,
+    // Tìm bài tập đầu tiên chưa hoàn thành
+    Workout? nextWorkout = dayWorkouts.firstWhere(
+      (w) => w.status != "COMPLETED",
+      orElse: () =>
+          dayWorkouts.first, // Nếu tất cả hoàn thành, dùng bài đầu tiên
     );
 
-    // Chuyển đến bài tập tương ứng
-    if (nextWorkout.exerciseName?.toLowerCase().contains("hít đất") == true) {
-      Navigator.push(
-          context,
-          MaterialPageRoute(
-              builder: (context) => PushUpDetectorView(day: day)));
-    } else if (nextWorkout.exerciseName?.toLowerCase().contains("squat") ==
-        true) {
-      Navigator.push(context,
-          MaterialPageRoute(builder: (context) => SquatDetectorView(day: day)));
-    } else if (nextWorkout.exerciseName?.toLowerCase().contains("gập bụng") ==
-        true) {
+    final workoutScreens = {
+      "hít đất": (int day) => PushUpDetectorView(day: day),
+      "squat": (int day) => SquatDetectorView(day: day),
+      "gập bụng": (int day) => SitUpDetectorPage(day: day),
+      "chạy bộ": (int day) => RunningTracker(day: day),
+    };
+
+    // Tìm tên bài tập có trong map
+    String? exerciseName = nextWorkout.exerciseName?.toLowerCase();
+    String? matchedKey;
+
+    if (exerciseName != null) {
+      matchedKey = workoutScreens.keys.firstWhere(
+        (key) => exerciseName.contains(key),
+        orElse: () => "",
+      );
+    }
+
+    // Xử lý bài tập đặc biệt cần khởi tạo camera
+    if (exerciseName?.contains("gập bụng") == true) {
       await initializeCameras();
-      Navigator.push(context,
-          MaterialPageRoute(builder: (context) => SitUpDetectorPage(day: day)));
-    } else if (nextWorkout.exerciseName?.toLowerCase().contains("chạy bộ") ==
-        true) {
-      Navigator.push(context,
-          MaterialPageRoute(builder: (context) => RunningTracker(day: day)));
+    }
+
+    // Chuyển đến màn hình tương ứng
+    if (matchedKey != null && matchedKey.isNotEmpty) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => workoutScreens[matchedKey]!(day),
+        ),
+      );
     } else {
-      // Chuyển đến bài tập khác hoặc màn hình mặc định
+      // Xử lý trường hợp không tìm thấy màn hình phù hợp
       print(
           "⚠️ Không tìm thấy màn hình phù hợp cho bài tập: ${nextWorkout.exerciseName}");
+
+      // Có thể chuyển đến một màn hình mặc định hoặc hiển thị thông báo
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Không tìm thấy bài tập phù hợp")),
+      );
     }
   }
 

@@ -140,15 +140,13 @@ class _PushUpDetectorViewState extends State<PushUpDetectorView> {
       print("[DEBUG] 💾 Đang lưu kết quả tập luyện...");
     }
 
-    // Đảm bảo widget vẫn mounted trước khi showDialog
     if (!mounted) return;
 
     showDialog(
       context: context,
       barrierDismissible: false,
-      // ignore: deprecated_member_use
       builder: (context) => WillPopScope(
-        onWillPop: () async => false, // Ngăn người dùng đóng dialog
+        onWillPop: () async => false,
         child: Center(child: CircularProgressIndicator()),
       ),
     );
@@ -158,10 +156,9 @@ class _PushUpDetectorViewState extends State<PushUpDetectorView> {
 
       if (!mounted) return;
 
-      // Đóng dialog loading trước khi chuyển trang
       Navigator.of(context, rootNavigator: true).pop();
 
-      // Chuyển trang với Navigator.pushReplacement
+      // Chuyển tới trang Rest thay vì bài tập khác
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -170,7 +167,7 @@ class _PushUpDetectorViewState extends State<PushUpDetectorView> {
       );
     } catch (e) {
       if (!mounted) return;
-      Navigator.of(context).pop(); // Đóng dialog nếu có lỗi
+      Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Lỗi: $e")),
       );
