@@ -25,6 +25,7 @@ class _ShopScreenState extends State<ShopScreen>
   final Dio _dio = Dio();
   late ApiService _apiService;
   final DatabaseHelper dbHelper = DatabaseHelper();
+  late FocusNode _focusNode;
 
   List<Item> _items = [];
   bool _isLoading = false;
@@ -39,8 +40,18 @@ class _ShopScreenState extends State<ShopScreen>
     super.initState();
     _tabController = TabController(length: categories.length, vsync: this);
     _apiService = ApiService(_dio);
+    _focusNode = FocusNode();
     _loadInitialData();
     _loadUserPoints();
+
+    // Add listener for when screen gains focus
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _focusNode.addListener(() {
+        if (_focusNode.hasFocus) {
+          _loadUserPoints();
+        }
+      });
+    });
   }
 
   Future<void> _loadInitialData() async {
@@ -574,84 +585,61 @@ class _ShopScreenState extends State<ShopScreen>
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Scaffold(
-        backgroundColor: Colors.white,
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
-
-    if (_errorMessage != null) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Shop')),
-        backgroundColor: Colors.white,
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(_errorMessage!),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _loadInitialData,
-                child: const Text('Retry'),
-              ),
-            ],
+    // Wrap the Scaffold with a Focus widget
+    return Focus(
+      focusNode: _focusNode,
+      child: Scaffold(
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          title: const Text('Shop'),
+          bottom: TabBar(
+            controller: _tabController,
+            tabs: categories.map((tab) => Tab(text: tab)).toList(),
           ),
-        ),
-      );
-    }
-
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        title: const Text('Shop'),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: categories.map((tab) => Tab(text: tab)).toList(),
-        ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16.0),
-            child: Center(
-              child: Row(
-                children: [
-                  const Icon(Icons.monetization_on, color: Colors.amber),
-                  const SizedBox(width: 4),
-                  Text('$_userPoints'),
-                ],
+          actions: [
+            Padding(
+              padding: const EdgeInsets.only(right: 16.0),
+              child: Center(
+                child: Row(
+                  children: [
+                    const Icon(Icons.monetization_on, color: Colors.amber),
+                    const SizedBox(width: 4),
+                    Text('$_userPoints'),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
-      ),
-      body: RefreshIndicator(
-        onRefresh: _loadInitialData,
-        child: Container(
-          color: Colors.white,
-          child: TabBarView(
-            controller: _tabController,
-            children: categories.map((category) {
-              final categoryItems = _getItemsByCategory(category);
+          ],
+        ),
+        body: RefreshIndicator(
+          onRefresh: _loadInitialData,
+          child: Container(
+            color: Colors.white,
+            child: TabBarView(
+              controller: _tabController,
+              children: categories.map((category) {
+                final categoryItems = _getItemsByCategory(category);
 
-              if (categoryItems.isEmpty) {
-                return const Center(child: Text('No items available'));
-              }
+                if (categoryItems.isEmpty) {
+                  return const Center(child: Text('No items available'));
+                }
 
-              return GridView.builder(
-                padding: const EdgeInsets.all(8),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 8,
-                  mainAxisSpacing: 8,
-                  childAspectRatio: 0.7,
-                ),
-                itemCount: categoryItems.length,
-                itemBuilder: (context, index) {
-                  final item = categoryItems[index];
-                  return _buildItemCard(item);
-                },
-              );
-            }).toList(),
+                return GridView.builder(
+                  padding: const EdgeInsets.all(8),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 8,
+                    mainAxisSpacing: 8,
+                    childAspectRatio: 0.7,
+                  ),
+                  itemCount: categoryItems.length,
+                  itemBuilder: (context, index) {
+                    final item = categoryItems[index];
+                    return _buildItemCard(item);
+                  },
+                );
+              }).toList(),
+            ),
           ),
         ),
       ),
@@ -749,6 +737,7 @@ class _ShopScreenState extends State<ShopScreen>
 
   @override
   void dispose() {
+    _focusNode.dispose();
     _tabController.dispose();
     super.dispose();
   }

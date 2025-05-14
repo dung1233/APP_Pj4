@@ -41,3 +41,8 @@ android {
 flutter {
     source = "../.."
 }
+// ✅ Thêm phần dependencies sau
+dependencies {
+    // ✅ Fix lỗi crash Stripe do emoji2 cũ
+    implementation "androidx.emoji2:emoji2:1.4.0"
+}

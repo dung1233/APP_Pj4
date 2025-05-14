@@ -19,6 +19,13 @@ class Trainhome extends StatefulWidget {
 class _TrainhomeState extends State<Trainhome> {
   int selectedIndex = 0;
   late PageController _pageController;
+  final List<GlobalKey<NavigatorState>> _navigatorKeys = [
+    GlobalKey<NavigatorState>(),
+    GlobalKey<NavigatorState>(),
+    GlobalKey<NavigatorState>(),
+    GlobalKey<NavigatorState>(),
+    GlobalKey<NavigatorState>(),
+  ];
 
   @override
   void initState() {
@@ -33,6 +40,17 @@ class _TrainhomeState extends State<Trainhome> {
       ShopScreen(),
       UserProfilePage(),
     ];
+  }
+
+  void _onTabChanged(int index) {
+    setState(() {
+      selectedIndex = index;
+      // Trigger focus on the shop screen when it's selected
+      if (index == 3) {
+        // 3 is the index of ShopScreen
+        FocusScope.of(context).requestFocus();
+      }
+    });
   }
 
   @override
@@ -67,11 +85,7 @@ class _TrainhomeState extends State<Trainhome> {
         child: NavigationBar(
           height: 70,
           selectedIndex: selectedIndex,
-          onDestinationSelected: (index) {
-            setState(() {
-              selectedIndex = index;
-            });
-          },
+          onDestinationSelected: _onTabChanged,
           destinations: [
             NavigationDestination(
               icon: Icon(Icons.home,
