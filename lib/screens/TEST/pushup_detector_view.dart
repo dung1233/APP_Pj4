@@ -121,9 +121,6 @@ class _PushUpDetectorViewState extends State<PushUpDetectorView> {
       // Lưu vào cơ sở dữ liệu
       await dbHelper.saveExerciseResult(widget.day, workoutResult);
 
-      // Kiểm tra và đồng bộ nếu đủ bài tập
-      await dbHelper.checkAndSyncWorkouts(widget.day);
-
       if (kDebugMode) {
         print(
             "[DEBUG] ✅ Đã lưu kết quả tập luyện: ${workoutResult.toString()}");
