@@ -452,7 +452,7 @@ class DatabaseHelper {
       // Nếu đã hoàn thành đủ số bài tập cần thiết
       if (completedResults.length >= totalRequiredExercises) {
         print(
-            "[DEBUG] 🔄 Đã hoàn thành đủ bài tập (${completedResults.length}/$totalRequiredExercises), bắt đầu đồng bộ");
+            "[DEBUG] 🔄 Đã hoàn thành đủ bài tập (${completedResults.length}/$totalRequiredExercises)");
 
         // Định dạng lại dữ liệu theo cấu trúc API
         final List<Map<String, dynamic>> formattedResults = completedResults
@@ -480,7 +480,7 @@ class DatabaseHelper {
         print("[DEBUG] ✅ Đã đồng bộ và xóa dữ liệu local");
       } else {
         print(
-            "[DEBUG] ⏳ Chưa đủ bài tập (${completedResults.length}/$totalRequiredExercises), đợi tiếp");
+            "[DEBUG] ⏳ Chưa đủ bài tập (${completedResults.length}/$totalRequiredExercises)");
       }
     } catch (e) {
       print("[DEBUG] ❌ Lỗi khi kiểm tra và đồng bộ: $e");

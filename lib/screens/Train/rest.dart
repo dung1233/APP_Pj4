@@ -8,6 +8,7 @@ import 'package:training_souls/models/work_out.dart';
 import 'package:training_souls/providers/workout_provider.dart';
 import 'package:training_souls/screens/TEST/pushup_detector_view.dart';
 import 'package:training_souls/screens/TEST/squat_detector_view.dart';
+import 'package:training_souls/screens/Train/restb.dart';
 import 'package:training_souls/screens/Train/train_screen.dart';
 import 'package:training_souls/screens/UI/Beginer/run.dart';
 import 'package:training_souls/screens/UI/Beginer/situp.dart';
@@ -80,30 +81,6 @@ class _RestState extends State<Rest> {
     });
   }
 
-  // Hàm đồng bộ dữ liệu khi hoàn thành tất cả bài tập
-  Future<void> _syncDataAfterCompletion() async {
-    try {
-      // Gọi hàm kiểm tra và đồng bộ workouts
-      await _dbHelper.checkAndSyncWorkouts(widget.day);
-
-      // Refresh WorkoutProvider
-      if (mounted) {
-        final workoutProvider =
-            Provider.of<WorkoutProvider>(context, listen: false);
-        await workoutProvider.refreshAfterDatabaseChange();
-      }
-
-      if (kDebugMode) {
-        print(
-            "[DEBUG] ✅ Đã hoàn thành đồng bộ dữ liệu sau khi hoàn thành tất cả bài tập");
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print("[DEBUG] ❌ Lỗi khi đồng bộ dữ liệu: $e");
-      }
-    }
-  }
-
   // Hàm chuyển đến bài tập tiếp theo chưa hoàn thành
   Future<void> _goToNextScreen() async {
     if (_isLoading || !mounted) return;
@@ -160,14 +137,11 @@ class _RestState extends State<Rest> {
       if (nextWorkout == null) {
         print("✅ Đã hoàn thành tất cả bài tập trong ngày ${widget.day}");
 
-        // Gọi hàm đồng bộ dữ liệu khi hoàn thành tất cả bài tập
-        await _syncDataAfterCompletion();
-
         if (mounted) {
-          // Thay vì pop về màn hình trước, chuyển về TrainScreen
+          // Chuyển sang màn hình Restb
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => TrainScreen()),
+            MaterialPageRoute(builder: (context) => Restb(day: widget.day)),
           );
 
           ScaffoldMessenger.of(context).showSnackBar(
