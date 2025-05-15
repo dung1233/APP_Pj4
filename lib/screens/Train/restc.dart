@@ -237,3 +237,32 @@ class _RestState extends State<Restc> {
     );
   }
 }
+   // await dbHelper.saveExerciseResult(widget.day, workoutResult);
+      // if (kDebugMode) {
+      //   print("[DEBUG] ✅ Đã lưu kết quả chạy bộ: $workoutResult");
+      // }
+
+      // // Đồng bộ bài tập
+      // await dbHelper.checkAndSyncWorkouts(widget.day);
+
+      // // Làm mới WorkoutProvider
+      // if (mounted) {
+      //   await workoutProvider.refreshAfterDatabaseChange();
+      //   if (kDebugMode) {
+      //     print("[DEBUG] ✅ Đã làm mới WorkoutProvider");
+      //   }
+      // }
+      // if (kDebugMode) {
+      //   print("[DEBUG] ✅ Đã lưu kết quả chạy bộ: $workoutResult");
+      // }
+
+      // // Đồng bộ bài tập
+      // await dbHelper.checkAndSyncWorkouts(widget.day);
+
+      // // Làm mới WorkoutProvider
+      // if (mounted) {
+      //   await workoutProvider.refreshAfterDatabaseChange();
+      //   if (kDebugMode) {
+      //     print("[DEBUG] ✅ Đã làm mới WorkoutProvider");
+      //   }
+      // }

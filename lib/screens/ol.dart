@@ -683,8 +683,7 @@ class _AwardsWidgetState extends State<AwardsWidget> {
 
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(
-                  "Điểm danh thành công! +100 điểm (Streak: ${streak * 100} điểm)"),
+              content: Text("Điểm danh thành công! +100 điểm "),
               backgroundColor: Colors.green,
             ),
           );
@@ -873,8 +872,8 @@ class _AwardsWidgetState extends State<AwardsWidget> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _buildStatItem("Streak",
-                      "${(_totalPoints / 100).floor()} ngày", Colors.orange),
+                  // _buildStatItem("Streak",
+                  //     "${(_totalPoints / 100).floor()} ngày", Colors.orange),
                   _buildStatItem("Điểm", "$_totalPoints", Colors.green),
                 ],
               ),

@@ -1,8 +1,17 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import 'package:training_souls/data/DatabaseHelper.dart';
+import 'package:training_souls/models/work_out.dart';
+import 'package:training_souls/providers/workout_provider.dart';
+import 'package:training_souls/screens/TEST/pushup_detector_view.dart';
 import 'package:training_souls/screens/TEST/squat_detector_view.dart';
+import 'package:training_souls/screens/Train/restb.dart';
+import 'package:training_souls/screens/Train/train_screen.dart';
+import 'package:training_souls/screens/UI/Beginer/run.dart';
+import 'package:training_souls/screens/UI/Beginer/situp.dart';
 
 class Rest extends StatefulWidget {
   final int day;
@@ -39,7 +48,7 @@ class _RestState extends State<Rest> {
 
   Future<void> _loadWorkoutData() async {
     if (!mounted) return;
-    
+
     setState(() => _isLoading = true);
     try {
       final results = await _dbHelper.getAllWorkoutResults();
@@ -54,7 +63,7 @@ class _RestState extends State<Rest> {
   }
 
   void startTimer() {
-    timer?.cancel(); // Clear any existing timer
+    timer?.cancel();
     timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!mounted) {
         timer.cancel();
@@ -72,20 +81,160 @@ class _RestState extends State<Rest> {
     });
   }
 
+  // Hàm chuyển đến bài tập tiếp theo chưa hoàn thành
   Future<void> _goToNextScreen() async {
     if (_isLoading || !mounted) return;
 
-    timer?.cancel(); // Clear timer before navigation
-    
-    await Future.delayed(const Duration(milliseconds: 300));
-    if (!mounted) return;
+    timer?.cancel();
 
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => SquatDetectorView(day: widget.day),
-      ),
-    );
+    try {
+      // Lấy danh sách bài tập của ngày
+      final workouts = await _dbHelper.getWorkouts();
+      final dayWorkouts = workouts.where((w) => w.day == widget.day).toList();
+
+      if (dayWorkouts.isEmpty) {
+        print("⚠️ Không có bài tập nào cho ngày ${widget.day}");
+        Navigator.pop(context);
+        return;
+      }
+
+      // Lấy danh sách kết quả đã hoàn thành
+      final completedResults = await _dbHelper.getAllWorkoutResults();
+      final todayCompletedExercises = completedResults
+          .where((result) => result['day_number'] == widget.day)
+          .map((result) => result['exercise_name'].toString().toLowerCase())
+          .toSet();
+
+      debugPrint("📋 Bài tập đã hoàn thành hôm nay: $todayCompletedExercises");
+
+      // Tìm bài tập đầu tiên chưa hoàn thành
+      Workout? nextWorkout;
+
+      for (var workout in dayWorkouts) {
+        String? exerciseName = workout.exerciseName?.toLowerCase();
+
+        // Kiểm tra xem bài tập này đã có kết quả chưa
+        bool isCompleted = false;
+        if (exerciseName != null) {
+          isCompleted = todayCompletedExercises.any((completedName) =>
+              completedName.contains(exerciseName) ||
+              exerciseName.contains(completedName) ||
+              _normalizeExerciseName(completedName) ==
+                  _normalizeExerciseName(exerciseName));
+        }
+
+        debugPrint(
+            "🏃 Kiểm tra bài tập: ${workout.exerciseName} - Đã hoàn thành: $isCompleted");
+
+        // Nếu chưa có kết quả, đây là bài tập tiếp theo
+        if (!isCompleted) {
+          nextWorkout = workout;
+          break;
+        }
+      }
+
+      // Nếu không tìm thấy bài tập chưa hoàn thành (đã hoàn thành hết)
+      if (nextWorkout == null) {
+        print("✅ Đã hoàn thành tất cả bài tập trong ngày ${widget.day}");
+
+        if (mounted) {
+          // Chuyển sang màn hình Restb
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => Restb(day: widget.day)),
+          );
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content:
+                  Text("Chúc mừng! Bạn đã hoàn thành tất cả bài tập hôm nay!"),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+        return;
+      }
+
+      // Danh sách các màn hình tập luyện
+      final workoutScreens = {
+        "hít đất": (int day) => PushUpDetectorView(day: day),
+        "squat": (int day) => SquatDetectorView(day: day),
+        "gập bụng": (int day) => SitUpDetectorPage(day: day),
+        "chạy bộ": (int day) => RunningTracker(day: day),
+      };
+
+      // Tìm tên bài tập có trong map
+      String? exerciseName = nextWorkout.exerciseName?.toLowerCase();
+      String? matchedKey;
+
+      if (exerciseName != null) {
+        matchedKey = workoutScreens.keys.firstWhere(
+          (key) =>
+              exerciseName.contains(key) ||
+              _normalizeExerciseName(exerciseName) ==
+                  _normalizeExerciseName(key),
+          orElse: () => "",
+        );
+      }
+
+      print(
+          "📋 Bài tập tiếp theo: ${nextWorkout.exerciseName} (matched: $matchedKey)");
+
+      // Xử lý bài tập đặc biệt cần khởi tạo camera
+      if (exerciseName?.contains("gập bụng") == true) {
+        try {
+          await initializeCameras();
+        } catch (e) {
+          debugPrint("Lỗi khởi tạo camera: $e");
+        }
+      }
+
+      if (!mounted) return;
+
+      // Chuyển đến màn hình tương ứng
+      if (matchedKey != null && matchedKey.isNotEmpty) {
+        await Future.delayed(const Duration(
+            milliseconds: 500)); // Delay nhỏ để đảm bảo UI ổn định
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => workoutScreens[matchedKey]!(widget.day),
+          ),
+        );
+      } else {
+        // Nếu không tìm thấy bài tập phù hợp, quay về màn hình chính
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                "Không tìm thấy bài tập phù hợp cho: ${nextWorkout.exerciseName}"),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint("Error navigating to next screen: $e");
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Lỗi: $e"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  // Hàm chuẩn hóa tên bài tập để so sánh chính xác hơn
+  String _normalizeExerciseName(String name) {
+    return name
+        .toLowerCase()
+        .trim()
+        .replaceAll(RegExp(r'\s+'),
+            ' ') // Thay thế nhiều khoảng trắng bằng 1 khoảng trắng
+        .replaceAll(' ', ''); // Loại bỏ tất cả khoảng trắng
   }
 
   @override
@@ -104,11 +253,17 @@ class _RestState extends State<Rest> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+        backgroundColor: backgroundColor,
+        body: Center(
+          child: CircularProgressIndicator(
+            color: primaryColor,
+          ),
+        ),
       );
     }
 
     return Scaffold(
+      backgroundColor: backgroundColor,
       body: Column(
         children: [
           Expanded(
@@ -122,6 +277,19 @@ class _RestState extends State<Rest> {
                     child: Image.asset(
                       'assets/img/dayoff.jpg',
                       fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          height: 200,
+                          color: Colors.grey[200],
+                          child: Center(
+                            child: Icon(
+                              Icons.image_not_supported,
+                              size: 60,
+                              color: Colors.grey[400],
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ),
@@ -152,7 +320,15 @@ class _RestState extends State<Rest> {
                     fontSize: 60,
                   ),
                 ),
-                const SizedBox(height: 60),
+                const SizedBox(height: 20),
+                Text(
+                  'Chuẩn bị cho bài tập tiếp theo',
+                  style: GoogleFonts.urbanist(
+                    color: Colors.grey[600],
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 40),
                 OutlinedButton(
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(color: Colors.black),

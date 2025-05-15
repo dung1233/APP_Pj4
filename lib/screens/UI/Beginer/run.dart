@@ -8,6 +8,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:training_souls/data/DatabaseHelper.dart';
 import 'package:training_souls/providers/auth_provider.dart';
 import 'package:training_souls/providers/workout_provider.dart';
+import 'package:training_souls/screens/Train/rest.dart';
 import 'package:training_souls/screens/ol.dart';
 import 'package:provider/provider.dart';
 
@@ -73,27 +74,14 @@ class _RunningTrackerState extends State<RunningTracker> {
       };
 
       await dbHelper.saveExerciseResult(widget.day, workoutResult);
-      if (kDebugMode) {
-        print("[DEBUG] ✅ Đã lưu kết quả chạy bộ: $workoutResult");
-      }
-
-      // Đồng bộ bài tập
-      await dbHelper.checkAndSyncWorkouts(widget.day);
-
-      // Làm mới WorkoutProvider
-      if (mounted) {
-        await workoutProvider.refreshAfterDatabaseChange();
-        if (kDebugMode) {
-          print("[DEBUG] ✅ Đã làm mới WorkoutProvider");
-        }
-      }
 
       // Chuyển hướng đến màn hình Ol và đảm bảo nó được khởi tạo lại
       if (mounted) {
-        Navigator.pushAndRemoveUntil(
+        Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const Ol()),
-          (route) => false, // Xóa tất cả các route trước đó
+          MaterialPageRoute(
+            builder: (_) => Rest(day: widget.day),
+          ),
         );
       }
     } catch (e) {

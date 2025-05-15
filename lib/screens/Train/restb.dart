@@ -3,6 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:training_souls/data/DatabaseHelper.dart';
 import 'package:training_souls/screens/UI/Beginer/situp.dart';
+import 'package:training_souls/screens/Train/train_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:training_souls/providers/workout_provider.dart';
+import 'package:training_souls/screens/trainhome.dart';
 
 class Restb extends StatefulWidget {
   final int day;
@@ -10,18 +14,22 @@ class Restb extends StatefulWidget {
   const Restb({Key? key, required this.day}) : super(key: key);
 
   @override
-  State<Restb> createState() => _RestState();
+  State<Restb> createState() => _RestbState();
 }
 
-class _RestState extends State<Restb> {
-  int seconds = 30;
-  Timer? timer;
-  bool _isLoading = false; // Thêm biến kiểm soát trạng thái loading
+class _RestbState extends State<Restb> {
+  bool _isLoading = false;
+  final DatabaseHelper _dbHelper = DatabaseHelper();
+  int completedWorkouts = 0;
+  bool _isSyncing = false;
+
+  Color primaryColor = Color(0xFFFF6B00);
+  Color secondaryColor = Color(0xFF333333);
+  Color backgroundColor = Color(0xFFF5F5F5);
 
   @override
   void initState() {
     super.initState();
-    startTimer();
     _loadWorkoutData();
   }
 
@@ -31,11 +39,19 @@ class _RestState extends State<Restb> {
     }
 
     try {
-      final dbHelper = DatabaseHelper();
-      final results = await dbHelper.getAllWorkoutResults();
+      final results = await _dbHelper.getAllWorkoutResults();
 
-      // Debug log
-      debugPrint("Workout results: $results");
+      // Đếm số bài tập đã hoàn thành trong ngày
+      final todayCompleted =
+          results.where((result) => result['day_number'] == widget.day).length;
+
+      if (mounted) {
+        setState(() {
+          completedWorkouts = todayCompleted;
+        });
+      }
+
+      debugPrint("Số bài tập đã hoàn thành: $completedWorkouts");
     } catch (e) {
       debugPrint("Error loading workout data: $e");
     } finally {
@@ -45,57 +61,6 @@ class _RestState extends State<Restb> {
     }
   }
 
-  Color primaryColor = Color(0xFFFF6B00); // Cam sáng hiện đại
-  Color secondaryColor = Color(0xFF333333); // Màu nền hoặc chữ phụ
-  Color backgroundColor = Color(0xFFF5F5F5); // Màu nền nhẹ
-
-  void startTimer() {
-    timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (!mounted) {
-        timer.cancel();
-        return;
-      }
-
-      setState(() {
-        if (seconds > 0) {
-          seconds--;
-        } else {
-          timer.cancel();
-          _goToNextScreen();
-        }
-      });
-    });
-  }
-
-  Future<void> _goToNextScreen() async {
-    if (_isLoading) return; // Ngăn chặn chuyển trang khi đang loading
-
-    if (!mounted) return;
-
-    // Thêm delay nhỏ để đảm bảo animation hoàn tất
-    await Future.delayed(const Duration(milliseconds: 300));
-
-    if (!mounted) return;
-
-    await initializeCameras();
-    Navigator.push(
-        context,
-        MaterialPageRoute(
-            builder: (context) => SitUpDetectorPage(day: widget.day)));
-  }
-
-  @override
-  void dispose() {
-    timer?.cancel();
-    super.dispose();
-  }
-
-  String get timerText {
-    int minutes = seconds ~/ 60;
-    int remainingSeconds = seconds % 60;
-    return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
-  }
-
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -103,135 +68,202 @@ class _RestState extends State<Restb> {
         body: Center(child: CircularProgressIndicator()),
       );
     }
-    return Scaffold(
-      body: Column(
-        children: [
-          Expanded(
-            child: Container(
-              color: Colors.white,
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(10.0),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
-                    child: Image.asset(
-                      'assets/img/dayoff.jpg',
 
-                      // Thêm frame rate cố định
+    return Scaffold(
+      backgroundColor: backgroundColor,
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Icon chúc mừng
+              Container(
+                width: 120,
+                height: 120,
+                decoration: BoxDecoration(
+                  color: primaryColor.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.celebration,
+                  size: 60,
+                  color: primaryColor,
+                ),
+              ),
+              const SizedBox(height: 40),
+
+              // Tiêu đề chúc mừng
+              Text(
+                'Chúc mừng!',
+                style: GoogleFonts.urbanist(
+                  color: secondaryColor,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 36,
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Thông báo hoàn thành
+              Text(
+                'Bạn đã hoàn thành\n$completedWorkouts bài tập hôm nay!',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.urbanist(
+                  color: secondaryColor,
+                  fontSize: 20,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Streak point display
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                decoration: BoxDecoration(
+                  color: primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(25),
+                  border: Border.all(color: primaryColor, width: 2),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.local_fire_department,
+                      color: primaryColor,
+                      size: 24,
                     ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '+1 Streak',
+                      style: GoogleFonts.urbanist(
+                        color: primaryColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 30),
+
+              // Thông tin ngày
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(25),
+                ),
+                child: Text(
+                  'Ngày ${widget.day}',
+                  style: GoogleFonts.urbanist(
+                    color: secondaryColor,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
                   ),
                 ),
               ),
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 20),
-            color: Colors.white,
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          '',
-                          style: GoogleFonts.urbanist(
-                            color: secondaryColor,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 26,
-                          ),
-                        ),
-                      ),
-                      Container(
-                        width: 24,
-                        height: 24,
-                        decoration: BoxDecoration(
+              const SizedBox(height: 50),
+
+              // Lời động viên
+              Text(
+                'Hãy giữ vững phong độ này nhé!\nTiếp tục luyện tập để đạt mục tiêu.',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.urbanist(
+                  color: Colors.grey[600],
+                  fontSize: 16,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 60),
+
+              // Nút hoàn thành
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: primaryColor,
+                  minimumSize: Size(280, 55),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(25),
+                  ),
+                  elevation: 5,
+                ),
+                onPressed: _isSyncing
+                    ? null
+                    : () async {
+                        setState(() => _isSyncing = true);
+                        try {
+                          // Gọi hàm sync và refresh
+                          await _dbHelper.checkAndSyncWorkouts(widget.day);
+                          if (mounted) {
+                            await Provider.of<WorkoutProvider>(context,
+                                    listen: false)
+                                .refreshAfterDatabaseChange();
+                          }
+
+                          // Quay về màn hình TrainScreen hoặc màn hình chính
+                          if (mounted) {
+                            Navigator.pushAndRemoveUntil(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => Trainhome()),
+                              (route) => false,
+                            );
+                          }
+                        } catch (e) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                    'Đã xảy ra lỗi khi đồng bộ dữ liệu. Vui lòng thử lại sau.'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        } finally {
+                          if (mounted) {
+                            setState(() => _isSyncing = false);
+                          }
+                        }
+                      },
+                child: _isSyncing
+                    ? SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
+                          strokeWidth: 2,
                         ),
-                        child: const Center(
-                          child: Text(
-                            '',
-                            style: TextStyle(
-                              color: Colors.blue,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                      )
+                    : Text(
+                        'Hoàn Thành',
+                        style: GoogleFonts.urbanist(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
                         ),
                       ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 30),
-                Text(
-                  'Nghỉ  Ngơi',
-                  style: GoogleFonts.urbanist(
-                    color: secondaryColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 24,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  timerText,
-                  style: TextStyle(
-                    color: secondaryColor,
-                    fontFamily: 'RobotoMono',
-                    fontWeight: FontWeight.bold,
-                    fontSize: 60,
-                  ),
-                ),
-                const SizedBox(height: 60),
-                OutlinedButton(
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: Colors.black),
-                    minimumSize: Size(300, 50),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25)),
-                  ),
-                  onPressed: () {
-                    if (mounted) {
-                      setState(() => seconds += 20);
-                    }
-                  },
-                  child: Text(
-                    '+20s',
-                    style: GoogleFonts.urbanist(
-                      color: secondaryColor,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 15),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: primaryColor,
-                    minimumSize: Size(300, 50),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    elevation: 5,
-                  ),
-                  onPressed: () {
-                    timer?.cancel();
-                    _goToNextScreen();
-                  },
-                  child: Text(
-                    'BỎ QUA',
-                    style: GoogleFonts.urbanist(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 25),
-              ],
-            ),
+              ),
+              const SizedBox(height: 20),
+
+              // Nút tiếp tục tập thêm (tùy chọn)
+              // TextButton(
+              //   onPressed: () {
+              //     // Quay lại trang Rest để tiếp tục tập
+              //     Navigator.pop(context);
+              //   },
+              //   child: Text(
+              //     'Tiếp tục tập thêm',
+              //     style: GoogleFonts.urbanist(
+              //       color: primaryColor,
+              //       fontWeight: FontWeight.w600,
+              //       fontSize: 16,
+              //     ),
+              //   ),
+              // ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

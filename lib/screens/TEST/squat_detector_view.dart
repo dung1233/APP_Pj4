@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
 import 'package:training_souls/data/DatabaseHelper.dart';
+import 'package:training_souls/screens/Train/rest.dart';
 import 'package:training_souls/screens/Train/restb.dart';
 import 'detector_view.dart';
 import 'painters/pose_painter.dart';
@@ -91,15 +92,13 @@ class _SquatDetectorViewState extends State<SquatDetectorView> {
       print("[DEBUG] 💾 Đang lưu kết quả tập luyện...");
     }
 
-    // Đảm bảo widget vẫn mounted trước khi showDialog
     if (!mounted) return;
 
     showDialog(
       context: context,
       barrierDismissible: false,
-      // ignore: deprecated_member_use
       builder: (context) => WillPopScope(
-        onWillPop: () async => false, // Ngăn người dùng đóng dialog
+        onWillPop: () async => false,
         child: Center(child: CircularProgressIndicator()),
       ),
     );
@@ -109,19 +108,18 @@ class _SquatDetectorViewState extends State<SquatDetectorView> {
 
       if (!mounted) return;
 
-      // Đóng dialog loading trước khi chuyển trang
       Navigator.of(context, rootNavigator: true).pop();
 
-      // Chuyển trang với Navigator.pushReplacement
+      // Chuyển tới trang Rest thay vì bài tập khác
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (_) => Restb(day: widget.day),
+          builder: (_) => Rest(day: widget.day),
         ),
       );
     } catch (e) {
       if (!mounted) return;
-      Navigator.of(context).pop(); // Đóng dialog nếu có lỗi
+      Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Lỗi: $e")),
       );
@@ -143,7 +141,6 @@ class _SquatDetectorViewState extends State<SquatDetectorView> {
 
       // Lưu vào cơ sở dữ liệu
       await dbHelper.saveExerciseResult(widget.day, workoutResult);
-      await dbHelper.checkAndSyncWorkouts(widget.day);
       if (kDebugMode) {
         print(
             "[DEBUG] ✅ Đã lưu kết quả tập luyện: ${workoutResult.toString()}");

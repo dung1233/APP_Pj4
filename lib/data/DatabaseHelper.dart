@@ -115,12 +115,19 @@ class DatabaseHelper {
         if (!hasCompletionDate) {
           await db
               .execute('ALTER TABLE workouts ADD COLUMN completionDate TEXT');
-          print("[DEBUG] ✅ Đã thêm cột completionDate vào bảng workouts");
+          if (kDebugMode) {
+            print("[DEBUG] ✅ Đã thêm cột completionDate vào bảng workouts");
+          }
         } else {
-          print("[DEBUG] ℹ️ Cột completionDate đã tồn tại trong bảng workouts");
+          if (kDebugMode) {
+            print(
+                "[DEBUG] ℹ️ Cột completionDate đã tồn tại trong bảng workouts");
+          }
         }
       } catch (e) {
-        print("[DEBUG] ❌ Lỗi khi thêm cột completionDate: $e");
+        if (kDebugMode) {
+          print("[DEBUG] ❌ Lỗi khi thêm cột completionDate: $e");
+        }
       }
     }
 
@@ -134,12 +141,18 @@ class DatabaseHelper {
 
         if (!hasWorkoutDate) {
           await db.execute('ALTER TABLE workouts ADD COLUMN workoutDate TEXT');
-          print("[DEBUG] ✅ Đã thêm cột workoutDate vào bảng workouts");
+          if (kDebugMode) {
+            print("[DEBUG] ✅ Đã thêm cột workoutDate vào bảng workouts");
+          }
         } else {
-          print("[DEBUG] ℹ️ Cột workoutDate đã tồn tại trong bảng workouts");
+          if (kDebugMode) {
+            print("[DEBUG] ℹ️ Cột workoutDate đã tồn tại trong bảng workouts");
+          }
         }
       } catch (e) {
-        print("[DEBUG] ❌ Lỗi khi thêm cột workoutDate: $e");
+        if (kDebugMode) {
+          print("[DEBUG] ❌ Lỗi khi thêm cột workoutDate: $e");
+        }
       }
     }
   }
@@ -207,7 +220,9 @@ class DatabaseHelper {
         completed_date TEXT
       )
       ''');
-      print("[DEBUG] ✅ Đã tạo bảng workout_results");
+      if (kDebugMode) {
+        print("[DEBUG] ✅ Đã tạo bảng workout_results");
+      }
     }
     // Kiểm tra bảng user_profile
     tables = await db.rawQuery(
@@ -274,9 +289,13 @@ class DatabaseHelper {
     if (!hasWorkoutDate) {
       try {
         await db.execute('ALTER TABLE workouts ADD COLUMN workoutDate TEXT');
-        print("[DEBUG] ✅ Đã thêm cột workoutDate vào bảng workouts");
+        if (kDebugMode) {
+          print("[DEBUG] ✅ Đã thêm cột workoutDate vào bảng workouts");
+        }
       } catch (e) {
-        print("[DEBUG] ❌ Lỗi khi thêm cột workoutDate: $e");
+        if (kDebugMode) {
+          print("[DEBUG] ❌ Lỗi khi thêm cột workoutDate: $e");
+        }
       }
     }
   }
@@ -303,7 +322,9 @@ class DatabaseHelper {
           completed_date TEXT
         )
         ''');
-        print("[DEBUG] ✅ Đã tạo bảng workout_results");
+        if (kDebugMode) {
+          print("[DEBUG] ✅ Đã tạo bảng workout_results");
+        }
       }
 
       // Kiểm tra xem đã có kết quả cho ngày và bài tập này chưa
@@ -325,7 +346,9 @@ class DatabaseHelper {
             },
             where: 'day_number = ? AND exercise_name = ?',
             whereArgs: [dayNumber, exerciseResult['exerciseName']]);
-        print("[DEBUG] ✏️ Đã cập nhật kết quả có sẵn");
+        if (kDebugMode) {
+          print("[DEBUG] ✏️ Đã cập nhật kết quả có sẵn");
+        }
       } else {
         // Thêm mới kết quả
         await db.insert('workout_results', {
@@ -337,10 +360,14 @@ class DatabaseHelper {
           'duration_completed': exerciseResult['durationCompleted'],
           'completed_date': DateTime.now().toIso8601String()
         });
-        print("[DEBUG] ➕ Đã thêm kết quả mới");
+        if (kDebugMode) {
+          print("[DEBUG] ➕ Đã thêm kết quả mới");
+        }
       }
     } catch (e) {
-      print("[DEBUG] ❌ Lỗi database: $e");
+      if (kDebugMode) {
+        print("[DEBUG] ❌ Lỗi database: $e");
+      }
       throw e;
     }
   }
@@ -429,18 +456,35 @@ class DatabaseHelper {
     try {
       final db = await database;
 
-      // Lấy tất cả kết quả cho ngày này
-      final List<Map<String, dynamic>> results = await db.query(
+      // Lấy tổng số bài tập cần thiết cho ngày này
+      final List<Map<String, dynamic>> requiredExercises = await db.query(
+        'workouts',
+        where: 'day = ?',
+        whereArgs: [dayNumber],
+      );
+
+      final int totalRequiredExercises = requiredExercises.length;
+
+      if (totalRequiredExercises == 0) {
+        if (kDebugMode) {
+          print("[DEBUG] ⚠️ Không tìm thấy bài tập nào cho ngày $dayNumber");
+        }
+        return;
+      }
+
+      // Lấy tất cả kết quả đã hoàn thành cho ngày này
+      final List<Map<String, dynamic>> completedResults = await db.query(
           'workout_results',
           where: 'day_number = ?',
           whereArgs: [dayNumber]);
 
-      // Nếu có đủ 4 bài tập, gửi lên API
-      if (results.length >= 4) {
-        print("[DEBUG] 🔄 Đã hoàn thành đủ bài tập, bắt đầu đồng bộ");
+      // Nếu đã hoàn thành đủ số bài tập cần thiết
+      if (completedResults.length >= totalRequiredExercises) {
+        print(
+            "[DEBUG] 🔄 Đã hoàn thành đủ bài tập (${completedResults.length}/$totalRequiredExercises)");
 
         // Định dạng lại dữ liệu theo cấu trúc API
-        final List<Map<String, dynamic>> formattedResults = results
+        final List<Map<String, dynamic>> formattedResults = completedResults
             .map((result) => {
                   "exerciseName": result['exercise_name'],
                   "setsCompleted": result['sets_completed'],
@@ -462,9 +506,14 @@ class DatabaseHelper {
         await db.delete('workout_results',
             where: 'day_number = ?', whereArgs: [dayNumber]);
 
-        print("[DEBUG] ✅ Đã đồng bộ và xóa dữ liệu local");
+        if (kDebugMode) {
+          print("[DEBUG] ✅ Đã đồng bộ và xóa dữ liệu local");
+        }
       } else {
-        print("[DEBUG] ⏳ Chưa đủ bài tập (${results.length}/4), đợi tiếp");
+        if (kDebugMode) {
+          print(
+              "[DEBUG] ⏳ Chưa đủ bài tập (${completedResults.length}/$totalRequiredExercises)");
+        }
       }
     } catch (e) {
       print("[DEBUG] ❌ Lỗi khi kiểm tra và đồng bộ: $e");
@@ -486,13 +535,19 @@ class DatabaseHelper {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        print("[DEBUG] ✅ Gửi API thành công");
+        if (kDebugMode) {
+          print("[DEBUG] ✅ Gửi API thành công");
+        }
       } else {
-        print("[DEBUG] ❌ Lỗi API: ${response.statusCode} - ${response.data}");
+        if (kDebugMode) {
+          print("[DEBUG] ❌ Lỗi API: ${response.statusCode} - ${response.data}");
+        }
         throw Exception("API error: ${response.statusCode}");
       }
     } catch (e) {
-      print("[DEBUG] ❌ Lỗi kết nối API: $e");
+      if (kDebugMode) {
+        print("[DEBUG] ❌ Lỗi kết nối API: $e");
+      }
       throw e;
     }
   }
@@ -525,7 +580,9 @@ class DatabaseHelper {
     final db = await database;
     final List<Map<String, dynamic>> results =
         await db.query('workout_results');
-    print("[DEBUG] 📊 Đã lấy ${results.length} kết quả từ workout_results");
+    if (kDebugMode) {
+      print("[DEBUG] 📊 Đã lấy ${results.length} kết quả từ workout_results");
+    }
     return results;
   }
 
