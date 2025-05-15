@@ -1,9 +1,11 @@
 // ignore: file_names
 import 'package:flutter/material.dart';
 import 'package:training_souls/screens/User/status.dart';
+import 'package:hive/hive.dart';
 
 import '../../data/DatabaseHelper.dart';
 import 'PurchasedItemsPage.dart';
+import '../Home/home.dart';
 
 class UserProfilePage extends StatefulWidget {
   const UserProfilePage({super.key});
@@ -40,7 +42,6 @@ class _UserScreenState extends State<UserProfilePage>
   void refreshUser() {
     _loadUserProfile(dbHelper);
   }
-
 
   Future<void> _printDatabaseContent(DatabaseHelper dbHelper) async {
     final db = await dbHelper.database;
@@ -95,6 +96,7 @@ class _UserScreenState extends State<UserProfilePage>
         );
     }
   }
+
   // Navigate to Purchased Items Page
   Future<void> navigateToPurchasedItemsPage() async {
     await Navigator.push(
@@ -203,7 +205,23 @@ class _UserScreenState extends State<UserProfilePage>
                     leading: const Icon(Icons.logout, color: Colors.red),
                     title: const Text("Đăng xuất",
                         style: TextStyle(color: Colors.red)),
-                    onTap: () {},
+                    onTap: () async {
+                      // Clear Hive storage
+                      final box = await Hive.openBox('userBox');
+                      await box.clear();
+
+                      // Clear SQLite database
+                      await dbHelper.clearAllData();
+
+                      if (mounted) {
+                        // Navigate to HomePage which will redirect to login
+                        Navigator.of(context).pushAndRemoveUntil(
+                          MaterialPageRoute(
+                              builder: (context) => const HomePage()),
+                          (route) => false, // Remove all previous routes
+                        );
+                      }
+                    },
                   ),
                 ],
               ),

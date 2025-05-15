@@ -7,9 +7,9 @@ import 'package:training_souls/screens/Shop/shop_screen.dart'; // Import ShopScr
 import 'package:flutter/material.dart';
 
 class Trainhome extends StatefulWidget {
-// Thêm trường dữ liệu
+  final int initialIndex;
 
-  // Sửa constructor
+  const Trainhome({this.initialIndex = 0});
 
   @override
   // ignore: library_private_types_in_public_api
@@ -17,7 +17,7 @@ class Trainhome extends StatefulWidget {
 }
 
 class _TrainhomeState extends State<Trainhome> {
-  int selectedIndex = 0;
+  late int selectedIndex;
   late PageController _pageController;
   final List<GlobalKey<NavigatorState>> _navigatorKeys = [
     GlobalKey<NavigatorState>(),
@@ -30,6 +30,7 @@ class _TrainhomeState extends State<Trainhome> {
   @override
   void initState() {
     super.initState();
+    selectedIndex = widget.initialIndex;
     _pageController = PageController(initialPage: selectedIndex);
 
     // Khởi tạo màn hình với dữ liệu
