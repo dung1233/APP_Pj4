@@ -6,6 +6,7 @@ import 'package:training_souls/screens/UI/Beginer/situp.dart';
 import 'package:training_souls/screens/Train/train_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:training_souls/providers/workout_provider.dart';
+import 'package:training_souls/screens/trainhome.dart';
 
 class Restb extends StatefulWidget {
   final int day;
@@ -205,7 +206,7 @@ class _RestbState extends State<Restb> {
                             Navigator.pushAndRemoveUntil(
                               context,
                               MaterialPageRoute(
-                                  builder: (context) => TrainScreen()),
+                                  builder: (context) => Trainhome()),
                               (route) => false,
                             );
                           }
