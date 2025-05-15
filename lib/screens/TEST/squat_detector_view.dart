@@ -141,7 +141,6 @@ class _SquatDetectorViewState extends State<SquatDetectorView> {
 
       // Lưu vào cơ sở dữ liệu
       await dbHelper.saveExerciseResult(widget.day, workoutResult);
-      await dbHelper.checkAndSyncWorkouts(widget.day);
       if (kDebugMode) {
         print(
             "[DEBUG] ✅ Đã lưu kết quả tập luyện: ${workoutResult.toString()}");
