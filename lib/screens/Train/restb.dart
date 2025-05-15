@@ -215,20 +215,20 @@ class _RestbState extends State<Restb> {
               const SizedBox(height: 20),
 
               // Nút tiếp tục tập thêm (tùy chọn)
-              TextButton(
-                onPressed: () {
-                  // Quay lại trang Rest để tiếp tục tập
-                  Navigator.pop(context);
-                },
-                child: Text(
-                  'Tiếp tục tập thêm',
-                  style: GoogleFonts.urbanist(
-                    color: primaryColor,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                  ),
-                ),
-              ),
+              // TextButton(
+              //   onPressed: () {
+              //     // Quay lại trang Rest để tiếp tục tập
+              //     Navigator.pop(context);
+              //   },
+              //   child: Text(
+              //     'Tiếp tục tập thêm',
+              //     style: GoogleFonts.urbanist(
+              //       color: primaryColor,
+              //       fontWeight: FontWeight.w600,
+              //       fontSize: 16,
+              //     ),
+              //   ),
+              // ),
             ],
           ),
         ),
