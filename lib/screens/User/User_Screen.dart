@@ -1,9 +1,12 @@
 // ignore: file_names
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:training_souls/screens/User/status.dart';
 import 'package:hive/hive.dart';
 
+import '../../APi/user_service.dart';
 import '../../data/DatabaseHelper.dart';
+import '../../data/local_storage.dart';
 import 'PurchasedItemsPage.dart';
 import '../Home/home.dart';
 
@@ -54,13 +57,50 @@ class _UserScreenState extends State<UserProfilePage>
   }
 
   Future<void> _loadUserProfile(DatabaseHelper dbHelper) async {
-    final db = await dbHelper.database;
-    final name = await db.query('user_info');
-    // final profiles = await db.query('user_profile');
-    if (name.isNotEmpty) {
+    try {
+
+      // Then try to fetch fresh data from API
+      final token = await LocalStorage.getValidToken();
+      if (token != null) {
+        final dio = Dio();
+        final client = UserService(dio);
+
+        try {
+          final response = await client.getMyInfo("Bearer $token");
+          if (response.code == 0) {
+            final user = response.result;
+            // Update local database
+            await dbHelper.insertUserInfo({
+              'userID': user.userID,
+              'name': user.name,
+              'email': user.email,
+              'accountType': user.accountType,
+              'points': user.points,
+              'level': user.level
+            });
+
+            // Update state with fresh data
+            setState(() {
+              _userInfo = {
+                'userID': user.userID,
+                'name': user.name,
+                'email': user.email,
+                'accountType': user.accountType,
+                'points': user.points,
+                'level': user.level
+              };
+            });
+          }
+        } catch (apiError) {
+          print("❌ API error in _loadUserProfile: $apiError");
+          // Don't throw here - we already have local data displayed
+        }
+      }
+    } catch (e) {
+      print("❌ Error in _loadUserProfile: $e");
+      // If both local and API fail, show error state
       setState(() {
-        // _userProfile = profiles.first;
-        _userInfo = name.first;
+        _userInfo = {'accountType': 'basic', 'name': 'Unknown'};
       });
     }
   }

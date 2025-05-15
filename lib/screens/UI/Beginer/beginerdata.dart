@@ -222,6 +222,155 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
     return completedDays;
   }
 
+  void _showNutritionAdvice(int day) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        height: MediaQuery.of(context).size.height * 0.6,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Tư vấn dinh dưỡng - Ngày $day",
+              style: GoogleFonts.urbanist(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildMealSection(
+                      "Bữa sáng",
+                      Icons.breakfast_dining,
+                      [
+                        "2 quả trứng luộc",
+                        "1 lát bánh mì nguyên cám",
+                        "1 cốc sữa tươi không đường",
+                        "1 quả táo hoặc chuối"
+                      ],
+                    ),
+                    const SizedBox(height: 15),
+                    _buildMealSection(
+                      "Bữa trưa",
+                      Icons.restaurant,
+                      [
+                        "150g ức gà nướng",
+                        "1 chén cơm gạo lứt",
+                        "Rau xanh tùy thích",
+                        "1 chén súp rau củ"
+                      ],
+                    ),
+                    const SizedBox(height: 15),
+                    _buildMealSection(
+                      "Bữa tối",
+                      Icons.dinner_dining,
+                      [
+                        "150g cá hồi nướng",
+                        "Salad rau trộn",
+                        "1/2 chén cơm gạo lứt",
+                        "1 cốc sữa chua không đường"
+                      ],
+                    ),
+                    const SizedBox(height: 15),
+                    _buildMealSection(
+                      "Bữa phụ",
+                      Icons.fastfood,
+                      [
+                        "1 nắm hạt hỗn hợp",
+                        "Sinh tố protein sau tập",
+                        "Trái cây tươi",
+                        "Nước lọc (2-3 lít/ngày)"
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    Container(
+                      padding: const EdgeInsets.all(15),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFF0E6),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.info_outline,
+                            color: Color(0xFFFF6F00),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              "Lưu ý: Điều chỉnh khẩu phần theo nhu cầu cá nhân",
+                              style: GoogleFonts.urbanist(
+                                fontSize: 14,
+                                color: const Color(0xFFFF6F00),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMealSection(String title, IconData icon, List<String> items) {
+    return Container(
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: const Color(0xFFFF6F00), size: 24),
+              const SizedBox(width: 10),
+              Text(
+                title,
+                style: GoogleFonts.urbanist(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          ...items.map((item) => Padding(
+                padding: const EdgeInsets.only(left: 34, bottom: 5),
+                child: Row(
+                  children: [
+                    const Icon(Icons.check_circle,
+                        size: 16, color: Colors.green),
+                    const SizedBox(width: 8),
+                    Text(
+                      item,
+                      style: GoogleFonts.urbanist(fontSize: 14),
+                    ),
+                  ],
+                ),
+              )),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<WorkoutProvider>(
@@ -315,6 +464,9 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
                                             completedCount, isExpanded);
                                       },
                                     ),
+                              // Thêm card kiểm tra tuần
+
+                              _buildWeeklyTestCard(weekIndex + 1),
                             ],
                           ),
                         );
@@ -332,82 +484,118 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
       padding: const EdgeInsets.symmetric(vertical: 10.0),
       child: Column(
         children: [
-          GestureDetector(
-            onTap: () {
-              setState(() {
-                expandedDays[day] = !isExpanded;
-              });
-            },
-            child: Container(
-              width: MediaQuery.of(context).size.width * 0.93,
-              height: MediaQuery.of(context).size.height * 0.15,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Colors.black26,
-                    offset: Offset(0, 5),
-                    blurRadius: 10,
-                  ),
-                ],
-                image: DecorationImage(
-                  image: AssetImage(getRandomImageForDay(day)),
-                  fit: BoxFit.cover,
-                  colorFilter: ColorFilter.mode(
-                    Colors.black.withOpacity(0.6),
-                    BlendMode.multiply,
-                  ),
-                ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        "Ngày $day",
-                        style: GoogleFonts.urbanist(
-                          fontSize: 26,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
+          Stack(
+            children: [
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    expandedDays[day] = !isExpanded;
+                  });
+                },
+                child: Container(
+                  width: MediaQuery.of(context).size.width * 0.93,
+                  height: MediaQuery.of(context).size.height * 0.15,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Colors.black26,
+                        offset: Offset(0, 5),
+                        blurRadius: 10,
                       ),
-                      const SizedBox(height: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: _getCompletionColor(
-                              completedCount, dayWorkouts.length),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          "$completedCount/${dayWorkouts.length} bài hoàn thành",
-                          style: GoogleFonts.urbanist(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.white,
+                    ],
+                    image: DecorationImage(
+                      image: AssetImage(getRandomImageForDay(day)),
+                      fit: BoxFit.cover,
+                      colorFilter: ColorFilter.mode(
+                        Colors.black.withOpacity(0.6),
+                        BlendMode.multiply,
+                      ),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            "Ngày $day",
+                            style: GoogleFonts.urbanist(
+                              fontSize: 26,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
                           ),
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _getCompletionColor(
+                                  completedCount, dayWorkouts.length),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              "$completedCount/${dayWorkouts.length} bài hoàn thành",
+                              style: GoogleFonts.urbanist(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      CircleAvatar(
+                        backgroundColor: Colors.black45,
+                        radius: 18,
+                        child: Icon(
+                          isExpanded ? Icons.expand_less : Icons.expand_more,
+                          color: Colors.white,
                         ),
                       ),
                     ],
                   ),
-                  CircleAvatar(
-                    backgroundColor: Colors.black45,
-                    radius: 18,
-                    child: Icon(
-                      isExpanded ? Icons.expand_less : Icons.expand_more,
-                      color: Colors.white,
+                ),
+              ),
+              // Nút tư vấn dinh dưỡng
+              Positioned(
+                top: 10,
+                right: 10,
+                child: GestureDetector(
+                  onTap: () => _showNutritionAdvice(day),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.9),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          offset: const Offset(0, 2),
+                          blurRadius: 5,
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.restaurant_menu,
+                          color: Color(0xFFFF6F00),
+                          size: 20,
+                        ),
+                      ],
                     ),
                   ),
-                ],
+                ),
               ),
-            ),
+            ],
           ),
           if (isExpanded)
             Container(
@@ -646,5 +834,137 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
         });
       }
     }
+  }
+
+  Widget _buildWeeklyTestCard(int weekNumber) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 15),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFFF6F00), Color(0xFFFF8F00)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFFF6F00).withOpacity(0.3),
+            offset: const Offset(0, 5),
+            blurRadius: 10,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  "Bài kiểm tra tuần $weekNumber",
+                  style: GoogleFonts.urbanist(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  "30 phút",
+                  style: GoogleFonts.urbanist(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 15),
+          Text(
+            "Kiểm tra tiến độ và đánh giá kết quả sau một tuần tập luyện",
+            style: GoogleFonts.urbanist(
+              fontSize: 14,
+              color: Colors.white.withOpacity(0.9),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Wrap(
+            spacing: 15,
+            runSpacing: 10,
+            children: [
+              _buildTestFeature(Icons.fitness_center, "5 bài tập"),
+              _buildTestFeature(Icons.timer, "30 phút"),
+              _buildTestFeature(Icons.emoji_events, "Chứng nhận"),
+            ],
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {
+                // TODO: Implement test start functionality
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: const Color(0xFFFF6F00),
+                padding: const EdgeInsets.symmetric(vertical: 15),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Text(
+                "Bắt đầu kiểm tra",
+                style: GoogleFonts.urbanist(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTestFeature(IconData icon, String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            color: Colors.white,
+            size: 16,
+          ),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              text,
+              style: GoogleFonts.urbanist(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
