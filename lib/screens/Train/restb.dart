@@ -113,6 +113,37 @@ class _RestbState extends State<Restb> {
                   height: 1.5,
                 ),
               ),
+              const SizedBox(height: 20),
+
+              // Streak point display
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                decoration: BoxDecoration(
+                  color: primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(25),
+                  border: Border.all(color: primaryColor, width: 2),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.local_fire_department,
+                      color: primaryColor,
+                      size: 24,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '+1 Streak',
+                      style: GoogleFonts.urbanist(
+                        color: primaryColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               const SizedBox(height: 30),
 
               // Thông tin ngày
