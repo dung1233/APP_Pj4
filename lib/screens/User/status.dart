@@ -75,31 +75,33 @@ class _StatusScreenState extends State<StatusScreen> {
             // Update local database
             await dbHelper.insertUserInfo({
               'userID': user.userID,
-              'name': user.name,
-              'email': user.email,
-              'accountType': user.accountType,
-              'points': user.points,
-              'level': user.level
+              'name': user.name ?? '',
+              'email': user.email ?? '',
+              'accountType': user.accountType ?? 'basic',
+              'points': user.points ?? 0,
+              'level': user.level ?? 1
             });
-            // Lưu thông tin userProfile vào bảng user_profile
+
+            // Safely handle userProfile data
             if (user.userProfile != null) {
               await dbHelper.insertUserProfile({
                 'userID': user.userID,
-                'gender': user.userProfile.gender,
-                'age': user.userProfile.age,
-                'height': user.userProfile.height,
-                'weight': user.userProfile.weight,
-                'bmi': user.userProfile.bmi,
-                'bodyFatPercentage': user.userProfile.bodyFatPercentage,
-                'muscleMassPercentage': user.userProfile.muscleMassPercentage,
-                'activityLevel': user.userProfile.activityLevel,
-                'fitnessGoal': user.userProfile.fitnessGoal,
-                'level': user.userProfile.level,
-                'strength': user.userProfile.strength,
-                'deathPoints': user.userProfile.deathPoints,
-                'agility': user.userProfile.agility,
-                'endurance': user.userProfile.endurance,
-                'health': user.userProfile.health,
+                'gender': user.userProfile.gender ?? '',
+                'age': user.userProfile.age ?? 0,
+                'height': user.userProfile.height ?? 0,
+                'weight': user.userProfile.weight ?? 0,
+                'bmi': user.userProfile.bmi ?? 0.0,
+                'bodyFatPercentage': user.userProfile.bodyFatPercentage ?? 0.0,
+                'muscleMassPercentage':
+                    user.userProfile.muscleMassPercentage ?? 0.0,
+                'activityLevel': user.userProfile.activityLevel ?? '',
+                'fitnessGoal': user.userProfile.fitnessGoal ?? '',
+                'level': user.userProfile.level ?? 1,
+                'strength': user.userProfile.strength ?? 0,
+                'deathPoints': user.userProfile.deathPoints ?? 0,
+                'agility': user.userProfile.agility ?? 0,
+                'endurance': user.userProfile.endurance ?? 0,
+                'health': user.userProfile.health ?? 0,
               });
             }
 
@@ -107,33 +109,53 @@ class _StatusScreenState extends State<StatusScreen> {
             setState(() {
               _userInfo = {
                 'userID': user.userID,
-                'name': user.name,
-                'email': user.email,
-                'accountType': user.accountType,
-                'points': user.points,
-                'level': user.level
+                'name': user.name ?? '',
+                'email': user.email ?? '',
+                'accountType': user.accountType ?? 'basic',
+                'points': user.points ?? 0,
+                'level': user.level ?? 1
               };
-              _userProfile = {
-                'userID': user.userID,
-                'gender': user.userProfile.gender,
-                'age': user.userProfile.age,
-                'height': user.userProfile.height,
-                'weight': user.userProfile.weight,
-                'bmi': user.userProfile.bmi,
-                'bodyFatPercentage': user.userProfile.bodyFatPercentage,
-                'muscleMassPercentage': user.userProfile.muscleMassPercentage,
-                'level': user.userProfile.level,
-                'strength': user.userProfile.strength,
-                'deathPoints': user.userProfile.deathPoints,
-                'agility': user.userProfile.agility,
-                'endurance': user.userProfile.endurance,
-                'health': user.userProfile.health,
-              };
+
+              if (user.userProfile != null) {
+                _userProfile = {
+                  'userID': user.userID,
+                  'gender': user.userProfile.gender ?? '',
+                  'age': user.userProfile.age ?? 0,
+                  'height': user.userProfile.height ?? 0,
+                  'weight': user.userProfile.weight ?? 0,
+                  'bmi': user.userProfile.bmi ?? 0.0,
+                  'bodyFatPercentage':
+                      user.userProfile.bodyFatPercentage ?? 0.0,
+                  'muscleMassPercentage':
+                      user.userProfile.muscleMassPercentage ?? 0.0,
+                  'level': user.userProfile.level ?? 1,
+                  'strength': user.userProfile.strength ?? 0,
+                  'deathPoints': user.userProfile.deathPoints ?? 0,
+                  'agility': user.userProfile.agility ?? 0,
+                  'endurance': user.userProfile.endurance ?? 0,
+                  'health': user.userProfile.health ?? 0,
+                };
+              } else {
+                _userProfile = {
+                  'strength': 0,
+                  'agility': 0,
+                  'endurance': 0,
+                  'health': 0,
+                  'level': 1,
+                };
+              }
             });
           }
         } catch (apiError) {
           print("❌ API error in _loadUserProfile: $apiError");
-          // Don't throw here - we already have local data displayed
+          // Load from local database as fallback
+          final db = await dbHelper.database;
+          final profiles = await db.query('user_profile');
+          if (profiles.isNotEmpty) {
+            setState(() {
+              _userProfile = profiles.first;
+            });
+          }
         }
       }
     } catch (e) {
@@ -141,6 +163,13 @@ class _StatusScreenState extends State<StatusScreen> {
       // If both local and API fail, show error state
       setState(() {
         _userInfo = {'accountType': 'basic', 'name': 'Unknown'};
+        _userProfile = {
+          'strength': 0,
+          'agility': 0,
+          'endurance': 0,
+          'health': 0,
+          'level': 1,
+        };
       });
     }
   }
@@ -277,7 +306,7 @@ class _StatusScreenState extends State<StatusScreen> {
                         SizedBox(width: 8),
                         Container(
                           padding:
-                          EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               colors: [Color(0xFFFFB75E), Color(0xFFED8F03)],
@@ -306,7 +335,7 @@ class _StatusScreenState extends State<StatusScreen> {
                     Container(
                       width: double.infinity,
                       padding:
-                      EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                          EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                       decoration: BoxDecoration(
                         color: Colors.grey[50],
                         borderRadius: BorderRadius.circular(10),
@@ -483,8 +512,8 @@ class _StatusScreenState extends State<StatusScreen> {
                           crossAxisAlignment: index == 0
                               ? CrossAxisAlignment.start
                               : index == 3
-                              ? CrossAxisAlignment.end
-                              : CrossAxisAlignment.center,
+                                  ? CrossAxisAlignment.end
+                                  : CrossAxisAlignment.center,
                           children: [
                             Container(
                               width: markerWidth,
@@ -503,8 +532,8 @@ class _StatusScreenState extends State<StatusScreen> {
                                 textAlign: index == 0
                                     ? TextAlign.left
                                     : index == 3
-                                    ? TextAlign.right
-                                    : TextAlign.center,
+                                        ? TextAlign.right
+                                        : TextAlign.center,
                                 maxLines: 1,
                                 overflow: TextOverflow.visible,
                               ),
@@ -688,14 +717,14 @@ class _StatusScreenState extends State<StatusScreen> {
       _iconButton(Icons.replay, () => controller.resetAnimation()),
       _iconButton(Icons.format_list_bulleted_outlined, () async {
         List<String> availableAnimations =
-        await controller.getAvailableAnimations();
+            await controller.getAvailableAnimations();
         chosenAnimation = await showPickerDialog(
             'Animations', availableAnimations, chosenAnimation);
         controller.playAnimation(animationName: chosenAnimation);
       }),
       _iconButton(Icons.list_alt_rounded, () async {
         List<String> availableTextures =
-        await controller.getAvailableTextures();
+            await controller.getAvailableTextures();
         chosenTexture = await showPickerDialog(
             'Textures', availableTextures, chosenTexture);
         controller.setTexture(textureName: chosenTexture ?? '');
@@ -739,43 +768,43 @@ class _StatusScreenState extends State<StatusScreen> {
           height: 250,
           child: inputList.isEmpty
               ? Center(
-            child: Text('$title list is empty'),
-          )
+                  child: Text('$title list is empty'),
+                )
               : ListView.separated(
-            itemCount: inputList.length,
-            padding: const EdgeInsets.only(top: 16),
-            itemBuilder: (ctx, index) {
-              return InkWell(
-                onTap: () {
-                  Navigator.pop(context, inputList[index]);
-                },
-                child: Container(
-                  height: 50,
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('${index + 1}'),
-                      Text(inputList[index]),
-                      Icon(
-                        chosenItem == inputList[index]
-                            ? Icons.check_box
-                            : Icons.check_box_outline_blank,
-                      )
-                    ],
-                  ),
+                  itemCount: inputList.length,
+                  padding: const EdgeInsets.only(top: 16),
+                  itemBuilder: (ctx, index) {
+                    return InkWell(
+                      onTap: () {
+                        Navigator.pop(context, inputList[index]);
+                      },
+                      child: Container(
+                        height: 50,
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('${index + 1}'),
+                            Text(inputList[index]),
+                            Icon(
+                              chosenItem == inputList[index]
+                                  ? Icons.check_box
+                                  : Icons.check_box_outline_blank,
+                            )
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                  separatorBuilder: (ctx, index) {
+                    return const Divider(
+                      color: Colors.grey,
+                      thickness: 0.6,
+                      indent: 10,
+                      endIndent: 10,
+                    );
+                  },
                 ),
-              );
-            },
-            separatorBuilder: (ctx, index) {
-              return const Divider(
-                color: Colors.grey,
-                thickness: 0.6,
-                indent: 10,
-                endIndent: 10,
-              );
-            },
-          ),
         );
       },
     );

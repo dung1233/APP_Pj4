@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:training_souls/screens/User/status.dart';
 import 'package:hive/hive.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../APi/user_service.dart';
 import '../../data/DatabaseHelper.dart';
@@ -58,7 +59,6 @@ class _UserScreenState extends State<UserProfilePage>
 
   Future<void> _loadUserProfile(DatabaseHelper dbHelper) async {
     try {
-
       // Then try to fetch fresh data from API
       final token = await LocalStorage.getValidToken();
       if (token != null) {
@@ -246,20 +246,45 @@ class _UserScreenState extends State<UserProfilePage>
                     title: const Text("Đăng xuất",
                         style: TextStyle(color: Colors.red)),
                     onTap: () async {
-                      // Clear Hive storage
-                      final box = await Hive.openBox('userBox');
-                      await box.clear();
+                      try {
+                        // 1. Clear Hive storage
+                        final box = await Hive.openBox('userBox');
+                        await box.clear();
 
-                      // Clear SQLite database
-                      await dbHelper.clearAllData();
+                        // 2. Clear SharedPreferences
+                        final prefs = await SharedPreferences.getInstance();
+                        await prefs.clear();
 
-                      if (mounted) {
-                        // Navigate to HomePage which will redirect to login
-                        Navigator.of(context).pushAndRemoveUntil(
-                          MaterialPageRoute(
-                              builder: (context) => const HomePage()),
-                          (route) => false, // Remove all previous routes
-                        );
+                        // 3. Clear SQLite database tables
+                        final db = await dbHelper.database;
+                        await db.transaction((txn) async {
+                          // Clear all tables
+                          await txn.delete('workouts');
+                          await txn.delete('workout_results');
+                          await txn.delete('user_info');
+                          await txn.delete('user_profile');
+                          await txn.delete('roles');
+                          await txn.delete('permissions');
+                        });
+
+                        if (mounted) {
+                          // Navigate to HomePage and remove all previous routes
+                          Navigator.of(context).pushAndRemoveUntil(
+                            MaterialPageRoute(
+                                builder: (context) => const HomePage()),
+                            (route) => false,
+                          );
+                        }
+                      } catch (e) {
+                        print("❌ Error during logout: $e");
+                        // Still try to navigate even if there's an error
+                        if (mounted) {
+                          Navigator.of(context).pushAndRemoveUntil(
+                            MaterialPageRoute(
+                                builder: (context) => const HomePage()),
+                            (route) => false,
+                          );
+                        }
                       }
                     },
                   ),
