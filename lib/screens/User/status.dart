@@ -30,6 +30,7 @@ class _StatusScreenState extends State<StatusScreen> {
   final dbHelper = DatabaseHelper();
   Map<String, dynamic> _userProfile = {};
   Map<String, dynamic> _userInfo = {};
+  double _powerLevel = 0.0;
 
   @override
   void initState() {
@@ -38,102 +39,66 @@ class _StatusScreenState extends State<StatusScreen> {
       debugPrint('Model loaded: \${controller.onModelLoaded.value}');
     });
     availableModels = [srcGlb, srcGlb1];
-    _printDatabaseContent(dbHelper);
     _loadUserProfile(dbHelper);
-  }
-
-  Future<void> _printDatabaseContent(DatabaseHelper dbHelper) async {
-    final db = await dbHelper.database;
-
-    // Lấy và in thông tin người dùng
-    final userInfo = await db.query('user_info');
-    print("❓ Dữ liệu bảng user_info:");
-    userInfo.forEach((user) {
-      print(user);
-    });
-
-    // Lấy và in thông tin user_profile
-    final userProfiles = await db.query('user_profile');
-    print("❓ Dữ liệu bảng user_profile:");
-    userProfiles.forEach((profile) {
-      print(profile);
-    });
   }
 
   Future<void> _loadUserProfile(DatabaseHelper dbHelper) async {
     try {
-      // Then try to fetch fresh data from API
+      // First ensure database tables exist
+      await dbHelper.checkAndCreateTables();
+
+      // Try to fetch data from API first
       final token = await LocalStorage.getValidToken();
       if (token != null) {
         final dio = Dio();
-        final client = UserService(dio);
+        dio.options.baseUrl = 'http://54.251.220.228:8080/trainingSouls';
+        dio.options.headers = {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        };
 
         try {
-          final response = await client.getMyInfo("Bearer $token");
-          if (response.code == 0) {
-            final user = response.result;
-            // Update local database
-            await dbHelper.insertUserInfo({
-              'userID': user.userID,
-              'name': user.name ?? '',
-              'email': user.email ?? '',
-              'accountType': user.accountType ?? 'basic',
-              'points': user.points ?? 0,
-              'level': user.level ?? 1
-            });
+          print("📡 Fetching data from API...");
+          final response = await dio.get('/users/getMyInfo');
 
-            // Safely handle userProfile data
-            if (user.userProfile != null) {
-              await dbHelper.insertUserProfile({
-                'userID': user.userID,
-                'gender': user.userProfile.gender ?? '',
-                'age': user.userProfile.age ?? 0,
-                'height': user.userProfile.height ?? 0,
-                'weight': user.userProfile.weight ?? 0,
-                'bmi': user.userProfile.bmi ?? 0.0,
-                'bodyFatPercentage': user.userProfile.bodyFatPercentage ?? 0.0,
-                'muscleMassPercentage':
-                    user.userProfile.muscleMassPercentage ?? 0.0,
-                'activityLevel': user.userProfile.activityLevel ?? '',
-                'fitnessGoal': user.userProfile.fitnessGoal ?? '',
-                'level': user.userProfile.level ?? 1,
-                'strength': user.userProfile.strength ?? 0,
-                'deathPoints': user.userProfile.deathPoints ?? 0,
-                'agility': user.userProfile.agility ?? 0,
-                'endurance': user.userProfile.endurance ?? 0,
-                'health': user.userProfile.health ?? 0,
-              });
-            }
+          if (response.data['code'] == 0 && response.data['result'] != null) {
+            print("✅ API data received successfully");
+            final userData = response.data['result'];
+            final userProfile = userData['userProfile'];
+            final totalScore =
+                (userData['totalScore'] as num?)?.toDouble() ?? 0.0;
 
-            // Update state with fresh data
+            // Update state with fresh API data
             setState(() {
+              _powerLevel = totalScore;
+
               _userInfo = {
-                'userID': user.userID,
-                'name': user.name ?? '',
-                'email': user.email ?? '',
-                'accountType': user.accountType ?? 'basic',
-                'points': user.points ?? 0,
-                'level': user.level ?? 1
+                'userID': userData['userID'],
+                'name': userData['name'] ?? '',
+                'email': userData['email'] ?? '',
+                'accountType': userData['accountType'] ?? 'basic',
+                'points': userData['points'] ?? 0,
+                'level': userData['level'] ?? 1,
+                'totalScore': totalScore
               };
 
-              if (user.userProfile != null) {
+              if (userProfile != null) {
                 _userProfile = {
-                  'userID': user.userID,
-                  'gender': user.userProfile.gender ?? '',
-                  'age': user.userProfile.age ?? 0,
-                  'height': user.userProfile.height ?? 0,
-                  'weight': user.userProfile.weight ?? 0,
-                  'bmi': user.userProfile.bmi ?? 0.0,
-                  'bodyFatPercentage':
-                      user.userProfile.bodyFatPercentage ?? 0.0,
+                  'userID': userData['userID'],
+                  'gender': userProfile['gender'] ?? '',
+                  'age': userProfile['age'] ?? 0,
+                  'height': userProfile['height'] ?? 0,
+                  'weight': userProfile['weight'] ?? 0,
+                  'bmi': userProfile['bmi'] ?? 0.0,
+                  'bodyFatPercentage': userProfile['bodyFatPercentage'] ?? 0.0,
                   'muscleMassPercentage':
-                      user.userProfile.muscleMassPercentage ?? 0.0,
-                  'level': user.userProfile.level ?? 1,
-                  'strength': user.userProfile.strength ?? 0,
-                  'deathPoints': user.userProfile.deathPoints ?? 0,
-                  'agility': user.userProfile.agility ?? 0,
-                  'endurance': user.userProfile.endurance ?? 0,
-                  'health': user.userProfile.health ?? 0,
+                      userProfile['muscleMassPercentage'] ?? 0.0,
+                  'level': userProfile['level'] ?? 'Beginner',
+                  'strength': userProfile['strength'] ?? 0,
+                  'deathPoints': userProfile['deathPoints'] ?? 0,
+                  'agility': userProfile['agility'] ?? 0,
+                  'endurance': userProfile['endurance'] ?? 0,
+                  'health': userProfile['health'] ?? 0,
                 };
               } else {
                 _userProfile = {
@@ -141,34 +106,71 @@ class _StatusScreenState extends State<StatusScreen> {
                   'agility': 0,
                   'endurance': 0,
                   'health': 0,
-                  'level': 1,
+                  'level': 'Beginner',
                 };
               }
             });
+
+            // After successfully getting API data, update local database as backup
+            try {
+              await dbHelper.insertUserInfo(_userInfo);
+              if (userProfile != null) {
+                await dbHelper.insertUserProfile(_userProfile);
+              }
+              print("✅ Local database updated with latest API data");
+            } catch (dbError) {
+              print("⚠️ Failed to update local database: $dbError");
+            }
+          } else {
+            throw Exception("Invalid API response format");
           }
         } catch (apiError) {
-          print("❌ API error in _loadUserProfile: $apiError");
-          // Load from local database as fallback
+          print("❌ API error: $apiError");
+          print("⚠️ Falling back to local database...");
+
+          // Only use local database if API completely fails
           final db = await dbHelper.database;
-          final profiles = await db.query('user_profile');
-          if (profiles.isNotEmpty) {
-            setState(() {
-              _userProfile = profiles.first;
-            });
+          try {
+            final userInfos = await db.query('user_info');
+            final profiles = await db.query('user_profile');
+
+            if (userInfos.isNotEmpty) {
+              setState(() {
+                _userInfo = userInfos.first;
+                _powerLevel =
+                    (userInfos.first['totalScore'] as num?)?.toDouble() ?? 0.0;
+                if (profiles.isNotEmpty) {
+                  _userProfile = profiles.first;
+                }
+              });
+              print("✅ Loaded data from local database");
+            } else {
+              throw Exception("No data in local database");
+            }
+          } catch (dbError) {
+            print("❌ Local database error: $dbError");
+            throw dbError;
           }
         }
+      } else {
+        throw Exception("No valid token found");
       }
     } catch (e) {
-      print("❌ Error in _loadUserProfile: $e");
-      // If both local and API fail, show error state
+      print("❌ Fatal error in _loadUserProfile: $e");
+      // If both API and local database fail, show error state
       setState(() {
-        _userInfo = {'accountType': 'basic', 'name': 'Unknown'};
+        _powerLevel = 0.0;
+        _userInfo = {
+          'accountType': 'basic',
+          'name': 'Unknown',
+          'totalScore': 0.0
+        };
         _userProfile = {
           'strength': 0,
           'agility': 0,
           'endurance': 0,
           'health': 0,
-          'level': 1,
+          'level': 'Beginner',
         };
       });
     }
@@ -377,8 +379,8 @@ class _StatusScreenState extends State<StatusScreen> {
   }
 
   Widget _buildPowerSection() {
-    final powerValue = 0;
-    final maxPower = 100;
+    final maxPower = 100.0;
+    final powerValue = _powerLevel.clamp(0.0, maxPower);
 
     return Container(
       padding: EdgeInsets.all(15),
@@ -427,7 +429,7 @@ class _StatusScreenState extends State<StatusScreen> {
                   border: Border.all(color: Colors.grey[300]!),
                 ),
                 child: Text(
-                  "$powerValue/$maxPower",
+                  "${powerValue.toStringAsFixed(1)}/$maxPower",
                   style: TextStyle(
                     color: Color(0xFF2C3E50),
                     fontSize: 16,
@@ -698,7 +700,7 @@ class _StatusScreenState extends State<StatusScreen> {
     }
   }
 
-  Color _getPowerColor(int powerValue) {
+  Color _getPowerColor(double powerValue) {
     if (powerValue >= 95) {
       return Color(0xFF4ECB71); // Expert - Green
     } else if (powerValue >= 66) {

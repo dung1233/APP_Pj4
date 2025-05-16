@@ -1,7 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:training_souls/api/user_service.dart';
-import 'package:training_souls/data/DatabaseHelper.dart';
 import 'package:training_souls/data/local_storage.dart';
 
 import '../../Stripe/UpgradeAccountPage.dart';
@@ -19,21 +18,11 @@ class _IconsUserState extends State<IconsUser>
   String? userName;
   bool isLoading = true;
   Map<String, dynamic> _userInfo = {};
-  final dbHelper = DatabaseHelper();
 
   @override
   void initState() {
     super.initState();
     fetchUserInfo();
-    _loadUserData();
-    _loadUserProfile(dbHelper);
-  }
-
-  Future<void> _loadUserData() async {
-    final name = await DatabaseHelper().getUserName();
-    setState(() {
-      userName = name ?? 'aaa';
-    });
   }
 
   Future<void> fetchUserInfo() async {
@@ -49,76 +38,25 @@ class _IconsUserState extends State<IconsUser>
 
     final dio = Dio();
     final client = UserService(dio);
-    final dbHelper = DatabaseHelper();
-    await dbHelper.checkAndCreateTables();
 
     try {
       final response = await client.getMyInfo("Bearer $token");
+      print("📌 API Response: ${response.toJson()}");
 
-      // Kiểm tra code của response
       if (response.code == 0) {
         final user = response.result;
-
-        // Lưu thông tin user vào bảng user_info
-        await dbHelper.insertUserInfo({
-          'userID': user.userID,
-          'name': user.name,
-          'email': user.email,
-          'accountType': user.accountType,
-          'points': user.points,
-          'level': user.level
-        });
-
-        // Lưu thông tin userProfile vào bảng user_profile
-        if (user.userProfile != null) {
-          await dbHelper.insertUserProfile({
-            'userID': user.userID,
-            'gender': user.userProfile.gender,
-            'age': user.userProfile.age,
-            'height': user.userProfile.height,
-            'weight': user.userProfile.weight,
-            'bmi': user.userProfile.bmi,
-            'bodyFatPercentage': user.userProfile.bodyFatPercentage,
-            'muscleMassPercentage': user.userProfile.muscleMassPercentage,
-            'activityLevel': user.userProfile.activityLevel,
-            'fitnessGoal': user.userProfile.fitnessGoal,
-            'level': user.userProfile.level,
-            'strength': user.userProfile.strength,
-            'deathPoints': user.userProfile.deathPoints,
-            'agility': user.userProfile.agility,
-            'endurance': user.userProfile.endurance,
-            'health': user.userProfile.health,
-          });
-        }
-
-        // // Lưu thông tin roles và permissions
-        // if (user.roles != null && user.roles.isNotEmpty) {
-        //   for (var role in user.roles) {
-        //     // Lưu role
-        //     int roleID = await dbHelper.insertRole({
-        //       'userID': user.userID,
-        //       'name': role.name,
-        //       'description': role.description,
-        //     });
-
-        //     // Lưu permissions của role
-        //     if (role.permissions != null && role.permissions.isNotEmpty) {
-        //       for (var permission in role.permissions) {
-        //         await dbHelper.insertPermission({
-        //           'roleID': roleID,
-        //           'name': permission.name,
-        //           'description': permission.description,
-        //         });
-        //       }
-        //     }
-        //   }
-        // }
-
-        // Kiểm tra dữ liệu đã lưu bằng cách truy vấn từ database và print ra console
-        _printDatabaseContent(dbHelper);
+        print("📌 User data: ${user.toJson()}");
 
         setState(() {
           userName = user.name;
+          _userInfo = {
+            'userID': user.userID,
+            'name': user.name,
+            'email': user.email,
+            'accountType': user.accountType,
+            'points': user.points,
+            'level': user.level
+          };
           isLoading = false;
         });
       } else {
@@ -131,88 +69,6 @@ class _IconsUserState extends State<IconsUser>
       print("❌ Lỗi khi gọi API: $e");
       setState(() {
         isLoading = false;
-      });
-    }
-  }
-
-  Future<void> _printDatabaseContent(DatabaseHelper dbHelper) async {
-    final db = await dbHelper.database;
-
-    // Lấy và in thông tin người dùng
-    final userInfo = await db.query('user_info');
-    print("❓ Dữ liệu bảng user_info:");
-    userInfo.forEach((user) {
-      print(user);
-    });
-
-    // Lấy và in thông tin user_profile
-    final userProfiles = await db.query('user_profile');
-    print("❓ Dữ liệu bảng user_profile:");
-    userProfiles.forEach((profile) {
-      print(profile);
-    });
-
-    // // Lấy và in thông tin roles
-    // final roles = await db.query('roles');
-    // print("❓ Dữ liệu bảng roles:");
-    // roles.forEach((role) {
-    //   print(role);
-    // });
-
-    // // Lấy và in thông tin permissions
-    // final permissions = await db.query('permissions');
-    // print("❓ Dữ liệu bảng permissions:");
-    // permissions.forEach((permission) {
-    //   print(permission);
-    // });
-  }
-
-  // premium
-  Future<void> _loadUserProfile(DatabaseHelper dbHelper) async {
-    try {
-
-      // Then try to fetch fresh data from API
-      final token = await LocalStorage.getValidToken();
-      if (token != null) {
-        final dio = Dio();
-        final client = UserService(dio);
-
-        try {
-          final response = await client.getMyInfo("Bearer $token");
-          if (response.code == 0) {
-            final user = response.result;
-            // Update local database
-            await dbHelper.insertUserInfo({
-              'userID': user.userID,
-              'name': user.name,
-              'email': user.email,
-              'accountType': user.accountType,
-              'points': user.points,
-              'level': user.level
-            });
-
-            // Update state with fresh data
-            setState(() {
-              _userInfo = {
-                'userID': user.userID,
-                'name': user.name,
-                'email': user.email,
-                'accountType': user.accountType,
-                'points': user.points,
-                'level': user.level
-              };
-            });
-          }
-        } catch (apiError) {
-          print("❌ API error in _loadUserProfile: $apiError");
-          // Don't throw here - we already have local data displayed
-        }
-      }
-    } catch (e) {
-      print("❌ Error in _loadUserProfile: $e");
-      // If both local and API fail, show error state
-      setState(() {
-        _userInfo = {'accountType': 'basic', 'name': 'Unknown'};
       });
     }
   }
@@ -242,14 +98,13 @@ class _IconsUserState extends State<IconsUser>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Khi tab hiện tại được focus
     if (ModalRoute.of(context)?.isCurrent == true) {
       refreshUser();
     }
   }
 
   void refreshUser() {
-    _loadUserProfile(dbHelper);
+    fetchUserInfo();
   }
 
   @override
@@ -257,7 +112,7 @@ class _IconsUserState extends State<IconsUser>
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // BẮT BUỘC khi dùng keepAlive
+    super.build(context);
     final accountTypeRaw = _userInfo['accountType'] ?? 'basic';
     final accountType = capitalize(accountTypeRaw);
 
@@ -274,29 +129,28 @@ class _IconsUserState extends State<IconsUser>
             isLoading
                 ? const CircularProgressIndicator()
                 : RichText(
-                    text: TextSpan(
-                      children: [
-                        const TextSpan(
-                          text: 'Welcome Back, ',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
-                        ),
-                        TextSpan(
-                          text: userName ?? 'aa',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
-                        ),
-                      ],
+              text: TextSpan(
+                children: [
+                  const TextSpan(
+                    text: 'Welcome Back, ',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
                     ),
                   ),
+                  TextSpan(
+                    text: userName ?? 'aa',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                  ),
+                ],
+              ),
+            ),
             GestureDetector(
-              // Trong onTap của container
               onTap: () {
                 showGeneralDialog(
                   context: context,
@@ -308,7 +162,6 @@ class _IconsUserState extends State<IconsUser>
                       selectedOption: accountType,
                       options: ['Basic', 'Premium'],
                       onSelected: (selectedType) {
-                        // Xử lý nếu cần dùng selectedType, không cần điều hướng nữa
                         print("🔶 Người dùng đã chọn gói: $selectedType");
                       },
                     );
@@ -324,10 +177,9 @@ class _IconsUserState extends State<IconsUser>
                   },
                 );
               },
-
               child: Container(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
                   gradient: getAccountGradient(accountTypeRaw),

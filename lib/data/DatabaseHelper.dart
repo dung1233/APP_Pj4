@@ -110,7 +110,7 @@ class DatabaseHelper {
         // Kiểm tra xem cột đã tồn tại chưa
         var columns = await db.rawQuery('PRAGMA table_info(workouts)');
         bool hasCompletionDate =
-            columns.any((column) => column['name'] == 'completionDate');
+        columns.any((column) => column['name'] == 'completionDate');
 
         if (!hasCompletionDate) {
           await db
@@ -137,7 +137,7 @@ class DatabaseHelper {
         // Kiểm tra xem cột đã tồn tại chưa
         var columns = await db.rawQuery('PRAGMA table_info(workouts)');
         bool hasWorkoutDate =
-            columns.any((column) => column['name'] == 'workoutDate');
+        columns.any((column) => column['name'] == 'workoutDate');
 
         if (!hasWorkoutDate) {
           await db.execute('ALTER TABLE workouts ADD COLUMN workoutDate TEXT');
@@ -284,7 +284,7 @@ class DatabaseHelper {
     // Kiểm tra cột workoutDate trong bảng workouts
     var columns = await db.rawQuery('PRAGMA table_info(workouts)');
     bool hasWorkoutDate =
-        columns.any((column) => column['name'] == 'workoutDate');
+    columns.any((column) => column['name'] == 'workoutDate');
 
     if (!hasWorkoutDate) {
       try {
@@ -486,12 +486,12 @@ class DatabaseHelper {
         // Định dạng lại dữ liệu theo cấu trúc API
         final List<Map<String, dynamic>> formattedResults = completedResults
             .map((result) => {
-                  "exerciseName": result['exercise_name'],
-                  "setsCompleted": result['sets_completed'],
-                  "repsCompleted": result['reps_completed'],
-                  "distanceCompleted": result['distance_completed'],
-                  "durationCompleted": result['duration_completed']
-                })
+          "exerciseName": result['exercise_name'],
+          "setsCompleted": result['sets_completed'],
+          "repsCompleted": result['reps_completed'],
+          "distanceCompleted": result['distance_completed'],
+          "durationCompleted": result['duration_completed']
+        })
             .toList();
 
         final Map<String, dynamic> apiData = {
@@ -579,7 +579,7 @@ class DatabaseHelper {
   Future<List<Map<String, dynamic>>> getAllWorkoutResults() async {
     final db = await database;
     final List<Map<String, dynamic>> results =
-        await db.query('workout_results');
+    await db.query('workout_results');
     if (kDebugMode) {
       print("[DEBUG] 📊 Đã lấy ${results.length} kết quả từ workout_results");
     }
@@ -672,13 +672,13 @@ class DatabaseHelper {
 
     // Lấy user_info
     final userInfoResult =
-        await db.query('user_info', where: 'userID = ?', whereArgs: [userID]);
+    await db.query('user_info', where: 'userID = ?', whereArgs: [userID]);
     if (userInfoResult.isEmpty) return {};
     var userInfo = userInfoResult.first;
 
     // Lấy roles
     final rolesResult =
-        await db.query('roles', where: 'userID = ?', whereArgs: [userID]);
+    await db.query('roles', where: 'userID = ?', whereArgs: [userID]);
     var roles = rolesResult.map((role) => role).toList();
 
     // Lấy user_profile
@@ -715,78 +715,78 @@ class DatabaseHelper {
     );
   }
 
-  Future<void> updateUserInfoInDatabase(User user) async {
-    final db = await database;
+  // Future<void> updateUserInfoInDatabase(User user) async {
+  //   final db = await database;
 
-    try {
-      await db.transaction((txn) async {
-        // 1. Xóa dữ liệu user cũ
-        await txn.delete('user_info');
+  //   try {
+  //     await db.transaction((txn) async {
+  //       // 1. Xóa dữ liệu user cũ
+  //       await txn.delete('user_info');
 
-        // 2. Thêm thông tin user mới
-        final userInfoMap = {
-          'userID': user.userID, // Giữ userID từ API
-          'name': user.name,
-          'email': user.email,
-          'accountType': user.accountType,
-          'points': user.points,
-          'level': user.level,
-        };
+  //       // 2. Thêm thông tin user mới
+  //       final userInfoMap = {
+  //         'userID': user.userID, // Giữ userID từ API
+  //         'name': user.name,
+  //         'email': user.email,
+  //         'accountType': user.accountType,
+  //         'points': user.points,
+  //         'level': user.level,
+  //       };
 
-        await txn.insert('user_info', userInfoMap);
+  //       await txn.insert('user_info', userInfoMap);
 
-        // 3. Cập nhật user_profile
-        final userProfileExists = await txn.query('user_profile',
-            where: 'userID = ?', whereArgs: [user.userID]);
+  //       // 3. Cập nhật user_profile
+  //       final userProfileExists = await txn.query('user_profile',
+  //           where: 'userID = ?', whereArgs: [user.userID]);
 
-        final userProfileMap = {
-          'userID': user.userID,
-          'gender': user.userProfile.gender,
-          'age': user.userProfile.age,
-          'height': user.userProfile.height,
-          'weight': user.userProfile.weight,
-          'bmi': user.userProfile.bmi,
-          'bodyFatPercentage': user.userProfile.bodyFatPercentage,
-          'muscleMassPercentage': user.userProfile.muscleMassPercentage,
-          'activityLevel': user.userProfile.activityLevel,
-          'fitnessGoal': user.userProfile.fitnessGoal,
-          'level': user.userProfile.level,
-          'strength': user.userProfile.strength,
-          'deathPoints': user.userProfile.deathPoints,
-          'agility': user.userProfile.agility,
-          'endurance': user.userProfile.endurance,
-          'health': user.userProfile.health,
-        };
+  //       final userProfileMap = {
+  //         'userID': user.userID,
+  //         'gender': user.userProfile.gender,
+  //         'age': user.userProfile.age,
+  //         'height': user.userProfile.height,
+  //         'weight': user.userProfile.weight,
+  //         'bmi': user.userProfile.bmi,
+  //         'bodyFatPercentage': user.userProfile.bodyFatPercentage,
+  //         'muscleMassPercentage': user.userProfile.muscleMassPercentage,
+  //         'activityLevel': user.userProfile.activityLevel,
+  //         'fitnessGoal': user.userProfile.fitnessGoal,
+  //         'level': user.userProfile.level,
+  //         'strength': user.userProfile.strength,
+  //         'deathPoints': user.userProfile.deathPoints,
+  //         'agility': user.userProfile.agility,
+  //         'endurance': user.userProfile.endurance,
+  //         'health': user.userProfile.health,
+  //       };
 
-        if (userProfileExists.isEmpty) {
-          await txn.insert('user_profile', userProfileMap);
-        } else {
-          await txn.update('user_profile', userProfileMap,
-              where: 'userID = ?', whereArgs: [user.userID]);
-        }
+  //       if (userProfileExists.isEmpty) {
+  //         await txn.insert('user_profile', userProfileMap);
+  //       } else {
+  //         await txn.update('user_profile', userProfileMap,
+  //             where: 'userID = ?', whereArgs: [user.userID]);
+  //       }
 
-        // 4. Cập nhật roles (nếu cần)
-        // Xóa roles cũ
-        await txn
-            .delete('roles', where: 'userID = ?', whereArgs: [user.userID]);
+  //       // 4. Cập nhật roles (nếu cần)
+  //       // Xóa roles cũ
+  //       await txn
+  //           .delete('roles', where: 'userID = ?', whereArgs: [user.userID]);
 
-        // Thêm roles mới
-        for (var role in user.roles) {
-          await txn.insert('roles', {
-            'userID': user.userID,
-            'name': role.name,
-            'description': role.description,
-          });
-        }
-      });
+  //       // Thêm roles mới
+  //       for (var role in user.roles) {
+  //         await txn.insert('roles', {
+  //           'userID': user.userID,
+  //           'name': role.name,
+  //           'description': role.description,
+  //         });
+  //       }
+  //     });
 
-      print(
-          "[DEBUG] ✅ Đã cập nhật thông tin user, profile và roles trong database");
-    } catch (e) {
-      print("[DEBUG] ❌ Lỗi cập nhật database: $e");
-      throw e;
-    }
-  }
+  //     print(
+  //         "[DEBUG] ✅ Đã cập nhật thông tin user, profile và roles trong database");
+  //   } catch (e) {
+  //     print("[DEBUG] ❌ Lỗi cập nhật database: $e");
+  //     throw e;
+  //   }
+  // }
 
   Future<void> updateUserInfoFromAPI() async {
     try {
@@ -804,13 +804,13 @@ class DatabaseHelper {
 
       // Gọi API để lấy thông tin người dùng mới
       final UserResponse userResponse =
-          await userService.getMyInfo("Bearer $token");
+      await userService.getMyInfo("Bearer $token");
 
       // Truy cập thuộc tính result (đối tượng User)
       final User user = userResponse.result;
 
       // Cập nhật thông tin vào database
-      await updateUserInfoInDatabase(user);
+      // await updateUserInfoInDatabase(user);
 
       print("[DEBUG] ✅ Đã cập nhật thông tin người dùng từ API thành công");
     } catch (e) {

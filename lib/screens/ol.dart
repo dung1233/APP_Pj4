@@ -9,6 +9,10 @@ import 'package:training_souls/api/api_client.dart';
 import 'package:training_souls/data/DatabaseHelper.dart';
 import 'package:intl/intl.dart';
 import 'package:training_souls/screens/trainhome.dart';
+import 'package:training_souls/api/user_service.dart';
+import 'package:training_souls/models/user_response.dart';
+
+import '../../data/local_storage.dart';
 
 class Ol extends StatefulWidget {
   const Ol({super.key});
@@ -23,6 +27,8 @@ class _OlViewState extends State<Ol> {
   final dbHelper = DatabaseHelper();
   List<Map<String, dynamic>> _results = [];
   Map<String, dynamic> _userProfile = {};
+  Map<String, dynamic> _userInfo = {};
+  double _powerLevel = 0.0;
   late final ApiService apiService; // Chuyển vào trong class
 
   @override
@@ -69,11 +75,135 @@ class _OlViewState extends State<Ol> {
   }
 
   Future<void> _loadUserProfile(DatabaseHelper dbHelper) async {
-    final db = await dbHelper.database;
-    final profiles = await db.query('user_profile');
-    if (profiles.isNotEmpty) {
+    try {
+      // First ensure database tables exist
+      await dbHelper.checkAndCreateTables();
+
+      // Try to fetch data from API first
+      final token = await LocalStorage.getValidToken();
+      if (token != null) {
+        final dio = Dio();
+        dio.options.baseUrl = 'http://54.251.220.228:8080/trainingSouls';
+        dio.options.headers = {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        };
+
+        try {
+          print("📡 Fetching data from API...");
+          final response = await dio.get('/users/getMyInfo');
+
+          if (response.data['code'] == 0 && response.data['result'] != null) {
+            print("✅ API data received successfully");
+            final userData = response.data['result'];
+            final userProfile = userData['userProfile'];
+            final totalScore =
+                (userData['totalScore'] as num?)?.toDouble() ?? 0.0;
+
+            // Update state with fresh API data
+            setState(() {
+              _powerLevel = totalScore;
+
+              _userInfo = {
+                'userID': userData['userID'],
+                'name': userData['name'] ?? '',
+                'email': userData['email'] ?? '',
+                'accountType': userData['accountType'] ?? 'basic',
+                'points': userData['points'] ?? 0,
+                'level': userData['level'] ?? 1,
+                'totalScore': totalScore
+              };
+
+              if (userProfile != null) {
+                _userProfile = {
+                  'userID': userData['userID'],
+                  'gender': userProfile['gender'] ?? '',
+                  'age': userProfile['age'] ?? 0,
+                  'height': userProfile['height'] ?? 0,
+                  'weight': userProfile['weight'] ?? 0,
+                  'bmi': userProfile['bmi'] ?? 0.0,
+                  'bodyFatPercentage': userProfile['bodyFatPercentage'] ?? 0.0,
+                  'muscleMassPercentage':
+                  userProfile['muscleMassPercentage'] ?? 0.0,
+                  'level': userProfile['level'] ?? 'Beginner',
+                  'strength': userProfile['strength'] ?? 0,
+                  'deathPoints': userProfile['deathPoints'] ?? 0,
+                  'agility': userProfile['agility'] ?? 0,
+                  'endurance': userProfile['endurance'] ?? 0,
+                  'health': userProfile['health'] ?? 0,
+                };
+              } else {
+                _userProfile = {
+                  'strength': 0,
+                  'agility': 0,
+                  'endurance': 0,
+                  'health': 0,
+                  'level': 'Beginner',
+                };
+              }
+            });
+
+            // After successfully getting API data, update local database as backup
+            try {
+              await dbHelper.insertUserInfo(_userInfo);
+              if (userProfile != null) {
+                await dbHelper.insertUserProfile(_userProfile);
+              }
+              print("✅ Local database updated with latest API data");
+            } catch (dbError) {
+              print("⚠️ Failed to update local database: $dbError");
+            }
+          } else {
+            throw Exception("Invalid API response format");
+          }
+        } catch (apiError) {
+          print("❌ API error: $apiError");
+          print("⚠️ Falling back to local database...");
+
+          // Only use local database if API completely fails
+          final db = await dbHelper.database;
+          try {
+            final userInfos = await db.query('user_info');
+            final profiles = await db.query('user_profile');
+
+            if (userInfos.isNotEmpty) {
+              setState(() {
+                _userInfo = userInfos.first;
+                _powerLevel =
+                    (userInfos.first['totalScore'] as num?)?.toDouble() ?? 0.0;
+                if (profiles.isNotEmpty) {
+                  _userProfile = profiles.first;
+                }
+              });
+              print("✅ Loaded data from local database");
+            } else {
+              throw Exception("No data in local database");
+            }
+          } catch (dbError) {
+            print("❌ Local database error: $dbError");
+            throw dbError;
+          }
+        }
+      } else {
+        throw Exception("No valid token found");
+      }
+    } catch (e) {
+      print("❌ Fatal error in _loadUserProfile: $e");
+      // If both API and local database fail, show error state
       setState(() {
-        _userProfile = profiles.first;
+        _powerLevel = 0.0;
+        _userInfo = {
+          'accountType': 'basic',
+          'name': 'Unknown',
+          'totalScore': 0.0
+        };
+        _userProfile = {
+          'strength': 0,
+          'agility': 0,
+          'endurance': 0,
+          'health': 0,
+          'level': 'Beginner',
+        };
       });
     }
   }
@@ -100,7 +230,7 @@ class _OlViewState extends State<Ol> {
                         Navigator.pushAndRemoveUntil(
                           context,
                           MaterialPageRoute(builder: (context) => Trainhome()),
-                          (Route<dynamic> route) => false,
+                              (Route<dynamic> route) => false,
                         );
                       },
                     ),
@@ -247,11 +377,11 @@ class ActivityRingPainter extends CustomPainter {
   final double healthProgress;
 
   ActivityRingPainter(
-    this.strengthProgress,
-    this.agilityProgress,
-    this.enduranceProgress,
-    this.healthProgress,
-  );
+      this.strengthProgress,
+      this.agilityProgress,
+      this.enduranceProgress,
+      this.healthProgress,
+      );
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -455,7 +585,7 @@ class WorkoutDateGroup extends StatelessWidget {
           ),
           children: workouts.map((workout) {
             final name =
-                (workout['exerciseName'] ?? '').toString().toLowerCase();
+            (workout['exerciseName'] ?? '').toString().toLowerCase();
             final isRun = name.contains('run') || name.contains('chạy');
             String value;
             IconData icon;
@@ -468,7 +598,7 @@ class WorkoutDateGroup extends StatelessWidget {
             } else {
               icon = Icons.fitness_center;
               value =
-                  "${workout['setsCompleted'] ?? 0} sets - ${workout['repsCompleted'] ?? 0} reps";
+              "${workout['setsCompleted'] ?? 0} sets - ${workout['repsCompleted'] ?? 0} reps";
             }
 
             return Container(
@@ -602,17 +732,6 @@ class _AwardsWidgetState extends State<AwardsWidget> {
       final token = box.get('token');
       if (token == null) return;
 
-      // Load điểm từ database
-      final db = await dbHelper.database;
-      final userInfo = await db.query('user_info');
-      if (userInfo.isNotEmpty) {
-        final points = userInfo.first['points'] as int;
-        print("❓ Điểm hiện tại từ DB: $points");
-        setState(() {
-          _totalPoints = points;
-        });
-      }
-
       // Không có API status, sử dụng dữ liệu local
       setState(() {
         _currentStreak = box.get('currentStreak') ?? 0;
@@ -657,20 +776,14 @@ class _AwardsWidgetState extends State<AwardsWidget> {
         streak++;
         box.put('currentStreak', streak);
 
-        // Cập nhật điểm trong database
-        final db = await dbHelper.database;
-        final userInfo = await db.query('user_info');
-        if (userInfo.isNotEmpty) {
-          final currentPoints = userInfo.first['points'] as int? ?? 0;
-          final newPoints = currentPoints + 100; // Cộng thêm 100 điểm
+        // Lấy thông tin user mới nhất từ API
+        final dio = Dio();
+        final client = UserService(dio);
+        final userResponse = await client.getMyInfo("Bearer $token");
 
-          // Cập nhật điểm trong database
-          await db.update(
-            'user_info',
-            {'points': newPoints},
-            where: 'userID = ?',
-            whereArgs: [userInfo.first['userID']],
-          );
+        if (userResponse.code == 0) {
+          final user = userResponse.result;
+          final newPoints = user.points ?? 0;
 
           // Cập nhật điểm trong box
           box.put('totalPoints', newPoints);
@@ -682,8 +795,8 @@ class _AwardsWidgetState extends State<AwardsWidget> {
           });
 
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text("Điểm danh thành công! +100 điểm "),
+            const SnackBar(
+              content: Text("Điểm danh thành công! +100 điểm"),
               backgroundColor: Colors.green,
             ),
           );
@@ -695,7 +808,7 @@ class _AwardsWidgetState extends State<AwardsWidget> {
         }
       } else if (response.contains("đã điểm danh")) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Text("Bạn đã điểm danh hôm nay!"),
             backgroundColor: Colors.orange,
           ),
@@ -740,22 +853,25 @@ class _AwardsWidgetState extends State<AwardsWidget> {
         );
       } else {
         // Lấy điểm từ bảng user_info
-        final db = await dbHelper.database;
-        final userInfo = await db.query('user_info');
-        if (userInfo.isNotEmpty) {
-          final points = userInfo.first['points'] as int;
-          print("❓ Điểm hiện tại: $points");
+        final dio = Dio();
+        final client = UserService(dio);
+        final userResponse = await client.getMyInfo("Bearer $token");
+
+        if (userResponse.code == 0) {
+          final user = userResponse.result;
+          final newPoints = user.points ?? 0;
 
           // Cập nhật điểm
-          box.put('totalPoints', points);
+          box.put('totalPoints', newPoints);
 
           setState(() {
-            _totalPoints = points;
+            _totalPoints = newPoints;
           });
 
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text("Nhận thưởng thành công! Điểm hiện tại: $points"),
+              content:
+              Text("Nhận thưởng thành công! Điểm hiện tại: $newPoints"),
               backgroundColor: Colors.green,
             ),
           );
@@ -776,6 +892,21 @@ class _AwardsWidgetState extends State<AwardsWidget> {
     }
   }
 
+  Future<UserResponse> _loadUserPoints() async {
+    try {
+      var box = await Hive.openBox('userBox');
+      final token = box.get('token');
+      if (token == null) throw Exception("Token không tồn tại");
+
+      final dio = Dio();
+      final client = UserService(dio);
+      return await client.getMyInfo("Bearer $token");
+    } catch (e) {
+      print("❌ Lỗi khi lấy điểm từ API: $e");
+      rethrow;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -793,7 +924,7 @@ class _AwardsWidgetState extends State<AwardsWidget> {
                       fontWeight: FontWeight.bold)),
               Text("Xem thêm",
                   style:
-                      GoogleFonts.urbanist(color: Colors.green, fontSize: 16)),
+                  GoogleFonts.urbanist(color: Colors.green, fontSize: 16)),
             ],
           ),
         ),
@@ -837,9 +968,9 @@ class _AwardsWidgetState extends State<AwardsWidget> {
                   const SizedBox(width: 10), // tạo khoảng cách an toàn
                   ElevatedButton(
                     onPressed:
-                        _checkInStatus == "Đã điểm danh hôm nay" || _isLoading
-                            ? null
-                            : _handleCheckIn,
+                    _checkInStatus == "Đã điểm danh hôm nay" || _isLoading
+                        ? null
+                        : _handleCheckIn,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
                       disabledBackgroundColor: Colors.grey,
@@ -849,22 +980,22 @@ class _AwardsWidgetState extends State<AwardsWidget> {
                     ),
                     child: _isLoading
                         ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            ),
-                          )
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
                         : Text(
-                            _checkInStatus == "Đã điểm danh hôm nay"
-                                ? "Đã điểm danh"
-                                : "Điểm danh",
-                            style: GoogleFonts.urbanist(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold),
-                          ),
+                      _checkInStatus == "Đã điểm danh hôm nay"
+                          ? "Đã điểm danh"
+                          : "Điểm danh",
+                      style: GoogleFonts.urbanist(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold),
+                    ),
                   ),
                 ],
               ),
@@ -872,9 +1003,22 @@ class _AwardsWidgetState extends State<AwardsWidget> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  // _buildStatItem("Streak",
-                  //     "${(_totalPoints / 100).floor()} ngày", Colors.orange),
-                  _buildStatItem("Điểm", "$_totalPoints", Colors.green),
+                  FutureBuilder<UserResponse>(
+                    future: _loadUserPoints(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const CircularProgressIndicator();
+                      }
+                      if (snapshot.hasError) {
+                        return Text(
+                          'Lỗi: ${snapshot.error}',
+                          style: GoogleFonts.urbanist(color: Colors.red),
+                        );
+                      }
+                      final points = snapshot.data?.result?.points ?? 0;
+                      return _buildStatItem("Điểm", "$points", Colors.green);
+                    },
+                  ),
                 ],
               ),
 
@@ -892,28 +1036,28 @@ class _AwardsWidgetState extends State<AwardsWidget> {
                     ),
                     child: _isRewardLoading
                         ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            ),
-                          )
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
                         : Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.card_giftcard,
-                                  color: Colors.white),
-                              const SizedBox(width: 5),
-                              Text(
-                                "Nhận thưởng",
-                                style: GoogleFonts.urbanist(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold),
-                              ),
-                            ],
-                          ),
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.card_giftcard,
+                            color: Colors.white),
+                        const SizedBox(width: 5),
+                        Text(
+                          "Nhận thưởng",
+                          style: GoogleFonts.urbanist(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
             ],
