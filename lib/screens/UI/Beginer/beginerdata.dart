@@ -5,6 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:training_souls/models/work_out.dart';
 import 'package:training_souls/providers/workout_provider.dart';
+import 'package:dio/dio.dart';
+import 'package:training_souls/api/user_service.dart';
+import 'package:training_souls/Stripe/account_type_dialog.dart';
+import 'package:training_souls/screens/Khampha/teacher_screen.dart';
+import 'package:training_souls/data/local_storage.dart';
+import 'package:training_souls/screens/trainhome.dart';
 
 class BeginnerDataWidget extends StatefulWidget {
   const BeginnerDataWidget({super.key});
@@ -911,9 +917,7 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () {
-                // TODO: Implement test start functionality
-              },
+              onPressed: () => _handleTestButtonClick(context),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
                 foregroundColor: const Color(0xFFFF6F00),
@@ -966,5 +970,407 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
         ],
       ),
     );
+  }
+
+  // Thêm biến để lưu thời gian đã đặt lịch
+  DateTime? _scheduledTime;
+
+  // Hàm kiểm tra xem khung giờ có khả dụng không
+  bool _isTimeSlotAvailable(TimeOfDay slot) {
+    final now = DateTime.now();
+    final slotDateTime = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      slot.hour,
+      slot.minute,
+    );
+    return now.isBefore(slotDateTime);
+  }
+
+  // Hàm hiển thị dialog đặt lịch
+  void _showScheduleDialog(BuildContext context) {
+    final now = DateTime.now();
+    final timeSlots = [
+      TimeOfDay(hour: 8, minute: 0),
+      TimeOfDay(hour: 10, minute: 0),
+      TimeOfDay(hour: 15, minute: 0),
+      TimeOfDay(hour: 17, minute: 0),
+    ];
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(
+            'Chọn thời gian kiểm tra',
+            style: GoogleFonts.urbanist(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ...timeSlots.map((slot) {
+                final isAvailable = _isTimeSlotAvailable(slot);
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: ElevatedButton(
+                    onPressed: isAvailable
+                        ? () {
+                            final scheduledDateTime = DateTime(
+                              now.year,
+                              now.month,
+                              now.day,
+                              slot.hour,
+                              slot.minute,
+                            );
+                            setState(() {
+                              _scheduledTime = scheduledDateTime;
+                            });
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Đã đặt lịch kiểm tra lúc ${slot.hour}:${slot.minute.toString().padLeft(2, '0')}',
+                                ),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                            Navigator.pushAndRemoveUntil(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const Trainhome(),
+                              ),
+                              (Route<dynamic> route) => false,
+                            );
+                          }
+                        : null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: isAvailable ? Colors.green : Colors.grey,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 12,
+                      ),
+                    ),
+                    child: Text(
+                      '${slot.hour}:${slot.minute.toString().padLeft(2, '0')}',
+                      style: GoogleFonts.urbanist(
+                        color: Colors.white,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+              if (!timeSlots.any((slot) => _isTimeSlotAvailable(slot)))
+                Padding(
+                  padding: const EdgeInsets.only(top: 16),
+                  child: Text(
+                    'Vui lòng đăng ký kiểm tra vào ngày hôm sau',
+                    style: GoogleFonts.urbanist(
+                      color: Colors.red,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text(
+                'Hủy',
+                style: GoogleFonts.urbanist(color: Colors.grey),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Hàm hiển thị dialog chọn hình thức kiểm tra
+  void _showTestOptionsDialog(BuildContext context) {
+    if (_scheduledTime != null) {
+      final now = DateTime.now();
+      if (now.isAfter(_scheduledTime!)) {
+        // Nếu đã đến giờ hẹn, chuyển thẳng đến VideoCallScreen
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const VideoCallScreen(),
+          ),
+        );
+        return;
+      }
+    }
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        if (_scheduledTime != null) {
+          // Nếu đã đặt lịch, hiển thị thời gian còn lại
+          final now = DateTime.now();
+          final difference = _scheduledTime!.difference(now);
+
+          if (difference.isNegative) {
+            // Nếu đã đến giờ hẹn
+            return AlertDialog(
+              title: Text(
+                'Sẵn sàng kiểm tra',
+                style: GoogleFonts.urbanist(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Đã đến giờ kiểm tra',
+                    style: GoogleFonts.urbanist(),
+                  ),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const VideoCallScreen(),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 12,
+                      ),
+                    ),
+                    child: Text(
+                      'Vào phòng ngay',
+                      style: GoogleFonts.urbanist(
+                        color: Colors.white,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          // Nếu chưa đến giờ hẹn
+          return AlertDialog(
+            title: Text(
+              'Thời gian còn lại',
+              style: GoogleFonts.urbanist(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Còn ${difference.inHours} giờ ${difference.inMinutes.remainder(60)} phút',
+                  style: GoogleFonts.urbanist(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Đã đặt lịch kiểm tra lúc ${_scheduledTime!.hour}:${_scheduledTime!.minute.toString().padLeft(2, '0')}',
+                  style: GoogleFonts.urbanist(
+                    color: Colors.grey,
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: Text(
+                  'Đóng',
+                  style: GoogleFonts.urbanist(color: Colors.grey),
+                ),
+              ),
+            ],
+          );
+        }
+
+        // Dialog mặc định khi chưa đặt lịch
+        return AlertDialog(
+          title: Text(
+            'Chọn hình thức kiểm tra',
+            style: GoogleFonts.urbanist(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const VideoCallScreen(),
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 12,
+                  ),
+                ),
+                child: Text(
+                  'Gọi ngay',
+                  style: GoogleFonts.urbanist(
+                    color: Colors.white,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _showScheduleDialog(context);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 12,
+                  ),
+                ),
+                child: Text(
+                  'Đặt lịch',
+                  style: GoogleFonts.urbanist(
+                    color: Colors.white,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text(
+                'Hủy',
+                style: GoogleFonts.urbanist(color: Colors.grey),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _handleTestButtonClick(BuildContext context) async {
+    try {
+      final token = await LocalStorage.getValidToken();
+      if (token == null) {
+        throw Exception("Token không tồn tại");
+      }
+
+      final dio = Dio();
+      final client = UserService(dio);
+      final response = await client.getMyInfo("Bearer $token");
+
+      if (response.code == 0 && response.result != null) {
+        final accountType =
+            response.result?.accountType?.toLowerCase() ?? 'basic';
+
+        if (accountType != 'premium') {
+          // Hiển thị dialog thông báo cần mua Premium
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: Text(
+                  'Yêu cầu Premium',
+                  style: GoogleFonts.urbanist(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                content: Text(
+                  'Bạn cần mua Premium để được huấn luyện viên kiểm tra.',
+                  style: GoogleFonts.urbanist(),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    child: Text(
+                      'Hủy',
+                      style: GoogleFonts.urbanist(color: Colors.grey),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      showGeneralDialog(
+                        context: context,
+                        barrierLabel: 'Dismiss',
+                        barrierColor: Colors.black.withOpacity(0.5),
+                        transitionDuration: const Duration(milliseconds: 300),
+                        pageBuilder: (_, __, ___) {
+                          return AccountTypePopup(
+                            selectedOption: 'Basic',
+                            options: ['Basic', 'Premium'],
+                            onSelected: (selectedType) {
+                              print("🔶 Người dùng đã chọn gói: $selectedType");
+                            },
+                          );
+                        },
+                        transitionBuilder: (_, animation, __, child) {
+                          return Transform.scale(
+                            scale: animation.value,
+                            child: Opacity(
+                              opacity: animation.value,
+                              child: child,
+                            ),
+                          );
+                        },
+                      );
+                    },
+                    child: Text(
+                      'Mua Premium',
+                      style: GoogleFonts.urbanist(color: Colors.green),
+                    ),
+                  ),
+                ],
+              );
+            },
+          );
+        } else {
+          // Nếu là tài khoản Premium, hiển thị dialog chọn hình thức kiểm tra
+          _showTestOptionsDialog(context);
+        }
+      }
+    } catch (e) {
+      print("❌ Lỗi khi kiểm tra loại tài khoản: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Có lỗi xảy ra: ${e.toString()}"),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 }

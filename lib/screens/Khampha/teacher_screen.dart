@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:training_souls/screens/trainhome.dart';
 
 const appId = "511a6fc43f90406faf72630968742fc6";
 const token =
@@ -81,6 +82,14 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
       _localUserJoined = false;
       _remoteUid = null;
     });
+
+    if (mounted) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const Trainhome()),
+        (Route<dynamic> route) => false,
+      );
+    }
   }
 
   Future<void> _toggleCamera() async {
