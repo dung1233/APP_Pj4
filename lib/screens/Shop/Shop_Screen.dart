@@ -414,44 +414,29 @@ class _ShopScreenState extends State<ShopScreen>
 
       final dio = Dio();
       final client = UserService(dio);
-      final dbHelper = DatabaseHelper();
 
       try {
         final response = await client.getMyInfo("Bearer $token");
+        print("📌 API Response: ${response.toJson()}");
 
-        // Kiểm tra code của response
         if (response.code == 0) {
           final user = response.result;
-          // ✅ Lấy point trực tiếp từ API result
-          final int point = user.points; // 🔥 Truy cập đúng kiểu
-          final String accType = user.accountType;
+          print("📌 User data: ${user.toJson()}");
+
+          setState(() {
+            _userPoints = user.points ?? 0;
+            _accountType = user.accountType ?? 'basic';
+          });
 
           print("✅ Lấy thông tin user thành công");
-          print("💰 Điểm: $point");
-          print("👤 Loại tài khoản: $accType");
-          setState(() {
-            _userPoints = point;
-            _accountType = accType;
-          });
+          print("💰 Điểm: ${_userPoints}");
+          print("👤 Loại tài khoản: ${_accountType}");
         } else {
           print("❌ API trả về mã lỗi: ${response.code}");
         }
       } catch (e) {
         print("❌ Lỗi khi gọi API: $e");
       }
-
-      // Load điểm từ database
-      // final db = await dbHelper.database;
-      // final userInfo = await db.query('user_info');
-      // if (userInfo.isNotEmpty) {
-      //   final points = userInfo.first['points'] as int;
-      //   final accountType = userInfo.first['accountType']as String?;
-      //   print("❓ Điểm hiện tại từ DB: $points");
-      //   setState(() {
-      //     _userPoints = points;
-      //     _accountType = accountType;
-      //   });
-      // }
     } catch (e) {
       print("❌ Lỗi khi tải trạng thái người dùng: $e");
     }

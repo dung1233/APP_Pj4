@@ -9,6 +9,8 @@ import 'package:training_souls/api/api_client.dart';
 import 'package:training_souls/data/DatabaseHelper.dart';
 import 'package:intl/intl.dart';
 import 'package:training_souls/screens/trainhome.dart';
+import 'package:training_souls/api/user_service.dart';
+import 'package:training_souls/models/user_response.dart';
 
 class Ol extends StatefulWidget {
   const Ol({super.key});
@@ -602,17 +604,6 @@ class _AwardsWidgetState extends State<AwardsWidget> {
       final token = box.get('token');
       if (token == null) return;
 
-      // Load điểm từ database
-      final db = await dbHelper.database;
-      final userInfo = await db.query('user_info');
-      if (userInfo.isNotEmpty) {
-        final points = userInfo.first['points'] as int;
-        print("❓ Điểm hiện tại từ DB: $points");
-        setState(() {
-          _totalPoints = points;
-        });
-      }
-
       // Không có API status, sử dụng dữ liệu local
       setState(() {
         _currentStreak = box.get('currentStreak') ?? 0;
@@ -657,20 +648,14 @@ class _AwardsWidgetState extends State<AwardsWidget> {
         streak++;
         box.put('currentStreak', streak);
 
-        // Cập nhật điểm trong database
-        final db = await dbHelper.database;
-        final userInfo = await db.query('user_info');
-        if (userInfo.isNotEmpty) {
-          final currentPoints = userInfo.first['points'] as int? ?? 0;
-          final newPoints = currentPoints + 100; // Cộng thêm 100 điểm
+        // Lấy thông tin user mới nhất từ API
+        final dio = Dio();
+        final client = UserService(dio);
+        final userResponse = await client.getMyInfo("Bearer $token");
 
-          // Cập nhật điểm trong database
-          await db.update(
-            'user_info',
-            {'points': newPoints},
-            where: 'userID = ?',
-            whereArgs: [userInfo.first['userID']],
-          );
+        if (userResponse.code == 0) {
+          final user = userResponse.result;
+          final newPoints = user.points ?? 0;
 
           // Cập nhật điểm trong box
           box.put('totalPoints', newPoints);
@@ -682,8 +667,8 @@ class _AwardsWidgetState extends State<AwardsWidget> {
           });
 
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text("Điểm danh thành công! +100 điểm "),
+            const SnackBar(
+              content: Text("Điểm danh thành công! +100 điểm"),
               backgroundColor: Colors.green,
             ),
           );
@@ -695,7 +680,7 @@ class _AwardsWidgetState extends State<AwardsWidget> {
         }
       } else if (response.contains("đã điểm danh")) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Text("Bạn đã điểm danh hôm nay!"),
             backgroundColor: Colors.orange,
           ),
@@ -740,22 +725,25 @@ class _AwardsWidgetState extends State<AwardsWidget> {
         );
       } else {
         // Lấy điểm từ bảng user_info
-        final db = await dbHelper.database;
-        final userInfo = await db.query('user_info');
-        if (userInfo.isNotEmpty) {
-          final points = userInfo.first['points'] as int;
-          print("❓ Điểm hiện tại: $points");
+        final dio = Dio();
+        final client = UserService(dio);
+        final userResponse = await client.getMyInfo("Bearer $token");
+
+        if (userResponse.code == 0) {
+          final user = userResponse.result;
+          final newPoints = user.points ?? 0;
 
           // Cập nhật điểm
-          box.put('totalPoints', points);
+          box.put('totalPoints', newPoints);
 
           setState(() {
-            _totalPoints = points;
+            _totalPoints = newPoints;
           });
 
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text("Nhận thưởng thành công! Điểm hiện tại: $points"),
+              content:
+                  Text("Nhận thưởng thành công! Điểm hiện tại: $newPoints"),
               backgroundColor: Colors.green,
             ),
           );
@@ -773,6 +761,21 @@ class _AwardsWidgetState extends State<AwardsWidget> {
       setState(() {
         _isRewardLoading = false;
       });
+    }
+  }
+
+  Future<UserResponse> _loadUserPoints() async {
+    try {
+      var box = await Hive.openBox('userBox');
+      final token = box.get('token');
+      if (token == null) throw Exception("Token không tồn tại");
+
+      final dio = Dio();
+      final client = UserService(dio);
+      return await client.getMyInfo("Bearer $token");
+    } catch (e) {
+      print("❌ Lỗi khi lấy điểm từ API: $e");
+      rethrow;
     }
   }
 
@@ -872,9 +875,22 @@ class _AwardsWidgetState extends State<AwardsWidget> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  // _buildStatItem("Streak",
-                  //     "${(_totalPoints / 100).floor()} ngày", Colors.orange),
-                  _buildStatItem("Điểm", "$_totalPoints", Colors.green),
+                  FutureBuilder<UserResponse>(
+                    future: _loadUserPoints(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const CircularProgressIndicator();
+                      }
+                      if (snapshot.hasError) {
+                        return Text(
+                          'Lỗi: ${snapshot.error}',
+                          style: GoogleFonts.urbanist(color: Colors.red),
+                        );
+                      }
+                      final points = snapshot.data?.result?.points ?? 0;
+                      return _buildStatItem("Điểm", "$points", Colors.green);
+                    },
+                  ),
                 ],
               ),
 
