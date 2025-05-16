@@ -49,7 +49,16 @@ class _TrainhomeState extends State<Trainhome> {
       // Trigger focus on the shop screen when it's selected
       if (index == 3) {
         // 3 is the index of ShopScreen
-        FocusScope.of(context).requestFocus();
+        // Give time for the screen to build before requesting focus
+        Future.microtask(() {
+          if (_screens[3] is ShopScreen) {
+            FocusScope.of(context).requestFocus();
+            // Force rebuild of ShopScreen
+            setState(() {
+              _screens[3] = ShopScreen(key: UniqueKey());
+            });
+          }
+        });
       }
     });
   }

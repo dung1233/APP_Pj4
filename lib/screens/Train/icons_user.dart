@@ -129,27 +129,27 @@ class _IconsUserState extends State<IconsUser>
             isLoading
                 ? const CircularProgressIndicator()
                 : RichText(
-                    text: TextSpan(
-                      children: [
-                        const TextSpan(
-                          text: 'Welcome Back, ',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
-                        ),
-                        TextSpan(
-                          text: userName ?? 'aa',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
-                        ),
-                      ],
+              text: TextSpan(
+                children: [
+                  const TextSpan(
+                    text: 'Welcome Back, ',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
                     ),
                   ),
+                  TextSpan(
+                    text: userName ?? 'aa',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                  ),
+                ],
+              ),
+            ),
             GestureDetector(
               onTap: () {
                 showGeneralDialog(
@@ -179,7 +179,7 @@ class _IconsUserState extends State<IconsUser>
               },
               child: Container(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
                   gradient: getAccountGradient(accountTypeRaw),

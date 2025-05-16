@@ -31,7 +31,7 @@ class _ShopScreenState extends State<ShopScreen>
   bool _isLoading = false;
 
   String? _errorMessage;
-  int _userPoints = 0; // Giả sử user có điểm này
+  int _userPoints = 0;
   Map<String, dynamic>? selectedItem;
   String? _accountType;
 
@@ -48,10 +48,21 @@ class _ShopScreenState extends State<ShopScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _focusNode.addListener(() {
         if (_focusNode.hasFocus) {
+          print("🔄 Shop screen gained focus - refreshing points...");
           _loadUserPoints();
         }
       });
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Refresh points when screen becomes visible
+    if (ModalRoute.of(context)?.isCurrent ?? false) {
+      print("🔄 Shop screen became visible - refreshing points...");
+      _loadUserPoints();
+    }
   }
 
   Future<void> _loadInitialData() async {
@@ -407,6 +418,8 @@ class _ShopScreenState extends State<ShopScreen>
 
   //Points
   Future<void> _loadUserPoints() async {
+    if (!mounted) return; // Check if widget is still mounted
+
     try {
       var box = await Hive.openBox('userBox');
       final token = box.get('token');
@@ -419,7 +432,7 @@ class _ShopScreenState extends State<ShopScreen>
         final response = await client.getMyInfo("Bearer $token");
         print("📌 API Response: ${response.toJson()}");
 
-        if (response.code == 0) {
+        if (response.code == 0 && mounted) {
           final user = response.result;
           print("📌 User data: ${user.toJson()}");
 
@@ -428,17 +441,16 @@ class _ShopScreenState extends State<ShopScreen>
             _accountType = user.accountType ?? 'basic';
           });
 
-          print("✅ Lấy thông tin user thành công");
-          print("💰 Điểm: ${_userPoints}");
-          print("👤 Loại tài khoản: ${_accountType}");
+          print("✅ Points updated: $_userPoints");
+          print("👤 Account type: $_accountType");
         } else {
-          print("❌ API trả về mã lỗi: ${response.code}");
+          print("❌ API error code: ${response.code}");
         }
       } catch (e) {
-        print("❌ Lỗi khi gọi API: $e");
+        print("❌ API call error: $e");
       }
     } catch (e) {
-      print("❌ Lỗi khi tải trạng thái người dùng: $e");
+      print("❌ Error loading user status: $e");
     }
   }
 

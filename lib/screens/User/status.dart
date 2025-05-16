@@ -4,10 +4,13 @@
 // - Title shown as plain text (no icon)
 // - Other stats grouped in rows: Health + Strength, Endurance + Agility
 
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_3d_controller/flutter_3d_controller.dart';
 
+import '../../APi/user_service.dart';
 import '../../data/DatabaseHelper.dart';
+import '../../data/local_storage.dart';
 
 class StatusScreen extends StatefulWidget {
   const StatusScreen({super.key});
@@ -27,6 +30,7 @@ class _StatusScreenState extends State<StatusScreen> {
   final dbHelper = DatabaseHelper();
   Map<String, dynamic> _userProfile = {};
   Map<String, dynamic> _userInfo = {};
+  double _powerLevel = 0.0;
 
   @override
   void initState() {
@@ -35,35 +39,139 @@ class _StatusScreenState extends State<StatusScreen> {
       debugPrint('Model loaded: \${controller.onModelLoaded.value}');
     });
     availableModels = [srcGlb, srcGlb1];
-    _printDatabaseContent(dbHelper);
     _loadUserProfile(dbHelper);
   }
-  Future<void> _printDatabaseContent(DatabaseHelper dbHelper) async {
-    final db = await dbHelper.database;
 
-    // Lấy và in thông tin người dùng
-    final userInfo = await db.query('user_info');
-    print("❓ Dữ liệu bảng user_info:");
-    userInfo.forEach((user) {
-      print(user);
-    });
-
-    // Lấy và in thông tin user_profile
-    final userProfiles = await db.query('user_profile');
-    print("❓ Dữ liệu bảng user_profile:");
-    userProfiles.forEach((profile) {
-      print(profile);
-    });
-
-  }
   Future<void> _loadUserProfile(DatabaseHelper dbHelper) async {
-    final db = await dbHelper.database;
-    final name = await db.query('user_info');
-    final profiles = await db.query('user_profile');
-    if (profiles.isNotEmpty) {
+    try {
+      // First ensure database tables exist
+      await dbHelper.checkAndCreateTables();
+
+      // Try to fetch data from API first
+      final token = await LocalStorage.getValidToken();
+      if (token != null) {
+        final dio = Dio();
+        dio.options.baseUrl = 'http://54.251.220.228:8080/trainingSouls';
+        dio.options.headers = {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        };
+
+        try {
+          print("📡 Fetching data from API...");
+          final response = await dio.get('/users/getMyInfo');
+
+          if (response.data['code'] == 0 && response.data['result'] != null) {
+            print("✅ API data received successfully");
+            final userData = response.data['result'];
+            final userProfile = userData['userProfile'];
+            final totalScore =
+                (userData['totalScore'] as num?)?.toDouble() ?? 0.0;
+
+            // Update state with fresh API data
+            setState(() {
+              _powerLevel = totalScore;
+
+              _userInfo = {
+                'userID': userData['userID'],
+                'name': userData['name'] ?? '',
+                'email': userData['email'] ?? '',
+                'accountType': userData['accountType'] ?? 'basic',
+                'points': userData['points'] ?? 0,
+                'level': userData['level'] ?? 1,
+                'totalScore': totalScore
+              };
+
+              if (userProfile != null) {
+                _userProfile = {
+                  'userID': userData['userID'],
+                  'gender': userProfile['gender'] ?? '',
+                  'age': userProfile['age'] ?? 0,
+                  'height': userProfile['height'] ?? 0,
+                  'weight': userProfile['weight'] ?? 0,
+                  'bmi': userProfile['bmi'] ?? 0.0,
+                  'bodyFatPercentage': userProfile['bodyFatPercentage'] ?? 0.0,
+                  'muscleMassPercentage':
+                      userProfile['muscleMassPercentage'] ?? 0.0,
+                  'level': userProfile['level'] ?? 'Beginner',
+                  'strength': userProfile['strength'] ?? 0,
+                  'deathPoints': userProfile['deathPoints'] ?? 0,
+                  'agility': userProfile['agility'] ?? 0,
+                  'endurance': userProfile['endurance'] ?? 0,
+                  'health': userProfile['health'] ?? 0,
+                };
+              } else {
+                _userProfile = {
+                  'strength': 0,
+                  'agility': 0,
+                  'endurance': 0,
+                  'health': 0,
+                  'level': 'Beginner',
+                };
+              }
+            });
+
+            // After successfully getting API data, update local database as backup
+            try {
+              await dbHelper.insertUserInfo(_userInfo);
+              if (userProfile != null) {
+                await dbHelper.insertUserProfile(_userProfile);
+              }
+              print("✅ Local database updated with latest API data");
+            } catch (dbError) {
+              print("⚠️ Failed to update local database: $dbError");
+            }
+          } else {
+            throw Exception("Invalid API response format");
+          }
+        } catch (apiError) {
+          print("❌ API error: $apiError");
+          print("⚠️ Falling back to local database...");
+
+          // Only use local database if API completely fails
+          final db = await dbHelper.database;
+          try {
+            final userInfos = await db.query('user_info');
+            final profiles = await db.query('user_profile');
+
+            if (userInfos.isNotEmpty) {
+              setState(() {
+                _userInfo = userInfos.first;
+                _powerLevel =
+                    (userInfos.first['totalScore'] as num?)?.toDouble() ?? 0.0;
+                if (profiles.isNotEmpty) {
+                  _userProfile = profiles.first;
+                }
+              });
+              print("✅ Loaded data from local database");
+            } else {
+              throw Exception("No data in local database");
+            }
+          } catch (dbError) {
+            print("❌ Local database error: $dbError");
+            throw dbError;
+          }
+        }
+      } else {
+        throw Exception("No valid token found");
+      }
+    } catch (e) {
+      print("❌ Fatal error in _loadUserProfile: $e");
+      // If both API and local database fail, show error state
       setState(() {
-        _userProfile = profiles.first;
-        _userInfo = name.first;
+        _powerLevel = 0.0;
+        _userInfo = {
+          'accountType': 'basic',
+          'name': 'Unknown',
+          'totalScore': 0.0
+        };
+        _userProfile = {
+          'strength': 0,
+          'agility': 0,
+          'endurance': 0,
+          'health': 0,
+          'level': 'Beginner',
+        };
       });
     }
   }
@@ -146,33 +254,123 @@ class _StatusScreenState extends State<StatusScreen> {
 
   Widget _buildInfoPanel() {
     return Expanded(
-      child: SingleChildScrollView(
-        child: Container(
-          padding: const EdgeInsets.all(16.0),
-          decoration: const BoxDecoration(
-            color: Color(0xFFFCF5FD),
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(20),
-              topRight: Radius.circular(20),
-            ),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.grey[50],
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(30),
+            topRight: Radius.circular(30),
           ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 10,
+              spreadRadius: 2,
+            ),
+          ],
+        ),
+        child: SingleChildScrollView(
+          padding: EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children:  [
-                  Text(_userInfo['name']?.toString() ?? "Tên người dùng", style: TextStyle(fontSize: 16)),
-                  Text("Level: ${_userInfo['level']?.toString() ?? "??"}", style: TextStyle(fontSize: 16)),
-                ],
+              Container(
+                padding: EdgeInsets.all(15),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(15),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      spreadRadius: 0,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: Text(
+                            _userInfo['name']?.toString() ?? "Tên người dùng",
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF2C3E50),
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        SizedBox(width: 8),
+                        Container(
+                          padding:
+                              EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [Color(0xFFFFB75E), Color(0xFFED8F03)],
+                            ),
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Color(0xFFED8F03).withOpacity(0.3),
+                                blurRadius: 8,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Text(
+                            "Level ${_userInfo['level']?.toString() ?? "??"}",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 10),
+                    Container(
+                      width: double.infinity,
+                      padding:
+                          EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[50],
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.grey[200]!),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.military_tech_outlined,
+                            color: Color(0xFF2C3E50),
+                            size: 20,
+                          ),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              "Thành tựu: ${_userInfo['accountType'] ?? "??"}",
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Color(0xFF2C3E50),
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 6),
-              Text("Thành tựu: ${_userInfo['accountType'] ?? "??"}", style: TextStyle(fontSize: 16)),
-              const Divider(),
-              _buildPowerBar(),
-              const Divider(),
-              _buildStatRow('assets/img/Health.png', 'health', 'assets/img/Strength.png', 'strength'),
-              _buildStatRow('assets/img/Endurance.png', 'endurance', 'assets/img/aigilty.png', 'agility'),
+              SizedBox(height: 20),
+              _buildPowerSection(),
+              SizedBox(height: 20),
+              _buildStatsSection(),
             ],
           ),
         ),
@@ -180,66 +378,338 @@ class _StatusScreenState extends State<StatusScreen> {
     );
   }
 
-  // Thay _buildStatRow cũ bằng phiên bản mới này
-  Widget _buildStatRow(String leftIcon, String leftKey, String rightIcon, String rightKey) {
-    final leftValue = _userProfile[leftKey]?.toString() ?? "???";
-    final rightValue = _userProfile[rightKey]?.toString() ?? "???";
+  Widget _buildPowerSection() {
+    final maxPower = 100.0;
+    final powerValue = _powerLevel.clamp(0.0, maxPower);
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Container(
+      padding: EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            spreadRadius: 0,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(children: [
-            Image.asset(leftIcon, width: 24, height: 24),
-            const SizedBox(width: 8),
-            Text(leftValue, style: const TextStyle(fontSize: 16)),
-          ]),
-          Row(children: [
-            Image.asset(rightIcon, width: 24, height: 24),
-            const SizedBox(width: 8),
-            Text(rightValue, style: const TextStyle(fontSize: 16)),
-          ]),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Image.asset(
+                    'assets/img/Power.png',
+                    width: 28,
+                    height: 28,
+                    color: _getPowerColor(powerValue),
+                  ),
+                  SizedBox(width: 10),
+                  Text(
+                    'Power Level',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF2C3E50),
+                    ),
+                  ),
+                ],
+              ),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.grey[300]!),
+                ),
+                child: Text(
+                  "${powerValue.toStringAsFixed(1)}/$maxPower",
+                  style: TextStyle(
+                    color: Color(0xFF2C3E50),
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 15),
+          Container(
+            height: 60,
+            padding: EdgeInsets.symmetric(horizontal: 0),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return Stack(
+                  children: [
+                    Positioned(
+                      top: 0,
+                      left: 10,
+                      right: 10,
+                      child: Stack(
+                        children: [
+                          Container(
+                            height: 12,
+                            decoration: BoxDecoration(
+                              color: Colors.grey[200],
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                          ),
+                          FractionallySizedBox(
+                            widthFactor: powerValue / maxPower,
+                            child: Container(
+                              height: 12,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    Color(0xFFFF6B6B),
+                                    Color(0xFFFFB946),
+                                    Color(0xFF4ECB71),
+                                  ],
+                                  stops: [0.3, 0.6, 1.0],
+                                ),
+                                borderRadius: BorderRadius.circular(6),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black12,
+                                    blurRadius: 4,
+                                    spreadRadius: 1,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    ...List.generate(4, (index) {
+                      final positions = [0.0, 0.33, 0.66, 1.0];
+                      final labels = [
+                        "Beginner",
+                        "Average",
+                        "Advanced",
+                        "Expert"
+                      ];
+                      final markerWidth = 2.0;
+
+                      double getAdjustedPosition() {
+                        final availableWidth = constraints.maxWidth - 20;
+                        final basePosition =
+                            10 + (availableWidth * positions[index]);
+
+                        if (index == 0) return basePosition;
+                        if (index == 3) return basePosition - 45;
+                        return basePosition - 35;
+                      }
+
+                      return Positioned(
+                        left: getAdjustedPosition(),
+                        top: 0,
+                        child: Column(
+                          crossAxisAlignment: index == 0
+                              ? CrossAxisAlignment.start
+                              : index == 3
+                                  ? CrossAxisAlignment.end
+                                  : CrossAxisAlignment.center,
+                          children: [
+                            Container(
+                              width: markerWidth,
+                              height: 12,
+                              color: Colors.grey[400],
+                            ),
+                            SizedBox(height: 4),
+                            Container(
+                              width: index == 3 ? 50 : 70,
+                              child: Text(
+                                labels[index],
+                                style: TextStyle(
+                                  color: Color(0xFF2C3E50),
+                                  fontSize: 12,
+                                ),
+                                textAlign: index == 0
+                                    ? TextAlign.left
+                                    : index == 3
+                                        ? TextAlign.right
+                                        : TextAlign.center,
+                                maxLines: 1,
+                                overflow: TextOverflow.visible,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                  ],
+                );
+              },
+            ),
+          ),
         ],
       ),
     );
   }
 
+  Widget _buildStatsSection() {
+    return Container(
+      padding: EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            spreadRadius: 0,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          _buildStatRow('assets/img/Health.png', 'health',
+              'assets/img/Strength.png', 'strength'),
+          SizedBox(height: 15),
+          _buildStatRow('assets/img/Endurance.png', 'endurance',
+              'assets/img/aigilty.png', 'agility'),
+        ],
+      ),
+    );
+  }
 
-  Widget _buildPowerBar() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildStatRow(
+      String leftIcon, String leftKey, String rightIcon, String rightKey) {
+    return Row(
       children: [
-        Image.asset('assets/img/Power.png', width: 24, height: 24),
-        const SizedBox(height: 4),
-        Stack(
-          children: [
-            Container(
-              height: 20,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-                gradient: const LinearGradient(
-                  colors: [Colors.red, Colors.yellow, Colors.green],
-                  stops: [0.3, 0.5, 1.0],
-                ),
-              ),
-            ),
-            Positioned(left: 0, child: _verticalMark("30")),
-            Positioned(left: 100, child: _verticalMark("50")),
-            Positioned(right: 0, child: _verticalMark("100")),
-          ],
-        ),
+        Expanded(child: _buildStatItem(leftIcon, leftKey)),
+        SizedBox(width: 20),
+        Expanded(child: _buildStatItem(rightIcon, rightKey)),
       ],
     );
   }
 
-  Widget _verticalMark(String label) {
-    return Column(
-      children: [
-        Container(width: 1, height: 20, color: Colors.black),
-        Text(label, style: const TextStyle(fontSize: 10)),
-      ],
+  Widget _buildStatItem(String icon, String key) {
+    final value = _userProfile[key]?.toString() ?? "???";
+    final maxValue = 100;
+    final currentValue = int.tryParse(value) ?? 0;
+
+    return Container(
+      padding: EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: _getStatColor(key).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Image.asset(
+                  icon,
+                  width: 20,
+                  height: 20,
+                  color: _getStatColor(key),
+                ),
+              ),
+              SizedBox(width: 8),
+              Text(
+                key.capitalize(),
+                style: TextStyle(
+                  color: Color(0xFF2C3E50),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 12),
+          Stack(
+            children: [
+              Container(
+                height: 8,
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              FractionallySizedBox(
+                widthFactor: currentValue / maxValue,
+                child: Container(
+                  height: 8,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        _getStatColor(key).withOpacity(0.7),
+                        _getStatColor(key),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                value,
+                style: TextStyle(
+                  color: Color(0xFF2C3E50),
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                "/$maxValue",
+                style: TextStyle(
+                  color: Colors.grey[400],
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
+  }
+
+  Color _getStatColor(String statType) {
+    switch (statType.toLowerCase()) {
+      case 'health':
+        return Color(0xFFE74C3C); // Đỏ
+      case 'strength':
+        return Color(0xFFE67E22); // Cam
+      case 'endurance':
+        return Color(0xFF27AE60); // Xanh lá
+      case 'agility':
+        return Color(0xFF3498DB); // Xanh dương
+      default:
+        return Color(0xFF9B59B6); // Tím
+    }
+  }
+
+  Color _getPowerColor(double powerValue) {
+    if (powerValue >= 95) {
+      return Color(0xFF4ECB71); // Expert - Green
+    } else if (powerValue >= 66) {
+      return Color(0xFFFFB946); // Advanced - Orange
+    } else if (powerValue >= 33) {
+      return Color(0xFFFF9500); // Average - Light Orange
+    } else {
+      return Color(0xFFFF6B6B); // Beginner - Red
+    }
   }
 
   List<Widget> _buildFloatingButtons() {
@@ -248,13 +718,17 @@ class _StatusScreenState extends State<StatusScreen> {
       _iconButton(Icons.pause, () => controller.pauseAnimation()),
       _iconButton(Icons.replay, () => controller.resetAnimation()),
       _iconButton(Icons.format_list_bulleted_outlined, () async {
-        List<String> availableAnimations = await controller.getAvailableAnimations();
-        chosenAnimation = await showPickerDialog('Animations', availableAnimations, chosenAnimation);
+        List<String> availableAnimations =
+            await controller.getAvailableAnimations();
+        chosenAnimation = await showPickerDialog(
+            'Animations', availableAnimations, chosenAnimation);
         controller.playAnimation(animationName: chosenAnimation);
       }),
       _iconButton(Icons.list_alt_rounded, () async {
-        List<String> availableTextures = await controller.getAvailableTextures();
-        chosenTexture = await showPickerDialog('Textures', availableTextures, chosenTexture);
+        List<String> availableTextures =
+            await controller.getAvailableTextures();
+        chosenTexture = await showPickerDialog(
+            'Textures', availableTextures, chosenTexture);
         controller.setTexture(textureName: chosenTexture ?? '');
       }),
       _iconButton(Icons.camera_alt_outlined, () {
@@ -276,7 +750,8 @@ class _StatusScreenState extends State<StatusScreen> {
     ];
   }
 
-  Widget _iconButton(IconData icon, VoidCallback onPressed, {double size = 24}) {
+  Widget _iconButton(IconData icon, VoidCallback onPressed,
+      {double size = 24}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
       child: IconButton(
@@ -295,45 +770,51 @@ class _StatusScreenState extends State<StatusScreen> {
           height: 250,
           child: inputList.isEmpty
               ? Center(
-            child: Text('$title list is empty'),
-          )
+                  child: Text('$title list is empty'),
+                )
               : ListView.separated(
-            itemCount: inputList.length,
-            padding: const EdgeInsets.only(top: 16),
-            itemBuilder: (ctx, index) {
-              return InkWell(
-                onTap: () {
-                  Navigator.pop(context, inputList[index]);
-                },
-                child: Container(
-                  height: 50,
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('${index + 1}'),
-                      Text(inputList[index]),
-                      Icon(
-                        chosenItem == inputList[index]
-                            ? Icons.check_box
-                            : Icons.check_box_outline_blank,
-                      )
-                    ],
-                  ),
+                  itemCount: inputList.length,
+                  padding: const EdgeInsets.only(top: 16),
+                  itemBuilder: (ctx, index) {
+                    return InkWell(
+                      onTap: () {
+                        Navigator.pop(context, inputList[index]);
+                      },
+                      child: Container(
+                        height: 50,
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('${index + 1}'),
+                            Text(inputList[index]),
+                            Icon(
+                              chosenItem == inputList[index]
+                                  ? Icons.check_box
+                                  : Icons.check_box_outline_blank,
+                            )
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                  separatorBuilder: (ctx, index) {
+                    return const Divider(
+                      color: Colors.grey,
+                      thickness: 0.6,
+                      indent: 10,
+                      endIndent: 10,
+                    );
+                  },
                 ),
-              );
-            },
-            separatorBuilder: (ctx, index) {
-              return const Divider(
-                color: Colors.grey,
-                thickness: 0.6,
-                indent: 10,
-                endIndent: 10,
-              );
-            },
-          ),
         );
       },
     );
+  }
+}
+
+extension StringExtension on String {
+  String capitalize() {
+    return "${this[0].toUpperCase()}${this.substring(1)}";
   }
 }
