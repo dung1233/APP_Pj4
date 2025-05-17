@@ -1510,7 +1510,7 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
       TimeOfDay(hour: 8, minute: 0),
       TimeOfDay(hour: 10, minute: 0),
       TimeOfDay(hour: 15, minute: 0),
-      TimeOfDay(hour: 19, minute: 30),
+      TimeOfDay(hour: 22, minute: 59),
     ];
 
     showDialog(
