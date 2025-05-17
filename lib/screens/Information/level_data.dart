@@ -16,9 +16,9 @@ class Leverdata extends StatefulWidget {
 
 class _LeverdataState extends State<Leverdata> {
   final List<Map<String, String>> options = [
-    {"title": "Beginer", "icon": "assets/icons/Dumbbell.png"},
-    {"title": "Medium", "icon": "assets/icons/Sneakers.png"},
-    {"title": "Hard", "icon": "assets/icons/Fire.png"},
+    {"title": "Người Mới", "icon": "assets/icons/Dumbbell.png"},
+    {"title": "Trung Cấp", "icon": "assets/icons/Sneakers.png"},
+    {"title": "Cao Cấp", "icon": "assets/icons/Fire.png"},
   ];
 
   int selectedOption = -1;
