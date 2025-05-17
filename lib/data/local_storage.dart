@@ -102,4 +102,22 @@ class LocalStorage {
       return null;
     }
   }
+
+  // Thêm phương thức lưu dữ liệu chung
+  static Future<void> saveData(String key, String value) async {
+    var box = await Hive.openBox('userBox');
+    await box.put(key, value);
+  }
+
+  // Thêm phương thức lấy dữ liệu chung
+  static Future<String?> getData(String key) async {
+    var box = await Hive.openBox('userBox');
+    return box.get(key);
+  }
+
+  // Thêm phương thức xóa dữ liệu
+  static Future<void> removeData(String key) async {
+    var box = await Hive.openBox('userBox');
+    await box.delete(key);
+  }
 }
