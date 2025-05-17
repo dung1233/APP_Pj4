@@ -15,4 +15,10 @@ abstract class UserService {
 
   @GET("/getMyInfo")
   Future<UserResponse> getMyInfo(@Header("Authorization") String token);
+
+  @POST("/select-coach/:coachId")
+  Future<void> selectCoach(
+    @Header("Authorization") String token,
+    @Path() String coachId,
+  );
 }

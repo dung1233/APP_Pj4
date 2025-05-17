@@ -128,6 +128,21 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
     }
   }
 
+  // Thêm hàm để lưu ID huấn luyện viên đã chọn
+  Future<void> _saveSelectedCoachId(String coachId) async {
+    await LocalStorage.saveData('selected_coach_id', coachId);
+  }
+
+  // Thêm hàm để load ID huấn luyện viên đã chọn
+  Future<void> _loadSelectedCoachId() async {
+    final coachId = await LocalStorage.getData('selected_coach_id');
+    if (coachId != null) {
+      setState(() {
+        _selectedTrainerId = coachId;
+      });
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -137,7 +152,8 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
       _ensureDataLoaded();
       _syncWorkoutStatusFromResults();
       _loadScheduledTime();
-      _startTimer(); // Thêm dòng này
+      _loadSelectedCoachId(); // Thêm dòng này
+      _startTimer();
     });
   }
 
@@ -964,7 +980,6 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
           ),
           const SizedBox(height: 20),
           if (_scheduledTime != null) ...[
-            // Nếu đã đặt lịch, hiển thị thời gian còn lại
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(12),
@@ -1003,7 +1018,12 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          'HLV: ${trainerInfo[_selectedTrainerId]!['name']}',
+                          _selectedTrainerId != null
+                              ? trainerInfo.values.firstWhere(
+                                  (t) => t['id'] == _selectedTrainerId,
+                                  orElse: () => {'name': 'Unknown'},
+                                )['name']
+                              : 'Unknown',
                           style: GoogleFonts.urbanist(
                             color: const Color(0xFFFF6F00),
                             fontSize: 14,
@@ -1155,7 +1175,7 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
   // Thêm map chứa thông tin huấn luyện viên
   final Map<String, Map<String, dynamic>> trainerInfo = {
     'trainer1': {
-      'id': 'trainer1',
+      'id': '946869671',
       'name': 'Nguyễn Văn An',
       'specialty': 'Huấn luyện viên Thể lực',
       'experience': '5 năm kinh nghiệm',
@@ -1168,7 +1188,7 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
           'Chuyên gia về cải thiện thể lực và sức bền, có kinh nghiệm làm việc với vận động viên chuyên nghiệp.',
     },
     'trainer2': {
-      'id': 'trainer2',
+      'id': '104641193',
       'name': 'Trần Thị Bích',
       'specialty': 'Huấn luyện viên Tốc độ',
       'experience': '4 năm kinh nghiệm',
@@ -1181,7 +1201,7 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
           'Chuyên gia về cải thiện tốc độ và kỹ thuật chạy, giúp học viên đạt được mục tiêu cá nhân.',
     },
     'trainer3': {
-      'id': 'trainer3',
+      'id': '161411928',
       'name': 'Lê Văn Cường',
       'specialty': 'Huấn luyện viên Sức mạnh',
       'experience': '6 năm kinh nghiệm',
@@ -1195,13 +1215,49 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
     },
   };
 
-  void _showTrainerSelectionDialog(BuildContext context) {
+  void _showTrainerSelectionDialog(BuildContext context) async {
+    // Kiểm tra xem đã có huấn luyện viên được chọn chưa
+    if (_selectedTrainerId != null) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text(
+              'Thông báo',
+              style: GoogleFonts.urbanist(
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFFFF6F00),
+              ),
+            ),
+            content: Text(
+              'Bạn đã đăng ký huấn luyện viên rồi, không thể thay đổi',
+              style: GoogleFonts.urbanist(),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: Text(
+                  'Đã hiểu',
+                  style: GoogleFonts.urbanist(
+                    color: const Color(0xFFFF6F00),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      );
+      return;
+    }
+
     final PageController pageController = PageController();
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return Dialog(
-          insetPadding: EdgeInsets.zero, // Loại bỏ padding mặc định
+          insetPadding: EdgeInsets.zero,
           child: Container(
             width: MediaQuery.of(context).size.width * 0.95,
             height: MediaQuery.of(context).size.height * 0.8,
@@ -1316,13 +1372,81 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
                             SizedBox(
                               width: double.infinity,
                               child: ElevatedButton(
-                                onPressed: () {
-                                  setState(() {
-                                    _selectedTrainerId = trainer['id'];
-                                  });
-                                  Navigator.pop(context);
-                                  // Hiển thị lại dialog chọn thời gian
-                                  _showScheduleDialog(context);
+                                onPressed: () async {
+                                  try {
+                                    final token =
+                                        await LocalStorage.getValidToken();
+                                    if (token == null) {
+                                      throw Exception("Token không tồn tại");
+                                    }
+
+                                    print(
+                                        "🔍 Attempting to select coach with ID: ${trainer['id']}");
+
+                                    final dio = Dio();
+                                    dio.interceptors.add(LogInterceptor(
+                                      request: true,
+                                      requestHeader: true,
+                                      requestBody: true,
+                                      responseHeader: true,
+                                      responseBody: true,
+                                      error: true,
+                                    ));
+
+                                    final userService = UserService(dio);
+                                    try {
+                                      await userService.selectCoach(
+                                        "Bearer $token",
+                                        trainer['id'].toString(),
+                                      );
+
+                                      // Lưu ID huấn luyện viên đã chọn
+                                      await _saveSelectedCoachId(
+                                          trainer['id'].toString());
+
+                                      setState(() {
+                                        _selectedTrainerId = trainer['id'];
+                                      });
+                                      Navigator.pop(context);
+                                      // Hiển thị lại dialog chọn thời gian
+                                      _showScheduleDialog(context);
+                                    } catch (e) {
+                                      if (e is DioException &&
+                                          e.response?.statusCode == 500) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                                "Bạn đã đăng ký huấn luyện viên này hoặc một huấn luyện viên khác rồi"),
+                                            backgroundColor: Colors.orange,
+                                          ),
+                                        );
+                                        Navigator.pop(context);
+                                      } else {
+                                        rethrow;
+                                      }
+                                    }
+                                  } catch (e) {
+                                    print("❌ Lỗi khi chọn huấn luyện viên: $e");
+                                    if (e is DioException) {
+                                      print(
+                                          "🔍 Response data: ${e.response?.data}");
+                                      print(
+                                          "🔍 Response headers: ${e.response?.headers}");
+                                      print(
+                                          "🔍 Request data: ${e.requestOptions.data}");
+                                      print(
+                                          "🔍 Request path: ${e.requestOptions.path}");
+                                    }
+                                    if (!context.mounted) return;
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                            "Có lỗi xảy ra khi chọn huấn luyện viên: ${e.toString()}"),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                  }
                                 },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: const Color(0xFFFF6B00),
@@ -1386,14 +1510,13 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
       TimeOfDay(hour: 8, minute: 0),
       TimeOfDay(hour: 10, minute: 0),
       TimeOfDay(hour: 15, minute: 0),
-      TimeOfDay(hour: 18, minute: 2),
+      TimeOfDay(hour: 19, minute: 30),
     ];
 
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return StatefulBuilder(
-          // Sử dụng StatefulBuilder để cập nhật UI trong dialog
           builder: (context, setState) {
             return AlertDialog(
               title: Text(
@@ -1403,11 +1526,9 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
                 ),
               ),
               content: SingleChildScrollView(
-                // Thêm SingleChildScrollView để tránh overflow
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Thêm nút chọn huấn luyện viên
                     Container(
                       width: double.infinity,
                       child: ElevatedButton.icon(
@@ -1415,13 +1536,15 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
                         icon: const Icon(Icons.person),
                         label: Text(
                           _selectedTrainerId != null
-                              ? 'HLV: ${trainerInfo[_selectedTrainerId]!['name']}'
+                              ? 'HLV: ${trainerInfo.values.firstWhere((t) => t['id'] == _selectedTrainerId)['name']}'
                               : 'Chọn huấn luyện viên',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFFF6B00),
+                          backgroundColor: _selectedTrainerId != null
+                              ? Colors.green
+                              : const Color(0xFFFF6B00),
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 20,
@@ -1440,58 +1563,79 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
                           child: ElevatedButton(
                             onPressed: isAvailable && _selectedTrainerId != null
                                 ? () async {
-                                    final scheduledDateTime = DateTime(
-                                      now.year,
-                                      now.month,
-                                      now.day,
-                                      slot.hour,
-                                      slot.minute,
-                                    );
-
                                     try {
-                                      // Lấy token
                                       final token =
                                           await LocalStorage.getValidToken();
                                       if (token == null) {
                                         throw Exception("Token không tồn tại");
                                       }
 
-                                      // Format date string cho API theo định dạng yyyy-MM-ddTHH:mm:ss
+                                      // Format date string cho API theo định dạng yyyy-MM-ddTHH:mm:00
+                                      final now = DateTime.now();
+                                      final scheduledDateTime = DateTime(
+                                        now.year,
+                                        now.month,
+                                        now.day,
+                                        slot.hour,
+                                        slot.minute,
+                                      );
+
+                                      // Đảm bảo định dạng đúng chuẩn yyyy-MM-ddTHH:mm:00
                                       final dateStr =
-                                          "${scheduledDateTime.year}-${scheduledDateTime.month.toString().padLeft(2, '0')}-${scheduledDateTime.day.toString().padLeft(2, '0')}T${scheduledDateTime.hour.toString().padLeft(2, '0')}:${scheduledDateTime.minute.toString().padLeft(2, '0')}:00";
+                                          "${scheduledDateTime.year}-"
+                                          "${scheduledDateTime.month.toString().padLeft(2, '0')}-"
+                                          "${scheduledDateTime.day.toString().padLeft(2, '0')}T"
+                                          "${scheduledDateTime.hour.toString().padLeft(2, '0')}:"
+                                          "${scheduledDateTime.minute.toString().padLeft(2, '0')}:00";
 
-                                      // Gọi API thông báo
                                       final dio = Dio();
-                                      final client = NotificationService(dio);
-                                      await client.notifyCoachLevelTest(
-                                          "Bearer $token", dateStr);
+                                      dio.options.headers["Authorization"] =
+                                          "Bearer $token";
+                                      dio.options.headers["Content-Type"] =
+                                          "application/json";
 
-                                      // Lưu thời gian đã đặt vào storage
-                                      await _saveScheduledTime(
-                                          scheduledDateTime);
-                                      this.setState(() {
-                                        _scheduledTime = scheduledDateTime;
-                                      });
-                                      Navigator.pop(context);
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            'Đã đặt lịch kiểm tra lúc ${slot.hour}:${slot.minute.toString().padLeft(2, '0')} với ${trainerInfo[_selectedTrainerId]!['name']}',
+                                      // Gọi API với endpoint đúng format
+                                      final response = await dio.post(
+                                          "http://54.251.220.228:8080/trainingSouls/notifications/notifyCoachLevelTest/$dateStr");
+
+                                      if (response.statusCode == 200) {
+                                        await _saveScheduledTime(
+                                            scheduledDateTime);
+                                        this.setState(() {
+                                          _scheduledTime = scheduledDateTime;
+                                        });
+                                        Navigator.pop(context);
+                                        if (!context.mounted) return;
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              'Đã đặt lịch kiểm tra lúc ${slot.hour}:${slot.minute.toString().padLeft(2, '0')} với ${trainerInfo.values.firstWhere((t) => t['id'] == _selectedTrainerId)['name']}',
+                                            ),
+                                            backgroundColor: Colors.green,
                                           ),
-                                          backgroundColor: Colors.green,
-                                        ),
-                                      );
-                                      Navigator.pushAndRemoveUntil(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              const Trainhome(),
-                                        ),
-                                        (Route<dynamic> route) => false,
-                                      );
+                                        );
+                                        Navigator.pushAndRemoveUntil(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                const Trainhome(),
+                                          ),
+                                          (Route<dynamic> route) => false,
+                                        );
+                                      } else {
+                                        throw Exception(
+                                            "Lỗi khi gửi thông báo: ${response.statusCode}");
+                                      }
                                     } catch (e) {
                                       print("❌ Lỗi khi gửi thông báo: $e");
+                                      if (e is DioException) {
+                                        print(
+                                            "Response data: ${e.response?.data}");
+                                        print(
+                                            "Response status: ${e.response?.statusCode}");
+                                      }
+                                      if (!context.mounted) return;
                                       ScaffoldMessenger.of(context)
                                           .showSnackBar(
                                         SnackBar(
@@ -1675,7 +1819,6 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
     if (_scheduledTime != null) {
       final now = DateTime.now();
       if (now.isAfter(_scheduledTime!)) {
-        // Nếu đã đến giờ hẹn, chuyển thẳng đến VideoCallScreen
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -1692,25 +1835,10 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
         if (_scheduledTime != null) {
           return StatefulBuilder(
             builder: (context, setState) {
-              // Tạo timer để cập nhật UI mỗi giây
-              Timer? countdownTimer;
-              countdownTimer =
-                  Timer.periodic(const Duration(seconds: 1), (timer) {
-                setState(() {}); // Cập nhật UI mỗi giây
-              });
-
-              // Hủy timer khi dialog bị đóng
-              Future.delayed(Duration.zero, () {
-                if (!context.mounted) {
-                  countdownTimer?.cancel();
-                }
-              });
-
               final now = DateTime.now();
               final difference = _scheduledTime!.difference(now);
 
               if (difference.isNegative) {
-                countdownTimer?.cancel();
                 return AlertDialog(
                   title: Text(
                     'Sẵn sàng kiểm tra',
@@ -1756,7 +1884,6 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
                 );
               }
 
-              // Nếu chưa đến giờ hẹn
               return AlertDialog(
                 title: Text(
                   'Thời gian còn lại',
@@ -1783,21 +1910,11 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
                         color: Colors.grey,
                       ),
                     ),
-                    if (_selectedTrainerId != null) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        'với ${trainerInfo[_selectedTrainerId]!['name']}',
-                        style: GoogleFonts.urbanist(
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ],
                   ],
                 ),
                 actions: [
                   TextButton(
                     onPressed: () {
-                      countdownTimer?.cancel(); // Hủy timer khi đóng dialog
                       Navigator.pop(context);
                     },
                     child: Text(
@@ -1811,7 +1928,6 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
           );
         }
 
-        // Dialog mặc định khi chưa đặt lịch
         return AlertDialog(
           title: Text(
             'Chọn hình thức kiểm tra',
@@ -1848,8 +1964,7 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
                 ),
               ),
               const SizedBox(height: 12),
-              if (_scheduledTime ==
-                  null) // Chỉ hiển thị nút đặt lịch khi chưa đặt
+              if (_scheduledTime == null)
                 ElevatedButton(
                   onPressed: () {
                     Navigator.pop(context);
