@@ -1093,7 +1093,7 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
                   ),
                 ),
                 child: Text(
-                  "Bắt đầu kiểm tra",
+                  "Đăng ký kiểm tra",
                   style: GoogleFonts.urbanist(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -1510,7 +1510,7 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
       TimeOfDay(hour: 8, minute: 0),
       TimeOfDay(hour: 10, minute: 0),
       TimeOfDay(hour: 15, minute: 0),
-      TimeOfDay(hour: 22, minute: 59),
+      TimeOfDay(hour: 23, minute: 23),
     ];
 
     showDialog(
