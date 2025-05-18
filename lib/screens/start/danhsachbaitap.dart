@@ -278,7 +278,48 @@ class _DanhsachbaitapState extends State<Danhsachbaitap> {
               // ),
               const SizedBox(height: 10),
               ElevatedButton(
-                onPressed: () {
+                onPressed: () async {
+                  // Kiểm tra xem tất cả bài tập trong ngày đã hoàn thành chưa
+                  bool allCompleted =
+                      workouts.every((w) => w.status == "COMPLETED");
+
+                  if (allCompleted) {
+                    // Hiển thị thông báo đã hoàn thành
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: Text(
+                            "Chúc mừng! 🎉",
+                            style: GoogleFonts.urbanist(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green,
+                            ),
+                          ),
+                          content: Text(
+                            "Bạn đã hoàn thành tất cả bài tập của ngày hôm nay!",
+                            style: GoogleFonts.urbanist(),
+                          ),
+                          actions: <Widget>[
+                            TextButton(
+                              child: Text(
+                                "OK",
+                                style: GoogleFonts.urbanist(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.orange,
+                                ),
+                              ),
+                              onPressed: () {
+                                Navigator.of(context).pop(); // Đóng dialog
+                              },
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                    return; // Không cho phép tiếp tục nếu đã hoàn thành
+                  }
+
                   final today = nextWorkout?.day;
                   if (today != null) {
                     print("🗓 Đang tập ngày: $today");

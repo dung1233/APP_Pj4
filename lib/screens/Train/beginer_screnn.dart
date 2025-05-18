@@ -151,83 +151,54 @@ class _BeginnerScreenState extends State<BeginerScrenn> {
             // Thông báo đã hoàn thành bài tập hôm nay
             const SizedBox(height: 8),
             Text(
-              "Đã hoàn thành bài tập hôm nay",
+              "✅ Bạn đã hoàn thành bài tập hôm nay",
               style: GoogleFonts.urbanist(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
-                color: Colors.orange,
+                color: Colors.green,
               ),
             ),
           ] else if (allWorkoutsCompleted) ...[
             // Thông báo đã hoàn thành toàn bộ chương trình
             const SizedBox(height: 8),
             Text(
-              "Bạn đã hoàn thành bài tập ngày ${nextWorkout!.day ?? '1'}",
+              "Chúc mừng! Bạn đã hoàn thành toàn bộ chương trình tập luyện!",
               style: GoogleFonts.urbanist(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
-                color: Colors.orange,
+                color: Colors.green,
               ),
             ),
-            const SizedBox(height: 5),
-          ] else ...[
-            // Hiển thị thông tin bài tập bình thường
-            // const SizedBox(height: 28),
-            // Text(
-            //   nextWorkout!.exerciseName ?? "Bài tập không tên",
-            //   style: GoogleFonts.urbanist(
-            //     fontSize: 20,
-            //     fontWeight: FontWeight.w600,
-            //     color: Colors.orange,
-            //   ),
-            // ),
-            // const SizedBox(height: 5),
-            // Text(
-            //   _getWorkoutDescription(nextWorkout!),
-            //   style: GoogleFonts.urbanist(fontSize: 18, color: Colors.white),
-            // ),
           ],
-
-          // const SizedBox(height: 20),
 
           // Hiển thị nút "Bắt đầu" chỉ khi chưa hoàn thành bài tập hôm nay
           // và chưa hoàn thành toàn bộ chương trình
-          if (!allWorkoutsCompleted) ...[
+          if (!allWorkoutsCompleted && !showCompletionMessage) ...[
             const SizedBox(height: 20),
-            if (showCompletionMessage)
-              Text(
-                "✅ Bạn đã hoàn thành bài tập hôm nay",
+            OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                padding:
+                    const EdgeInsets.symmetric(vertical: 12, horizontal: 30),
+                side: const BorderSide(color: Colors.white, width: 1),
+                backgroundColor: const Color(0xFFFF6F00),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30)),
+              ),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => Test()),
+                );
+              },
+              child: Text(
+                "Bắt đầu",
                 style: GoogleFonts.urbanist(
+                  color: Colors.white,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Colors.green,
-                ),
-              )
-            else
-              OutlinedButton(
-                style: OutlinedButton.styleFrom(
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 12, horizontal: 30),
-                  side: const BorderSide(color: Colors.white, width: 1),
-                  backgroundColor: const Color(0xFFFF6F00),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30)),
-                ),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => Test()),
-                  );
-                },
-                child: Text(
-                  "Bắt đầu",
-                  style: GoogleFonts.urbanist(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
                 ),
               ),
+            ),
           ],
 
           const Spacer(),
