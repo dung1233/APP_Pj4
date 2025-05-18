@@ -64,7 +64,7 @@ class _FitnessGoalState extends State<FitnessGoal> {
                 height: 100,
                 width: 220,
                 child: Text(
-                  "What is your main fitness goal?",
+                  "Mục tiêu luyện tập của bạn?",
                   style: GoogleFonts.urbanist(
                       color: Colors.black,
                       fontSize: 25,

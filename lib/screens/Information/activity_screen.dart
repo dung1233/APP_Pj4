@@ -68,7 +68,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
                 height: 100,
                 width: 220,
                 child: Text(
-                  "What is your activity level ?",
+                  "Mức độ hoạt độn hàng ngày của bạn?",
                   style: GoogleFonts.urbanist(
                       color: Colors.black,
                       fontSize: 25,

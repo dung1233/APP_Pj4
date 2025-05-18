@@ -15,9 +15,9 @@ class Datascreen extends StatefulWidget {
 }
 
 final List<Map<String, String>> options = [
-  {"title": "Male", "icon": "assets/icons/male.png"},
-  {"title": "Female", "icon": "assets/icons/female.png"},
-  {"title": "Non", "icon": "assets/icons/Carrot.png"},
+  {"title": "Nam", "icon": "assets/icons/male.png"},
+  {"title": "Nữ", "icon": "assets/icons/female.png"},
+  {"title": "Khác", "icon": "assets/icons/Carrot.png"},
 ];
 
 class _DataState extends State<Datascreen> {
@@ -70,7 +70,7 @@ class _DataState extends State<Datascreen> {
                 height: 100,
                 width: 120,
                 child: Text(
-                  "What's your gender?",
+                  "Giới tính của bạn?",
                   style: GoogleFonts.urbanist(
                       color: Colors.black,
                       fontSize: 25,

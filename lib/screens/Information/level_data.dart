@@ -68,7 +68,7 @@ class _LeverdataState extends State<Leverdata> {
                 height: 100,
                 width: 120,
                 child: Text(
-                  "Choose your Level ?",
+                  "Chọn chế độ luyện tập",
                   style: GoogleFonts.urbanist(
                       color: Colors.black,
                       fontSize: 25,

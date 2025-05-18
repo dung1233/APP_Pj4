@@ -255,17 +255,14 @@ class _UserScreenState extends State<UserProfilePage>
                         final prefs = await SharedPreferences.getInstance();
                         await prefs.clear();
 
-                        // 3. Clear SQLite database tables
+                        // 3. Clear database tables directly
                         final db = await dbHelper.database;
-                        await db.transaction((txn) async {
-                          // Clear all tables
-                          await txn.delete('workouts');
-                          await txn.delete('workout_results');
-                          await txn.delete('user_info');
-                          await txn.delete('user_profile');
-                          await txn.delete('roles');
-                          await txn.delete('permissions');
-                        });
+                        await db.delete('workouts');
+                        await db.delete('workout_results');
+                        await db.delete('user_info');
+                        await db.delete('user_profile');
+                        await db.delete('roles');
+                        await db.delete('permissions');
 
                         if (mounted) {
                           // Navigate to HomePage and remove all previous routes
