@@ -15,9 +15,9 @@ class ActivityScreen extends StatefulWidget {
 
 class _ActivityScreenState extends State<ActivityScreen> {
   final List<Map<String, String>> options = [
-    {"title": "Low", "icon": "assets/icons/lowa.png"},
-    {"title": "Moderate", "icon": "assets/icons/medium.png"},
-    {"title": "High", "icon": "assets/icons/Fire.png"},
+    {"title": "Thấp", "icon": "assets/icons/lowa.png"},
+    {"title": "Trung Bình", "icon": "assets/icons/medium.png"},
+    {"title": "Cao", "icon": "assets/icons/Fire.png"},
   ];
 
   int selectedOption = -1;
@@ -68,7 +68,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
                 height: 100,
                 width: 220,
                 child: Text(
-                  "What is your activity level ?",
+                  "Mức độ hoạt độn hàng ngày của bạn?",
                   style: GoogleFonts.urbanist(
                       color: Colors.black,
                       fontSize: 25,

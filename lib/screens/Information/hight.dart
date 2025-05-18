@@ -92,7 +92,7 @@ class _HightState extends State<HightScreen> {
                 height: 100,
                 width: 220,
                 child: Text(
-                  "Please enter your height (in cm)",
+                  "Hãy nhập chiều cao của bạn (cm)",
                   style: GoogleFonts.urbanist(
                     color: Colors.black,
                     fontSize: 25,

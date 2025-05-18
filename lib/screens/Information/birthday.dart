@@ -110,7 +110,7 @@ class _BirthDateScreenState extends State<BirthDateScreen> {
                 height: 80,
                 width: 150,
                 child: Text(
-                  "Birthday your ?",
+                  "Sinh Nhật Của Bạn?",
                   style: GoogleFonts.urbanist(
                       color: Colors.black,
                       fontSize: 25,
@@ -120,7 +120,7 @@ class _BirthDateScreenState extends State<BirthDateScreen> {
               ),
             ),
             Text(
-              "$_calculatedAge Age",
+              "$_calculatedAge Tuổi",
               style: GoogleFonts.urbanist(
                   fontSize: 35,
                   fontWeight: FontWeight.bold,
@@ -185,7 +185,7 @@ class _BirthDateScreenState extends State<BirthDateScreen> {
                     }
                   : null,
               child: Text(
-                "Next",
+                "Tiếp",
                 style: GoogleFonts.urbanist(
                   color: Colors.white,
                   fontSize: 18,

@@ -235,7 +235,7 @@ class _OlViewState extends State<Ol> {
                       },
                     ),
                     Text(
-                      'Activity',
+                      'Hoạt Động',
                       style: GoogleFonts.urbanist(
                         color: Colors.white,
                         fontSize: 25,
@@ -306,10 +306,10 @@ class ActivityRingsWidget extends StatelessWidget {
                   padding: const EdgeInsets.only(top: 30.0),
                   child: Column(
                     children: [
-                      _buildStatText("Strength", strength, Colors.red),
-                      _buildStatText("Agility", agility, Colors.yellow),
-                      _buildStatText("Endurance", endurance, Colors.blue),
-                      _buildStatText("Health", health, Colors.green),
+                      _buildStatText("Sức Mạnh", strength, Colors.red),
+                      _buildStatText("Tốc Độ", agility, Colors.yellow),
+                      _buildStatText("Sức Bền", endurance, Colors.blue),
+                      _buildStatText("Máu", health, Colors.green),
                     ],
                   ),
                 ),
@@ -485,10 +485,10 @@ class WorkoutsWidget extends StatelessWidget {
                     Icon(Icons.fitness_center,
                         color: Colors.green, size: screenWidth * 0.06),
                     SizedBox(width: screenWidth * 0.02),
-                    Text("Workouts",
+                    Text("Lịch sử tập luyện",
                         style: GoogleFonts.urbanist(
                             color: Colors.white,
-                            fontSize: screenWidth * 0.055,
+                            fontSize: screenWidth * 0.045,
                             fontWeight: FontWeight.bold)),
                   ],
                 ),
@@ -496,7 +496,7 @@ class WorkoutsWidget extends StatelessWidget {
                   onPressed: () {},
                   icon: Icon(Icons.arrow_forward,
                       color: Colors.green, size: screenWidth * 0.05),
-                  label: Text("Show More",
+                  label: Text("Xem thêm",
                       style: GoogleFonts.urbanist(
                           color: Colors.green,
                           fontSize: screenWidth * 0.04,

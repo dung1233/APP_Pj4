@@ -21,7 +21,7 @@ class ShopScreen extends StatefulWidget {
 class _ShopScreenState extends State<ShopScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  final List<String> categories = ["All", "Clothing", "Accessories"];
+  final List<String> categories = ["Tất cả", "Quần Áo", "Trang Sức"];
   final Dio _dio = Dio();
   late ApiService _apiService;
   final DatabaseHelper dbHelper = DatabaseHelper();
@@ -94,14 +94,14 @@ class _ShopScreenState extends State<ShopScreen>
         .where((item) => !item.name.toLowerCase().contains("premium"))
         .toList();
 
-    if (category == "All") return nonPremiumItems;
+    if (category == "Tất cả") return nonPremiumItems;
 
     return nonPremiumItems.where((item) {
       switch (category) {
-        case "Clothing":
+        case "Quần Áo":
           return item.name.toLowerCase().contains("shirt") ||
               item.name.toLowerCase().contains("shoe");
-        case "Accessories":
+        case "Trang Sức":
           return item.name.toLowerCase().contains("avatar") ||
               item.name.toLowerCase().contains("cart");
         default:
@@ -588,7 +588,7 @@ class _ShopScreenState extends State<ShopScreen>
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: Colors.white,
-          title: const Text('Shop'),
+          title: const Text('Cửa Hàng'),
           bottom: TabBar(
             controller: _tabController,
             tabs: categories.map((tab) => Tab(text: tab)).toList(),
@@ -690,14 +690,21 @@ class _ShopScreenState extends State<ShopScreen>
                 overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 4),
-              Text(
-                '${item.points} points', // ✅ Giá từ API
-                style: const TextStyle(
-                  color: Colors.green,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
+              Row(
+                children: [
+                  Text(
+                    '${item.points}',
+                    style: const TextStyle(
+                      color: Colors.green,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(width: 4), // khoảng cách giữa icon và text
+                  const Icon(Icons.monetization_on, color: Colors.amber, size: 18), // có thể chỉnh size
+                ],
               ),
+
               const SizedBox(height: 4),
               if (item.description.isNotEmpty) ...[
                 const SizedBox(height: 4),

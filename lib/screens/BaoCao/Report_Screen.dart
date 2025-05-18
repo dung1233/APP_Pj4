@@ -53,7 +53,7 @@ class _ReportScreenState extends State<ReportScreen> {
       appBar: AppBar(
         toolbarHeight: 25,
         automaticallyImplyLeading: false,
-        title: const Text('ReportScreen'),
+        title: const Text('Báo cáo'),
         backgroundColor: Colors.white,
       ),
       body: ListView(

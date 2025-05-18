@@ -89,7 +89,7 @@ class _KgScreenState extends State<KgScreen> {
                 height: 100,
                 width: 220,
                 child: Text(
-                  "Please enter your weight (kg)", // Sửa câu từ cho tự nhiên hơn
+                  "Hãy nhập cân nặng của bạn (kg)", // Sửa câu từ cho tự nhiên hơn
                   style: GoogleFonts.urbanist(
                     color: Colors.black,
                     fontSize: 25,

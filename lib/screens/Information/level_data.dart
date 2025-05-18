@@ -16,9 +16,9 @@ class Leverdata extends StatefulWidget {
 
 class _LeverdataState extends State<Leverdata> {
   final List<Map<String, String>> options = [
-    {"title": "Beginer", "icon": "assets/icons/Dumbbell.png"},
-    {"title": "Medium", "icon": "assets/icons/Sneakers.png"},
-    {"title": "Hard", "icon": "assets/icons/Fire.png"},
+    {"title": "Người Mới", "icon": "assets/icons/Dumbbell.png"},
+    {"title": "Trung Cấp", "icon": "assets/icons/Sneakers.png"},
+    {"title": "Cao Cấp", "icon": "assets/icons/Fire.png"},
   ];
 
   int selectedOption = -1;
@@ -68,7 +68,7 @@ class _LeverdataState extends State<Leverdata> {
                 height: 100,
                 width: 120,
                 child: Text(
-                  "Choose your Level ?",
+                  "Chọn chế độ luyện tập",
                   style: GoogleFonts.urbanist(
                       color: Colors.black,
                       fontSize: 25,
