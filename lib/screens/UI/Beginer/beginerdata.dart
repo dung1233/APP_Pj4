@@ -1729,65 +1729,198 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
             response.result?.accountType?.toLowerCase() ?? 'basic';
 
         if (accountType != 'premium') {
-          // Hiển thị dialog thông báo cần mua Premium
-          showDialog(
+          // Hiển thị dialog thiết kế mới cho yêu cầu Premium
+          showGeneralDialog(
             context: context,
-            builder: (BuildContext context) {
-              return AlertDialog(
-                title: Text(
-                  'Yêu cầu Premium',
-                  style: GoogleFonts.urbanist(
-                    fontWeight: FontWeight.bold,
+            barrierDismissible: true,
+            barrierLabel: 'Dismiss',
+            barrierColor: Colors.black.withOpacity(0.6),
+            transitionDuration: const Duration(milliseconds: 300),
+            pageBuilder: (_, __, ___) {
+              return Center(
+                child: Container(
+                  margin: EdgeInsets.symmetric(horizontal: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
                   ),
-                ),
-                content: Text(
-                  'Bạn cần mua Premium để được huấn luyện viên kiểm tra.',
-                  style: GoogleFonts.urbanist(),
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    child: Text(
-                      'Hủy',
-                      style: GoogleFonts.urbanist(color: Colors.grey),
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      showGeneralDialog(
-                        context: context,
-                        barrierLabel: 'Dismiss',
-                        barrierColor: Colors.black.withOpacity(0.5),
-                        transitionDuration: const Duration(milliseconds: 300),
-                        pageBuilder: (_, __, ___) {
-                          return AccountTypePopup(
-                            selectedOption: 'Basic',
-                            options: ['Basic', 'Premium'],
-                            onSelected: (selectedType) {
-                              print("🔶 Người dùng đã chọn gói: $selectedType");
-                            },
-                          );
-                        },
-                        transitionBuilder: (_, animation, __, child) {
-                          return Transform.scale(
-                            scale: animation.value,
-                            child: Opacity(
-                              opacity: animation.value,
-                              child: child,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: Material(
+                      color: Colors.white,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Banner gradient header
+                          Container(
+                            width: double.infinity,
+                            padding: EdgeInsets.symmetric(vertical: 25),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [Color(0xFFFF6F00), Color(0xFFFF6F00)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
                             ),
-                          );
-                        },
-                      );
-                    },
-                    child: Text(
-                      'Mua Premium',
-                      style: GoogleFonts.urbanist(color: Colors.green),
+                            child: Column(
+                              children: [
+                                Icon(
+                                  Icons.workspace_premium,
+                                  color: Colors.white,
+                                  size: 48,
+                                ),
+                                SizedBox(height: 10),
+                                Text(
+                                  'Tính năng Premium',
+                                  style: GoogleFonts.urbanist(
+                                    color: Colors.white,
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Content
+                          Padding(
+                            padding: EdgeInsets.all(24),
+                            child: Column(
+                              children: [
+                                Text(
+                                  'Kiểm tra bởi Huấn luyện viên',
+                                  style: GoogleFonts.urbanist(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                SizedBox(height: 16),
+                                Text(
+                                  'Tính năng này yêu cầu tài khoản Premium để sử dụng. '
+                                  'Nâng cấp ngay để được huấn luyện viên kiểm tra và nhận phản hồi chuyên sâu.',
+                                  style: GoogleFonts.urbanist(
+                                    fontSize: 16,
+                                    color: Colors.grey.shade700,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                SizedBox(height: 24),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: _buildFeatureItem(
+                                        Icons.check_circle_outline,
+                                        'Phản hồi chi tiết',
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: _buildFeatureItem(
+                                        Icons.schedule,
+                                        'Phản hồi nhanh',
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 16),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: _buildFeatureItem(
+                                        Icons.video_call,
+                                        'Tư vấn trực tiếp',
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: _buildFeatureItem(
+                                        Icons.insert_chart,
+                                        'Phân tích dữ liệu',
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 32),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                    showGeneralDialog(
+                                      context: context,
+                                      barrierLabel: 'Dismiss',
+                                      barrierColor:
+                                          Colors.black.withOpacity(0.5),
+                                      transitionDuration:
+                                          const Duration(milliseconds: 300),
+                                      pageBuilder: (_, __, ___) {
+                                        return AccountTypePopup(
+                                          selectedOption: 'Basic',
+                                          options: ['Basic', 'Premium'],
+                                          onSelected: (selectedType) {
+                                            print(
+                                                "🔶 Người dùng đã chọn gói: $selectedType");
+                                          },
+                                        );
+                                      },
+                                      transitionBuilder:
+                                          (_, animation, __, child) {
+                                        return Transform.scale(
+                                          scale: animation.value,
+                                          child: Opacity(
+                                            opacity: animation.value,
+                                            child: child,
+                                          ),
+                                        );
+                                      },
+                                    );
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Color(0xFFFF6F00),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    padding: EdgeInsets.symmetric(vertical: 15),
+                                    minimumSize: Size(double.infinity, 50),
+                                  ),
+                                  child: Text(
+                                    'Nâng cấp Premium',
+                                    style: GoogleFonts.urbanist(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(height: 16),
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                  },
+                                  child: Text(
+                                    'Để sau',
+                                    style: GoogleFonts.urbanist(
+                                      fontSize: 16,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ],
+                ),
+              );
+            },
+            transitionBuilder: (_, animation, __, child) {
+              return FadeTransition(
+                opacity: animation,
+                child: ScaleTransition(
+                  scale: CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeOutBack,
+                  ),
+                  child: child,
+                ),
               );
             },
           );
@@ -1805,6 +1938,28 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
         ),
       );
     }
+  }
+
+// Helper widget để hiển thị các tính năng Premium
+  Widget _buildFeatureItem(IconData icon, String text) {
+    return Column(
+      children: [
+        Icon(
+          icon,
+          color: Color(0xFFFF6F00),
+          size: 28,
+        ),
+        SizedBox(height: 8),
+        Text(
+          text,
+          style: GoogleFonts.urbanist(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
   }
 
   bool _isTestTimeReached() {
