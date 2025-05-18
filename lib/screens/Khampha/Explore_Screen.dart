@@ -36,7 +36,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
         title: const Padding(
           padding: EdgeInsets.all(8.0),
           child: Text(
-            'Discover',
+            'Khám Phá',
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
         ),

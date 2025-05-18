@@ -100,7 +100,7 @@ class _TrainhomeState extends State<Trainhome> {
             NavigationDestination(
               icon: Icon(Icons.home,
                   color: selectedIndex == 0 ? Colors.white : Colors.black),
-              label: 'Train',
+              label: 'Trang Chủ',
             ),
             NavigationDestination(
               icon: Icon(Icons.explore,
@@ -115,7 +115,7 @@ class _TrainhomeState extends State<Trainhome> {
             NavigationDestination(
               icon: Icon(Icons.shop,
                   color: selectedIndex == 3 ? Colors.white : Colors.black),
-              label: 'Shop', // Đúng vị trí của ShopScreen
+              label: 'Cửa Hàng', // Đúng vị trí của ShopScreen
             ),
             NavigationDestination(
               icon: Icon(Icons.person,

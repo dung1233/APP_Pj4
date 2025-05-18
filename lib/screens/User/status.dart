@@ -190,7 +190,7 @@ class _StatusScreenState extends State<StatusScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Status Screen"),
+        title: const Text("Thông Tin Người Dùng"),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: handleBackButton,
@@ -236,8 +236,8 @@ class _StatusScreenState extends State<StatusScreen> {
             top: 16,
             left: 20,
             child: _iconButton(Icons.accessibility_new, () async {
-              String? selectedModel = await showPickerDialog(
-                  'Choose Model', availableModels, srcGlb1);
+              String? selectedModel =
+                  await showPickerDialog('Chọn Mẫu', availableModels, srcGlb1);
               if (selectedModel != null && selectedModel != srcGlb1) {
                 setState(() {
                   srcGlb1 = selectedModel;
@@ -323,7 +323,7 @@ class _StatusScreenState extends State<StatusScreen> {
                             ],
                           ),
                           child: Text(
-                            "Level ${_userInfo['level']?.toString() ?? "??"}",
+                            "Cấp Độ ${_userInfo['level']?.toString() ?? "??"}",
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -412,7 +412,7 @@ class _StatusScreenState extends State<StatusScreen> {
                   ),
                   SizedBox(width: 10),
                   Text(
-                    'Power Level',
+                    'Sức Mạnh',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -429,7 +429,7 @@ class _StatusScreenState extends State<StatusScreen> {
                   border: Border.all(color: Colors.grey[300]!),
                 ),
                 child: Text(
-                  "${powerValue.toStringAsFixed(1)}/$maxPower",
+                  "Điểm: ${powerValue.toStringAsFixed(1)}/$maxPower",
                   style: TextStyle(
                     color: Color(0xFF2C3E50),
                     fontSize: 16,
@@ -490,10 +490,10 @@ class _StatusScreenState extends State<StatusScreen> {
                     ...List.generate(4, (index) {
                       final positions = [0.0, 0.33, 0.66, 1.0];
                       final labels = [
-                        "Beginner",
-                        "Average",
-                        "Advanced",
-                        "Expert"
+                        "Mới",
+                        "Trung Bình",
+                        "Nâng Cao",
+                        "Chuyên Gia"
                       ];
                       final markerWidth = 2.0;
 
@@ -623,7 +623,7 @@ class _StatusScreenState extends State<StatusScreen> {
               ),
               SizedBox(width: 8),
               Text(
-                key.capitalize(),
+                _getStatName(key),
                 style: TextStyle(
                   color: Color(0xFF2C3E50),
                   fontSize: 14,
@@ -688,27 +688,42 @@ class _StatusScreenState extends State<StatusScreen> {
   Color _getStatColor(String statType) {
     switch (statType.toLowerCase()) {
       case 'health':
-        return Color(0xFFE74C3C); // Đỏ
+        return Color(0xFFE74C3C); // Máu
       case 'strength':
-        return Color(0xFFE67E22); // Cam
+        return Color(0xFFE67E22); // Sức Mạnh
       case 'endurance':
-        return Color(0xFF27AE60); // Xanh lá
+        return Color(0xFF27AE60); // Sức Bền
       case 'agility':
-        return Color(0xFF3498DB); // Xanh dương
+        return Color(0xFF3498DB); // Nhanh Nhẹn
       default:
-        return Color(0xFF9B59B6); // Tím
+        return Color(0xFF9B59B6); // Mặc định
+    }
+  }
+
+  String _getStatName(String key) {
+    switch (key.toLowerCase()) {
+      case 'health':
+        return 'Máu';
+      case 'strength':
+        return 'Sức Mạnh';
+      case 'endurance':
+        return 'Sức Bền';
+      case 'agility':
+        return 'Tốc Độ';
+      default:
+        return key.capitalize();
     }
   }
 
   Color _getPowerColor(double powerValue) {
     if (powerValue >= 95) {
-      return Color(0xFF4ECB71); // Expert - Green
+      return Color(0xFF4ECB71); // Chuyên Gia - Xanh lá
     } else if (powerValue >= 66) {
-      return Color(0xFFFFB946); // Advanced - Orange
+      return Color(0xFFFFB946); // Nâng Cao - Cam
     } else if (powerValue >= 33) {
-      return Color(0xFFFF9500); // Average - Light Orange
+      return Color(0xFFFF9500); // Trung Bình - Cam nhạt
     } else {
-      return Color(0xFFFF6B6B); // Beginner - Red
+      return Color(0xFFFF6B6B); // Mới Bắt Đầu - Đỏ
     }
   }
 
@@ -721,14 +736,14 @@ class _StatusScreenState extends State<StatusScreen> {
         List<String> availableAnimations =
             await controller.getAvailableAnimations();
         chosenAnimation = await showPickerDialog(
-            'Animations', availableAnimations, chosenAnimation);
+            'Hoạt Ảnh', availableAnimations, chosenAnimation);
         controller.playAnimation(animationName: chosenAnimation);
       }),
       _iconButton(Icons.list_alt_rounded, () async {
         List<String> availableTextures =
             await controller.getAvailableTextures();
-        chosenTexture = await showPickerDialog(
-            'Textures', availableTextures, chosenTexture);
+        chosenTexture =
+            await showPickerDialog('Kết Cấu', availableTextures, chosenTexture);
         controller.setTexture(textureName: chosenTexture ?? '');
       }),
       _iconButton(Icons.camera_alt_outlined, () {
@@ -770,7 +785,7 @@ class _StatusScreenState extends State<StatusScreen> {
           height: 250,
           child: inputList.isEmpty
               ? Center(
-                  child: Text('$title list is empty'),
+                  child: Text('Danh sách $title trống'),
                 )
               : ListView.separated(
                   itemCount: inputList.length,
