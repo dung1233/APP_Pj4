@@ -288,36 +288,91 @@ class _DanhsachbaitapState extends State<Danhsachbaitap> {
                     showDialog(
                       context: context,
                       builder: (BuildContext context) {
-                        return AlertDialog(
-                          title: Text(
-                            "Chúc mừng! 🎉",
-                            style: GoogleFonts.urbanist(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.green,
-                            ),
+                        return Dialog(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
                           ),
-                          content: Text(
-                            "Bạn đã hoàn thành tất cả bài tập của ngày hôm nay!",
-                            style: GoogleFonts.urbanist(),
-                          ),
-                          actions: <Widget>[
-                            TextButton(
-                              child: Text(
-                                "OK",
-                                style: GoogleFonts.urbanist(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.orange,
+                          elevation: 0,
+                          backgroundColor: Colors.transparent,
+                          child: Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.rectangle,
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black26,
+                                  blurRadius: 10.0,
+                                  offset: const Offset(0.0, 10.0),
                                 ),
-                              ),
-                              onPressed: () {
-                                Navigator.of(context).pop(); // Đóng dialog
-                              },
+                              ],
                             ),
-                          ],
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(15),
+                                  decoration: BoxDecoration(
+                                    color: Colors.orange.withOpacity(0.1),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.check_circle_outline,
+                                    color: Colors.orange,
+                                    size: 50,
+                                  ),
+                                ),
+                                const SizedBox(height: 20),
+                                Text(
+                                  "Chúc mừng! 🎉",
+                                  style: GoogleFonts.urbanist(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.orange,
+                                  ),
+                                ),
+                                const SizedBox(height: 15),
+                                Text(
+                                  "Bạn đã hoàn thành tất cả\nbài tập của ngày hôm nay!",
+                                  textAlign: TextAlign.center,
+                                  style: GoogleFonts.urbanist(
+                                    fontSize: 16,
+                                    color: Colors.black87,
+                                    height: 1.5,
+                                  ),
+                                ),
+                                const SizedBox(height: 25),
+                                ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFFFF6F00),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 40,
+                                      vertical: 12,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(30),
+                                    ),
+                                  ),
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                  },
+                                  child: Text(
+                                    "Tuyệt vời!",
+                                    style: GoogleFonts.urbanist(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         );
                       },
                     );
-                    return; // Không cho phép tiếp tục nếu đã hoàn thành
+                    return;
                   }
 
                   final today = nextWorkout?.day;
