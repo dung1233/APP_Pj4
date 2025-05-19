@@ -12,7 +12,7 @@ import 'package:training_souls/screens/Khampha/teacher_screen.dart';
 import 'package:training_souls/data/local_storage.dart';
 import 'package:training_souls/screens/trainhome.dart';
 import 'dart:async'; // Thêm import Timer
-import 'package:training_souls/api/notification_service.dart';
+import 'package:training_souls/services/notification_service.dart';
 
 class BeginnerDataWidget extends StatefulWidget {
   const BeginnerDataWidget({super.key});
@@ -1802,6 +1802,18 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
                                       this.setState(() {
                                         _scheduledTime = selectedTime;
                                       });
+
+                                      // Thêm thông báo nhắc nhở trước 1 phút
+                                      final notificationTime = selectedTime!
+                                          .subtract(Duration(minutes: 1));
+                                      await NotificationService()
+                                          .scheduleNotification(
+                                        title: 'Chuẩn bị kiểm tra! ⏰',
+                                        body:
+                                            'Bạn có lịch kiểm tra với ${trainerInfo.values.firstWhere((t) => t['id'] == _selectedTrainerId)['name']} trong 1 phút nữa! 💪',
+                                        scheduledDate: notificationTime,
+                                      );
+
                                       Navigator.pop(context);
                                       if (!context.mounted) return;
                                       ScaffoldMessenger.of(context)
