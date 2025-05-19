@@ -27,6 +27,7 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
   final Map<int, bool> expandedDays = {};
   final dbHelper = DatabaseHelper();
   bool isUpdating = false;
+  bool hasExistingCoach = false; // Thêm biến để lưu trạng thái kiểm tra
 
   // Cache cho trạng thái hoàn thành
   final Map<String, bool> _completionCache = {};
@@ -154,6 +155,7 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
       _loadScheduledTime();
       _loadSelectedCoachId(); // Thêm dòng này
       _startTimer();
+      checkExistingCoach(); // Thêm dòng này để kiểm tra khi widget khởi tạo
     });
   }
 
@@ -1566,27 +1568,57 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
                       // Chọn huấn luyện viên
                       Container(
                         width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: () => _showTrainerSelectionDialog(context),
-                          icon: const Icon(Icons.person),
-                          label: Text(
-                            _selectedTrainerId != null
-                                ? 'HLV: ${trainerInfo.values.firstWhere((t) => t['id'] == _selectedTrainerId)['name']}'
-                                : 'Chọn huấn luyện viên',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: _selectedTrainerId != null
-                                ? Colors.green
-                                : const Color(0xFFFF6B00),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 20,
-                              vertical: 12,
-                            ),
-                          ),
-                        ),
+                        child: !hasExistingCoach
+                            ? ElevatedButton.icon(
+                                onPressed: () =>
+                                    _showTrainerSelectionDialog(context),
+                                icon: const Icon(Icons.person),
+                                label: Text(
+                                  _selectedTrainerId != null
+                                      ? 'HLV: ${trainerInfo.values.firstWhere((t) => t['id'] == _selectedTrainerId)['name']}'
+                                      : 'Chọn huấn luyện viên',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: _selectedTrainerId != null
+                                      ? Colors.green
+                                      : const Color(0xFFFF6B00),
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                    vertical: 12,
+                                  ),
+                                ),
+                              )
+                            : Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 12,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.green.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(
+                                      Icons.check_circle,
+                                      color: Colors.green,
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Đã có huấn luyện viên',
+                                      style: GoogleFonts.urbanist(
+                                        color: Colors.green,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                       ),
 
                       const SizedBox(height: 20),
@@ -1893,7 +1925,7 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
                             textAlign: TextAlign.center,
                           ),
                         ),
-                      if (_selectedTrainerId == null)
+                      if (!hasExistingCoach && _selectedTrainerId == null)
                         Padding(
                           padding: const EdgeInsets.only(top: 16),
                           child: Text(
@@ -2460,5 +2492,33 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
       // Hủy timer khi dialog đóng
       _countdownTimer?.cancel();
     });
+  }
+
+  // Thêm hàm kiểm tra huấn luyện viên
+  Future<void> checkExistingCoach() async {
+    try {
+      final token = await LocalStorage.getValidToken();
+      if (token == null) {
+        throw Exception("Token không tồn tại");
+      }
+
+      final dio = Dio();
+      final response = await dio.get(
+        "http://54.251.220.228:8080/trainingSouls/users/checkExistCoach",
+        options: Options(
+          headers: {
+            "Authorization": "Bearer $token",
+          },
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        setState(() {
+          hasExistingCoach = response.data == true;
+        });
+      }
+    } catch (e) {
+      print("❌ Lỗi khi kiểm tra huấn luyện viên: $e");
+    }
   }
 }
