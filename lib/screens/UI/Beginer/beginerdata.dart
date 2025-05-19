@@ -1506,18 +1506,36 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
   // Hàm hiển thị dialog đặt lịch
   void _showScheduleDialog(BuildContext context) {
     final now = DateTime.now();
-    final timeSlots = [
-      TimeOfDay(hour: 8, minute: 0),
-      TimeOfDay(hour: 10, minute: 0),
-      TimeOfDay(hour: 15, minute: 0),
-      TimeOfDay(hour: 23, minute: 23),
-    ];
+
+    // Lưu trữ thời gian đã chọn
+    DateTime? selectedTime;
+
+    // Xác định thời gian hiện tại cho giới hạn chọn lịch
+    final currentHour = now.hour;
+    final currentMinute = now.minute;
 
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (context, setState) {
+            // Kiểm tra xem thời gian đã chọn có hợp lệ không (không phải thời gian đã qua)
+            bool isTimeValid() {
+              if (selectedTime == null) return false;
+
+              // Nếu là cùng ngày, kiểm tra giờ và phút
+              if (selectedTime!.year == now.year &&
+                  selectedTime!.month == now.month &&
+                  selectedTime!.day == now.day) {
+                return selectedTime!.hour > currentHour ||
+                    (selectedTime!.hour == currentHour &&
+                        selectedTime!.minute > currentMinute);
+              }
+
+              // Nếu là ngày khác, luôn hợp lệ
+              return selectedTime!.isAfter(now);
+            }
+
             return AlertDialog(
               title: Text(
                 'Chọn thời gian kiểm tra',
@@ -1525,174 +1543,356 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: () => _showTrainerSelectionDialog(context),
-                        icon: const Icon(Icons.person),
-                        label: Text(
-                          _selectedTrainerId != null
-                              ? 'HLV: ${trainerInfo.values.firstWhere((t) => t['id'] == _selectedTrainerId)['name']}'
-                              : 'Chọn huấn luyện viên',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _selectedTrainerId != null
-                              ? Colors.green
-                              : const Color(0xFFFF6B00),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 12,
+              content: Container(
+                width: double.maxFinite,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Chọn huấn luyện viên
+                      Container(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: () => _showTrainerSelectionDialog(context),
+                          icon: const Icon(Icons.person),
+                          label: Text(
+                            _selectedTrainerId != null
+                                ? 'HLV: ${trainerInfo.values.firstWhere((t) => t['id'] == _selectedTrainerId)['name']}'
+                                : 'Chọn huấn luyện viên',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _selectedTrainerId != null
+                                ? Colors.green
+                                : const Color(0xFFFF6B00),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 12,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 20),
-                    ...timeSlots.map((slot) {
-                      final isAvailable = _isTimeSlotAvailable(slot);
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        child: Container(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: isAvailable && _selectedTrainerId != null
-                                ? () async {
-                                    try {
-                                      final token =
-                                          await LocalStorage.getValidToken();
-                                      if (token == null) {
-                                        throw Exception("Token không tồn tại");
-                                      }
 
-                                      // Format date string cho API theo định dạng yyyy-MM-ddTHH:mm:00
-                                      final now = DateTime.now();
-                                      final scheduledDateTime = DateTime(
+                      const SizedBox(height: 20),
+
+                      // Chọn ngày
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey.shade300),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 8, horizontal: 12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Chọn ngày:',
+                              style: GoogleFonts.urbanist(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 15,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            InkWell(
+                              onTap: () async {
+                                final DateTime? pickedDate =
+                                    await showDatePicker(
+                                  context: context,
+                                  initialDate: now,
+                                  firstDate: now,
+                                  lastDate: now.add(const Duration(days: 30)),
+                                  builder: (context, child) {
+                                    return Theme(
+                                      data: Theme.of(context).copyWith(
+                                        colorScheme: const ColorScheme.light(
+                                          primary: Color(0xFFFF6B00),
+                                          onPrimary: Colors.white,
+                                        ),
+                                      ),
+                                      child: child!,
+                                    );
+                                  },
+                                );
+
+                                if (pickedDate != null) {
+                                  setState(() {
+                                    if (selectedTime != null) {
+                                      // Giữ nguyên giờ và phút, chỉ cập nhật ngày
+                                      selectedTime = DateTime(
+                                        pickedDate.year,
+                                        pickedDate.month,
+                                        pickedDate.day,
+                                        selectedTime!.hour,
+                                        selectedTime!.minute,
+                                      );
+                                    } else {
+                                      // Nếu chưa chọn giờ, mặc định là giờ hiện tại + 1
+                                      final defaultHour = (now.hour + 1) % 24;
+                                      selectedTime = DateTime(
+                                        pickedDate.year,
+                                        pickedDate.month,
+                                        pickedDate.day,
+                                        defaultHour,
+                                        0,
+                                      );
+                                    }
+                                  });
+                                }
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    vertical: 12, horizontal: 16),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.shade100,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      selectedTime != null
+                                          ? '${selectedTime!.day}/${selectedTime!.month}/${selectedTime!.year}'
+                                          : 'Chọn ngày',
+                                      style: GoogleFonts.urbanist(),
+                                    ),
+                                    const Icon(Icons.calendar_today, size: 20),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Chọn giờ
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey.shade300),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 8, horizontal: 12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Chọn giờ:',
+                              style: GoogleFonts.urbanist(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 15,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            InkWell(
+                              onTap: () async {
+                                final TimeOfDay? pickedTime =
+                                    await showTimePicker(
+                                  context: context,
+                                  initialTime: selectedTime != null
+                                      ? TimeOfDay(
+                                          hour: selectedTime!.hour,
+                                          minute: selectedTime!.minute)
+                                      : TimeOfDay(
+                                          hour: (now.hour + 1) % 24, minute: 0),
+                                  builder: (context, child) {
+                                    return Theme(
+                                      data: Theme.of(context).copyWith(
+                                        colorScheme: const ColorScheme.light(
+                                          primary: Color(0xFFFF6B00),
+                                          onPrimary: Colors.white,
+                                        ),
+                                      ),
+                                      child: child!,
+                                    );
+                                  },
+                                );
+
+                                if (pickedTime != null) {
+                                  setState(() {
+                                    if (selectedTime != null) {
+                                      // Giữ nguyên ngày, chỉ cập nhật giờ và phút
+                                      selectedTime = DateTime(
+                                        selectedTime!.year,
+                                        selectedTime!.month,
+                                        selectedTime!.day,
+                                        pickedTime.hour,
+                                        pickedTime.minute,
+                                      );
+                                    } else {
+                                      // Nếu chưa chọn ngày, mặc định là ngày hiện tại
+                                      selectedTime = DateTime(
                                         now.year,
                                         now.month,
                                         now.day,
-                                        slot.hour,
-                                        slot.minute,
+                                        pickedTime.hour,
+                                        pickedTime.minute,
                                       );
+                                    }
+                                  });
+                                }
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    vertical: 12, horizontal: 16),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.shade100,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      selectedTime != null
+                                          ? '${selectedTime!.hour.toString().padLeft(2, '0')}:${selectedTime!.minute.toString().padLeft(2, '0')}'
+                                          : 'Chọn giờ',
+                                      style: GoogleFonts.urbanist(),
+                                    ),
+                                    const Icon(Icons.access_time, size: 20),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
 
-                                      // Đảm bảo định dạng đúng chuẩn yyyy-MM-ddTHH:mm:00
-                                      final dateStr =
-                                          "${scheduledDateTime.year}-"
-                                          "${scheduledDateTime.month.toString().padLeft(2, '0')}-"
-                                          "${scheduledDateTime.day.toString().padLeft(2, '0')}T"
-                                          "${scheduledDateTime.hour.toString().padLeft(2, '0')}:"
-                                          "${scheduledDateTime.minute.toString().padLeft(2, '0')}:00";
+                      const SizedBox(height: 24),
 
-                                      final dio = Dio();
-                                      dio.options.headers["Authorization"] =
-                                          "Bearer $token";
-                                      dio.options.headers["Content-Type"] =
-                                          "application/json";
+                      // Nút đặt lịch
+                      Container(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: (_selectedTrainerId != null &&
+                                  selectedTime != null &&
+                                  isTimeValid())
+                              ? () async {
+                                  try {
+                                    final token =
+                                        await LocalStorage.getValidToken();
+                                    if (token == null) {
+                                      throw Exception("Token không tồn tại");
+                                    }
 
-                                      // Gọi API với endpoint đúng format
-                                      final response = await dio.post(
-                                          "http://54.251.220.228:8080/trainingSouls/notifications/notifyCoachLevelTest/$dateStr");
+                                    // Format date string cho API theo định dạng yyyy-MM-ddTHH:mm:00
+                                    final dateStr = "${selectedTime!.year}-"
+                                        "${selectedTime!.month.toString().padLeft(2, '0')}-"
+                                        "${selectedTime!.day.toString().padLeft(2, '0')}T"
+                                        "${selectedTime!.hour.toString().padLeft(2, '0')}:"
+                                        "${selectedTime!.minute.toString().padLeft(2, '0')}:00";
 
-                                      if (response.statusCode == 200) {
-                                        await _saveScheduledTime(
-                                            scheduledDateTime);
-                                        this.setState(() {
-                                          _scheduledTime = scheduledDateTime;
-                                        });
-                                        Navigator.pop(context);
-                                        if (!context.mounted) return;
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          SnackBar(
-                                            content: Text(
-                                              'Đã đặt lịch kiểm tra lúc ${slot.hour}:${slot.minute.toString().padLeft(2, '0')} với ${trainerInfo.values.firstWhere((t) => t['id'] == _selectedTrainerId)['name']}',
-                                            ),
-                                            backgroundColor: Colors.green,
-                                          ),
-                                        );
-                                        Navigator.pushAndRemoveUntil(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) =>
-                                                const Trainhome(),
-                                          ),
-                                          (Route<dynamic> route) => false,
-                                        );
-                                      } else {
-                                        throw Exception(
-                                            "Lỗi khi gửi thông báo: ${response.statusCode}");
-                                      }
-                                    } catch (e) {
-                                      print("❌ Lỗi khi gửi thông báo: $e");
-                                      if (e is DioException) {
-                                        print(
-                                            "Response data: ${e.response?.data}");
-                                        print(
-                                            "Response status: ${e.response?.statusCode}");
-                                      }
+                                    final dio = Dio();
+                                    dio.options.headers["Authorization"] =
+                                        "Bearer $token";
+                                    dio.options.headers["Content-Type"] =
+                                        "application/json";
+
+                                    // Gọi API với endpoint đúng format
+                                    final response = await dio.post(
+                                        "http://54.251.220.228:8080/trainingSouls/notifications/notifyCoachLevelTest/$dateStr");
+
+                                    if (response.statusCode == 200) {
+                                      await _saveScheduledTime(selectedTime!);
+                                      this.setState(() {
+                                        _scheduledTime = selectedTime;
+                                      });
+                                      Navigator.pop(context);
                                       if (!context.mounted) return;
                                       ScaffoldMessenger.of(context)
                                           .showSnackBar(
                                         SnackBar(
                                           content: Text(
-                                              "Có lỗi xảy ra khi đặt lịch: ${e.toString()}"),
-                                          backgroundColor: Colors.red,
+                                            'Đã đặt lịch kiểm tra lúc ${selectedTime!.hour.toString().padLeft(2, '0')}:${selectedTime!.minute.toString().padLeft(2, '0')} ngày ${selectedTime!.day}/${selectedTime!.month}/${selectedTime!.year} với ${trainerInfo.values.firstWhere((t) => t['id'] == _selectedTrainerId)['name']}',
+                                          ),
+                                          backgroundColor: Colors.green,
                                         ),
                                       );
+                                      Navigator.pushAndRemoveUntil(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              const Trainhome(),
+                                        ),
+                                        (Route<dynamic> route) => false,
+                                      );
+                                    } else {
+                                      throw Exception(
+                                          "Lỗi khi gửi thông báo: ${response.statusCode}");
                                     }
+                                  } catch (e) {
+                                    print("❌ Lỗi khi gửi thông báo: $e");
+                                    if (e is DioException) {
+                                      print(
+                                          "Response data: ${e.response?.data}");
+                                      print(
+                                          "Response status: ${e.response?.statusCode}");
+                                    }
+                                    if (!context.mounted) return;
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                            "Có lỗi xảy ra khi đặt lịch: ${e.toString()}"),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
                                   }
-                                : null,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor:
-                                  isAvailable && _selectedTrainerId != null
-                                      ? Colors.green
-                                      : Colors.grey,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 32,
-                                vertical: 12,
-                              ),
-                            ),
-                            child: Text(
-                              '${slot.hour}:${slot.minute.toString().padLeft(2, '0')}',
-                              style: GoogleFonts.urbanist(
-                                color: Colors.white,
-                                fontSize: 16,
-                              ),
+                                }
+                              : null,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: (_selectedTrainerId != null &&
+                                    selectedTime != null &&
+                                    isTimeValid())
+                                ? Colors.green
+                                : Colors.grey,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 32,
+                              vertical: 16,
                             ),
                           ),
-                        ),
-                      );
-                    }).toList(),
-                    if (!timeSlots.any((slot) => _isTimeSlotAvailable(slot)))
-                      Padding(
-                        padding: const EdgeInsets.only(top: 16),
-                        child: Text(
-                          'Vui lòng đăng ký kiểm tra vào ngày hôm sau',
-                          style: GoogleFonts.urbanist(
-                            color: Colors.red,
-                            fontWeight: FontWeight.w500,
+                          child: Text(
+                            'Đặt lịch kiểm tra',
+                            style: GoogleFonts.urbanist(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                          textAlign: TextAlign.center,
                         ),
                       ),
-                    if (_selectedTrainerId == null)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 16),
-                        child: Text(
-                          'Vui lòng chọn huấn luyện viên trước khi đặt lịch',
-                          style: GoogleFonts.urbanist(
-                            color: Colors.orange,
-                            fontWeight: FontWeight.w500,
+
+                      // Thông báo lỗi nếu có
+                      if (selectedTime != null && !isTimeValid())
+                        Padding(
+                          padding: const EdgeInsets.only(top: 16),
+                          child: Text(
+                            'Không thể chọn thời gian đã qua. Vui lòng chọn thời gian khác.',
+                            style: GoogleFonts.urbanist(
+                              color: Colors.red,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            textAlign: TextAlign.center,
                           ),
-                          textAlign: TextAlign.center,
                         ),
-                      ),
-                  ],
+                      if (_selectedTrainerId == null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 16),
+                          child: Text(
+                            'Vui lòng chọn huấn luyện viên trước khi đặt lịch',
+                            style: GoogleFonts.urbanist(
+                              color: Colors.orange,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ),
               actions: [
