@@ -124,7 +124,7 @@ class _OlViewState extends State<Ol> {
                   'bmi': userProfile['bmi'] ?? 0.0,
                   'bodyFatPercentage': userProfile['bodyFatPercentage'] ?? 0.0,
                   'muscleMassPercentage':
-                  userProfile['muscleMassPercentage'] ?? 0.0,
+                      userProfile['muscleMassPercentage'] ?? 0.0,
                   'level': userProfile['level'] ?? 'Beginner',
                   'strength': userProfile['strength'] ?? 0,
                   'deathPoints': userProfile['deathPoints'] ?? 0,
@@ -230,7 +230,7 @@ class _OlViewState extends State<Ol> {
                         Navigator.pushAndRemoveUntil(
                           context,
                           MaterialPageRoute(builder: (context) => Trainhome()),
-                              (Route<dynamic> route) => false,
+                          (Route<dynamic> route) => false,
                         );
                       },
                     ),
@@ -377,11 +377,11 @@ class ActivityRingPainter extends CustomPainter {
   final double healthProgress;
 
   ActivityRingPainter(
-      this.strengthProgress,
-      this.agilityProgress,
-      this.enduranceProgress,
-      this.healthProgress,
-      );
+    this.strengthProgress,
+    this.agilityProgress,
+    this.enduranceProgress,
+    this.healthProgress,
+  );
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -585,7 +585,7 @@ class WorkoutDateGroup extends StatelessWidget {
           ),
           children: workouts.map((workout) {
             final name =
-            (workout['exerciseName'] ?? '').toString().toLowerCase();
+                (workout['exerciseName'] ?? '').toString().toLowerCase();
             final isRun = name.contains('run') || name.contains('chạy');
             String value;
             IconData icon;
@@ -598,7 +598,7 @@ class WorkoutDateGroup extends StatelessWidget {
             } else {
               icon = Icons.fitness_center;
               value =
-              "${workout['setsCompleted'] ?? 0} sets - ${workout['repsCompleted'] ?? 0} reps";
+                  "${workout['setsCompleted'] ?? 0} sets - ${workout['repsCompleted'] ?? 0} reps";
             }
 
             return Container(
@@ -871,7 +871,7 @@ class _AwardsWidgetState extends State<AwardsWidget> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content:
-              Text("Nhận thưởng thành công! Điểm hiện tại: $newPoints"),
+                  Text("Nhận thưởng thành công! Điểm hiện tại: $newPoints"),
               backgroundColor: Colors.green,
             ),
           );
@@ -924,7 +924,7 @@ class _AwardsWidgetState extends State<AwardsWidget> {
                       fontWeight: FontWeight.bold)),
               Text("Xem thêm",
                   style:
-                  GoogleFonts.urbanist(color: Colors.green, fontSize: 16)),
+                      GoogleFonts.urbanist(color: Colors.green, fontSize: 16)),
             ],
           ),
         ),
@@ -968,9 +968,9 @@ class _AwardsWidgetState extends State<AwardsWidget> {
                   const SizedBox(width: 10), // tạo khoảng cách an toàn
                   ElevatedButton(
                     onPressed:
-                    _checkInStatus == "Đã điểm danh hôm nay" || _isLoading
-                        ? null
-                        : _handleCheckIn,
+                        _checkInStatus == "Đã điểm danh hôm nay" || _isLoading
+                            ? null
+                            : _handleCheckIn,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
                       disabledBackgroundColor: Colors.grey,
@@ -980,22 +980,22 @@ class _AwardsWidgetState extends State<AwardsWidget> {
                     ),
                     child: _isLoading
                         ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
-                      ),
-                    )
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
                         : Text(
-                      _checkInStatus == "Đã điểm danh hôm nay"
-                          ? "Đã điểm danh"
-                          : "Điểm danh",
-                      style: GoogleFonts.urbanist(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold),
-                    ),
+                            _checkInStatus == "Đã điểm danh hôm nay"
+                                ? "Đã điểm danh"
+                                : "Điểm danh",
+                            style: GoogleFonts.urbanist(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold),
+                          ),
                   ),
                 ],
               ),
@@ -1036,28 +1036,28 @@ class _AwardsWidgetState extends State<AwardsWidget> {
                     ),
                     child: _isRewardLoading
                         ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
-                      ),
-                    )
-                        : Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.card_giftcard,
-                            color: Colors.white),
-                        const SizedBox(width: 5),
-                        Text(
-                          "Nhận thưởng",
-                          style: GoogleFonts.urbanist(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
                               color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.card_giftcard,
+                                  color: Colors.white),
+                              const SizedBox(width: 5),
+                              Text(
+                                "Nhận thưởng",
+                                style: GoogleFonts.urbanist(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
                   ),
                 ),
             ],

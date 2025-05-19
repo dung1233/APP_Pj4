@@ -23,7 +23,7 @@ User _$UserFromJson(Map<String, dynamic> json) => User(
       userProfile: json['userProfile'] == null
           ? null
           : UserProfile.fromJson(json['userProfile'] as Map<String, dynamic>),
-);
+    );
 
 Map<String, dynamic> _$UserToJson(User instance) => <String, dynamic>{
       'userID': instance.userID,
@@ -38,4 +38,4 @@ Map<String, dynamic> _$UserToJson(User instance) => <String, dynamic>{
       'roles': instance.roles,
       'purchasedItems': instance.purchasedItems,
       'userProfile': instance.userProfile,
-};
+    };
