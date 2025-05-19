@@ -27,7 +27,6 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
   final Map<int, bool> expandedDays = {};
   final dbHelper = DatabaseHelper();
   bool isUpdating = false;
-  bool hasExistingCoach = false; // Thêm biến để lưu trạng thái kiểm tra
 
   // Cache cho trạng thái hoàn thành
   final Map<String, bool> _completionCache = {};
@@ -155,7 +154,6 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
       _loadScheduledTime();
       _loadSelectedCoachId(); // Thêm dòng này
       _startTimer();
-      checkExistingCoach(); // Thêm dòng này để kiểm tra khi widget khởi tạo
     });
   }
 
@@ -1505,20 +1503,6 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
     );
   }
 
-  // Thêm biến để lưu timer cho đếm ngược
-  Timer? _countdownTimer;
-
-  void _startCountdownTimer(StateSetter setState) {
-    _countdownTimer?.cancel();
-    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (mounted) {
-        setState(() {
-          // Cập nhật UI mỗi giây
-        });
-      }
-    });
-  }
-
   // Hàm hiển thị dialog đặt lịch
   void _showScheduleDialog(BuildContext context) {
     final now = DateTime.now();
@@ -1568,57 +1552,27 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
                       // Chọn huấn luyện viên
                       Container(
                         width: double.infinity,
-                        child: !hasExistingCoach
-                            ? ElevatedButton.icon(
-                                onPressed: () =>
-                                    _showTrainerSelectionDialog(context),
-                                icon: const Icon(Icons.person),
-                                label: Text(
-                                  _selectedTrainerId != null
-                                      ? 'HLV: ${trainerInfo.values.firstWhere((t) => t['id'] == _selectedTrainerId)['name']}'
-                                      : 'Chọn huấn luyện viên',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: _selectedTrainerId != null
-                                      ? Colors.green
-                                      : const Color(0xFFFF6B00),
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 20,
-                                    vertical: 12,
-                                  ),
-                                ),
-                              )
-                            : Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                  vertical: 12,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.green.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    const Icon(
-                                      Icons.check_circle,
-                                      color: Colors.green,
-                                      size: 20,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      'Đã có huấn luyện viên',
-                                      style: GoogleFonts.urbanist(
-                                        color: Colors.green,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
+                        child: ElevatedButton.icon(
+                          onPressed: () => _showTrainerSelectionDialog(context),
+                          icon: const Icon(Icons.person),
+                          label: Text(
+                            _selectedTrainerId != null
+                                ? 'HLV: ${trainerInfo.values.firstWhere((t) => t['id'] == _selectedTrainerId)['name']}'
+                                : 'Chọn huấn luyện viên',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _selectedTrainerId != null
+                                ? Colors.green
+                                : const Color(0xFFFF6B00),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 12,
+                            ),
+                          ),
+                        ),
                       ),
 
                       const SizedBox(height: 20),
@@ -1925,7 +1879,7 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
                             textAlign: TextAlign.center,
                           ),
                         ),
-                      if (!hasExistingCoach && _selectedTrainerId == null)
+                      if (_selectedTrainerId == null)
                         Padding(
                           padding: const EdgeInsets.only(top: 16),
                           child: Text(
@@ -2236,9 +2190,6 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
         if (_scheduledTime != null) {
           return StatefulBuilder(
             builder: (context, setState) {
-              // Bắt đầu timer khi dialog hiển thị
-              _startCountdownTimer(setState);
-
               final now = DateTime.now();
               final difference = _scheduledTime!.difference(now);
 
@@ -2288,237 +2239,122 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
                 );
               }
 
-              return Dialog(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Container(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFF6F00).withOpacity(0.1),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.timer,
-                          color: Color(0xFFFF6F00),
-                          size: 40,
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      Text(
-                        'Thời gian còn lại',
-                        style: GoogleFonts.urbanist(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 12,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFF6F00).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          '${difference.inHours}h ${difference.inMinutes.remainder(60)}m ${difference.inSeconds.remainder(60)}s',
-                          style: GoogleFonts.urbanist(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w600,
-                            color: const Color(0xFF00FF22),
-                          ),
-                        ),
-                      ),
-                      if (_selectedTrainerId != null) ...[
-                        const SizedBox(height: 12),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              Icons.person,
-                              color: Color(0xFFFF6F00),
-                              size: 20,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'HLV: ${trainerInfo.values.firstWhere((t) => t['id'] == _selectedTrainerId)['name']}',
-                              style: GoogleFonts.urbanist(
-                                fontSize: 16,
-                                color: const Color(0xFFFF6F00),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                      const SizedBox(height: 24),
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: Text(
-                          'Đóng',
-                          style: GoogleFonts.urbanist(
-                            color: Colors.grey[600],
-                            fontSize: 16,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          );
-        }
-
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Container(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFF6F00).withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.sports_score,
-                    color: Color(0xFFFF6F00),
-                    size: 40,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  'Chọn hình thức kiểm tra',
+              return AlertDialog(
+                title: Text(
+                  'Thời gian còn lại',
                   style: GoogleFonts.urbanist(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 12),
-                Text(
-                  'Bạn có thể chọn kiểm tra ngay hoặc đặt lịch cho thời điểm khác',
-                  style: GoogleFonts.urbanist(
-                    fontSize: 16,
-                    color: Colors.grey[600],
-                  ),
-                  textAlign: TextAlign.center,
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Còn ${difference.inHours} giờ ${difference.inMinutes.remainder(60)} phút ${difference.inSeconds.remainder(60)} giây',
+                      style: GoogleFonts.urbanist(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Đã đặt lịch kiểm tra lúc ${_scheduledTime!.hour}:${_scheduledTime!.minute.toString().padLeft(2, '0')}',
+                      style: GoogleFonts.urbanist(
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
+                actions: [
+                  TextButton(
                     onPressed: () {
                       Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const VideoCallScreen(),
-                        ),
-                      );
                     },
-                    icon: const Icon(Icons.video_call),
-                    label: Text(
-                      'Gọi ngay',
-                      style: GoogleFonts.urbanist(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
+                    child: Text(
+                      'Đóng',
+                      style: GoogleFonts.urbanist(color: Colors.grey),
                     ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                  ),
+                ],
+              );
+            },
+          );
+        }
+
+        return AlertDialog(
+          title: Text(
+            'Chọn hình thức kiểm tra',
+            style: GoogleFonts.urbanist(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const VideoCallScreen(),
                     ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 12,
                   ),
                 ),
-                const SizedBox(height: 12),
-                if (_scheduledTime == null)
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        _showScheduleDialog(context);
-                      },
-                      icon: const Icon(Icons.calendar_today),
-                      label: Text(
-                        'Đặt lịch',
-                        style: GoogleFonts.urbanist(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFF6F00),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
+                child: Text(
+                  'Gọi ngay',
+                  style: GoogleFonts.urbanist(
+                    color: Colors.white,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              if (_scheduledTime == null)
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    _showScheduleDialog(context);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 12,
                     ),
                   ),
-                const SizedBox(height: 16),
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
                   child: Text(
-                    'Hủy',
+                    'Đặt lịch',
                     style: GoogleFonts.urbanist(
-                      color: Colors.grey[600],
+                      color: Colors.white,
                       fontSize: 16,
                     ),
                   ),
                 ),
-              ],
-            ),
+            ],
           ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text(
+                'Hủy',
+                style: GoogleFonts.urbanist(color: Colors.grey),
+              ),
+            ),
+          ],
         );
       },
-    ).then((_) {
-      // Hủy timer khi dialog đóng
-      _countdownTimer?.cancel();
-    });
-  }
-
-  // Thêm hàm kiểm tra huấn luyện viên
-  Future<void> checkExistingCoach() async {
-    try {
-      final token = await LocalStorage.getValidToken();
-      if (token == null) {
-        throw Exception("Token không tồn tại");
-      }
-
-      final dio = Dio();
-      final response = await dio.get(
-        "http://54.251.220.228:8080/trainingSouls/users/checkExistCoach",
-        options: Options(
-          headers: {
-            "Authorization": "Bearer $token",
-          },
-        ),
-      );
-
-      if (response.statusCode == 200) {
-        setState(() {
-          hasExistingCoach = response.data == true;
-        });
-      }
-    } catch (e) {
-      print("❌ Lỗi khi kiểm tra huấn luyện viên: $e");
-    }
+    );
   }
 }
