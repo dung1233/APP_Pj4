@@ -1502,6 +1502,7 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
       },
     );
   }
+
   // Thêm biến để lưu timer cho đếm ngược
   Timer? _countdownTimer;
 
@@ -2203,6 +2204,9 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
         if (_scheduledTime != null) {
           return StatefulBuilder(
             builder: (context, setState) {
+              // Bắt đầu timer khi dialog hiển thị
+              _startCountdownTimer(setState);
+
               final now = DateTime.now();
               final difference = _scheduledTime!.difference(now);
 
@@ -2252,45 +2256,89 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
                 );
               }
 
-              return AlertDialog(
-                title: Text(
-                  'Thời gian còn lại',
-                  style: GoogleFonts.urbanist(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
+              return Dialog(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Container(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFF6F00).withOpacity(0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.timer,
+                          color: Color(0xFFFF6F00),
+                          size: 40,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      Text(
+                        'Thời gian còn lại',
+                        style: GoogleFonts.urbanist(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFF6F00).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          '${difference.inHours}h ${difference.inMinutes.remainder(60)}m ${difference.inSeconds.remainder(60)}s',
+                          style: GoogleFonts.urbanist(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF00FF22),
+                          ),
+                        ),
+                      ),
+                      if (_selectedTrainerId != null) ...[
+                        const SizedBox(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.person,
+                              color: Color(0xFFFF6F00),
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'HLV: ${trainerInfo.values.firstWhere((t) => t['id'] == _selectedTrainerId)['name']}',
+                              style: GoogleFonts.urbanist(
+                                fontSize: 16,
+                                color: const Color(0xFFFF6F00),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                      const SizedBox(height: 24),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: Text(
+                          'Đóng',
+                          style: GoogleFonts.urbanist(
+                            color: Colors.grey[600],
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                content: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Còn ${difference.inHours} giờ ${difference.inMinutes.remainder(60)} phút ${difference.inSeconds.remainder(60)} giây',
-                      style: GoogleFonts.urbanist(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Đã đặt lịch kiểm tra lúc ${_scheduledTime!.hour}:${_scheduledTime!.minute.toString().padLeft(2, '0')}',
-                      style: GoogleFonts.urbanist(
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ],
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    child: Text(
-                      'Đóng',
-                      style: GoogleFonts.urbanist(color: Colors.grey),
-                    ),
-                  ),
-                ],
               );
             },
           );
