@@ -13,6 +13,7 @@ import 'package:training_souls/data/local_storage.dart';
 import 'package:training_souls/screens/trainhome.dart';
 import 'dart:async'; // Thêm import Timer
 import 'package:training_souls/services/notification_service.dart';
+import 'package:training_souls/models/meal_suggestion.dart';
 
 class BeginnerDataWidget extends StatefulWidget {
   const BeginnerDataWidget({super.key});
@@ -56,7 +57,7 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
       debugPrint(
           "DEBUG: Results for day $day: $results"); // Kiểm tra dữ liệu trả về
       final isCompleted =
-      results.any((result) => result['exercise_name'] == exerciseName);
+          results.any((result) => result['exercise_name'] == exerciseName);
 
       _completionCache[cacheKey] = isCompleted;
       return isCompleted;
@@ -284,7 +285,7 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
     for (var day in workoutsByDay.keys) {
       final workouts = workoutsByDay[day]!;
       final completedAll = workouts.every((w) =>
-      w.status == "COMPLETED" ||
+          w.status == "COMPLETED" ||
           (w.exerciseName?.toLowerCase().contains("nghỉ ngơi") ?? false));
 
       if (completedAll) completedDays++;
@@ -293,112 +294,151 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
     return completedDays;
   }
 
-  void _showNutritionAdvice(int day) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
-        height: MediaQuery.of(context).size.height * 0.6,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "Tư vấn dinh dưỡng - Ngày $day",
-              style: GoogleFonts.urbanist(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 20),
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildMealSection(
-                      "Bữa sáng",
-                      Icons.breakfast_dining,
-                      [
-                        "2 quả trứng luộc",
-                        "1 lát bánh mì nguyên cám",
-                        "1 cốc sữa tươi không đường",
-                        "1 quả táo hoặc chuối"
-                      ],
-                    ),
-                    const SizedBox(height: 15),
-                    _buildMealSection(
-                      "Bữa trưa",
-                      Icons.restaurant,
-                      [
-                        "150g ức gà nướng",
-                        "1 chén cơm gạo lứt",
-                        "Rau xanh tùy thích",
-                        "1 chén súp rau củ"
-                      ],
-                    ),
-                    const SizedBox(height: 15),
-                    _buildMealSection(
-                      "Bữa tối",
-                      Icons.dinner_dining,
-                      [
-                        "150g cá hồi nướng",
-                        "Salad rau trộn",
-                        "1/2 chén cơm gạo lứt",
-                        "1 cốc sữa chua không đường"
-                      ],
-                    ),
-                    const SizedBox(height: 15),
-                    _buildMealSection(
-                      "Bữa phụ",
-                      Icons.fastfood,
-                      [
-                        "1 nắm hạt hỗn hợp",
-                        "Sinh tố protein sau tập",
-                        "Trái cây tươi",
-                        "Nước lọc (2-3 lít/ngày)"
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    Container(
-                      padding: const EdgeInsets.all(15),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFF0E6),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.info_outline,
-                            color: Color(0xFFFF6F00),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              "Lưu ý: Điều chỉnh khẩu phần theo nhu cầu cá nhân",
-                              style: GoogleFonts.urbanist(
-                                fontSize: 14,
-                                color: const Color(0xFFFF6F00),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
+  void _showNutritionAdvice(int day) async {
+    try {
+      // Lấy token
+      final token = await LocalStorage.getValidToken();
+      if (token == null) {
+        throw Exception("Token không tồn tại");
+      }
+
+      // Tìm workout cho ngày được chọn
+      final provider = Provider.of<WorkoutProvider>(context, listen: false);
+      final dayWorkouts = provider.workouts.where((w) => w.day == day).toList();
+
+      if (dayWorkouts.isEmpty || dayWorkouts.first.workoutDate == null) {
+        throw Exception("Không tìm thấy thông tin ngày tập");
+      }
+
+      // Format ngày theo yêu cầu của API
+      final workoutDate = DateTime.parse(dayWorkouts.first.workoutDate!);
+      final formattedDate =
+          "${workoutDate.year}-${workoutDate.month.toString().padLeft(2, '0')}-${workoutDate.day.toString().padLeft(2, '0')}";
+
+      // Gọi API
+      final dio = Dio();
+      final response = await dio.get(
+        "http://54.251.220.228:8080/trainingSouls/meals/suggest?date=$formattedDate",
+        options: Options(
+          headers: {
+            "Authorization": "Bearer $token",
+          },
         ),
-      ),
-    );
+      );
+
+      if (response.statusCode == 200) {
+        final mealSuggestion = MealSuggestion.fromJson(response.data);
+
+        // Parse kết quả thành các phần
+        final meals = mealSuggestion.result.split('\n\n');
+
+        showModalBottomSheet(
+          context: context,
+          backgroundColor: Colors.white,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          builder: (context) => Container(
+            padding: const EdgeInsets.all(20),
+            height: MediaQuery.of(context).size.height * 0.6,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Tư vấn dinh dưỡng - Ngày $day",
+                  style: GoogleFonts.urbanist(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: meals.map((meal) {
+                        final parts = meal.split('\n');
+                        final title = parts[0].replaceAll(':', '');
+
+                        // Tìm phần "Nên ăn" và "Không nên ăn"
+                        final shouldEatIndex =
+                            parts.indexWhere((p) => p.contains('- Nên ăn:'));
+                        final shouldNotEatIndex = parts
+                            .indexWhere((p) => p.contains('- Không nên ăn:'));
+
+                        // Lấy danh sách món nên ăn
+                        List<String> shouldEatItems = [];
+                        if (shouldEatIndex != -1) {
+                          final shouldEatText = parts[shouldEatIndex]
+                              .replaceAll('- Nên ăn:', '')
+                              .trim();
+                          shouldEatItems = shouldEatText
+                              .split(', ')
+                              .map((item) => item.trim())
+                              .toList();
+                        }
+
+                        // Lấy danh sách món không nên ăn
+                        List<String> shouldNotEatItems = [];
+                        if (shouldNotEatIndex != -1) {
+                          final shouldNotEatText = parts[shouldNotEatIndex]
+                              .replaceAll('- Không nên ăn:', '')
+                              .trim();
+                          shouldNotEatItems = shouldNotEatText
+                              .split(', ')
+                              .map((item) => item.trim())
+                              .toList();
+                        }
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildMealSection(
+                              title,
+                              _getMealIcon(title),
+                              shouldEatItems,
+                              shouldNotEatItems,
+                            ),
+                            const SizedBox(height: 15),
+                          ],
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      } else {
+        throw Exception("Lỗi khi lấy dữ liệu: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("❌ Lỗi khi lấy tư vấn dinh dưỡng: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Có lỗi xảy ra: ${e.toString()}"),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
-  Widget _buildMealSection(String title, IconData icon, List<String> items) {
+  IconData _getMealIcon(String mealTitle) {
+    switch (mealTitle.toLowerCase()) {
+      case 'bữa sáng':
+        return Icons.breakfast_dining;
+      case 'bữa trưa':
+        return Icons.restaurant;
+      case 'bữa tối':
+        return Icons.dinner_dining;
+      default:
+        return Icons.fastfood;
+    }
+  }
+
+  Widget _buildMealSection(String title, IconData icon, List<String> shouldEat,
+      List<String> shouldNotEat) {
     return Container(
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
@@ -423,20 +463,60 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
             ],
           ),
           const SizedBox(height: 10),
-          ...items.map((item) => Padding(
-            padding: const EdgeInsets.only(left: 34, bottom: 5),
-            child: Row(
-              children: [
-                const Icon(Icons.check_circle,
-                    size: 16, color: Colors.green),
-                const SizedBox(width: 8),
-                Text(
-                  item,
-                  style: GoogleFonts.urbanist(fontSize: 14),
-                ),
-              ],
+          if (shouldEat.isNotEmpty) ...[
+            Text(
+              "Nên ăn:",
+              style: GoogleFonts.urbanist(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: Colors.green,
+              ),
             ),
-          )),
+            const SizedBox(height: 5),
+            ...shouldEat.map((item) => Padding(
+                  padding: const EdgeInsets.only(left: 34, bottom: 5),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.check_circle,
+                          size: 16, color: Colors.green),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          item,
+                          style: GoogleFonts.urbanist(fontSize: 14),
+                        ),
+                      ),
+                    ],
+                  ),
+                )),
+          ],
+          if (shouldNotEat.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Text(
+              "Không nên ăn:",
+              style: GoogleFonts.urbanist(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: Colors.red,
+              ),
+            ),
+            const SizedBox(height: 5),
+            ...shouldNotEat.map((item) => Padding(
+                  padding: const EdgeInsets.only(left: 34, bottom: 5),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.cancel, size: 16, color: Colors.red),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          item,
+                          style: GoogleFonts.urbanist(fontSize: 14),
+                        ),
+                      ),
+                    ],
+                  ),
+                )),
+          ],
         ],
       ),
     );
@@ -457,92 +537,92 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
           child: provider.isLoading
               ? const Center(child: CircularProgressIndicator())
               : weeks.isEmpty
-              ? const Center(child: Text("Không có bài tập nào."))
-              : Column(
-            children: weeks.asMap().entries.map((entry) {
-              int weekIndex = entry.key;
-              final weekData = entry.value;
-              final Map<int, List<Workout>> workoutsByDay = {};
-              for (var workout in weekData) {
-                if (workout.day != null) {
-                  workoutsByDay
-                      .putIfAbsent(workout.day!, () => [])
-                      .add(workout);
-                }
-              }
+                  ? const Center(child: Text("Không có bài tập nào."))
+                  : Column(
+                      children: weeks.asMap().entries.map((entry) {
+                        int weekIndex = entry.key;
+                        final weekData = entry.value;
+                        final Map<int, List<Workout>> workoutsByDay = {};
+                        for (var workout in weekData) {
+                          if (workout.day != null) {
+                            workoutsByDay
+                                .putIfAbsent(workout.day!, () => [])
+                                .add(workout);
+                          }
+                        }
 
-              // Tính số ngày đã hoàn thành
-              final completedDays = _getCompletedDaysInWeek(weekData);
-              final totalDays = workoutsByDay.length;
+                        // Tính số ngày đã hoàn thành
+                        final completedDays = _getCompletedDaysInWeek(weekData);
+                        final totalDays = workoutsByDay.length;
 
-              return Padding(
-                padding: const EdgeInsets.symmetric(
-                    vertical: 5.0, horizontal: 10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(left: 5),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 5),
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(colors: [
-                                Color(0xFFFF6F00),
-                                Color(0xFFFF6F00)
-                              ]),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              'Week ${weekIndex + 1}',
-                              style: GoogleFonts.urbanist(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 5.0, horizontal: 10),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.only(left: 5),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 5),
+                                      decoration: BoxDecoration(
+                                        gradient: const LinearGradient(colors: [
+                                          Color(0xFFFF6F00),
+                                          Color(0xFFFF6F00)
+                                        ]),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        'Week ${weekIndex + 1}',
+                                        style: GoogleFonts.urbanist(
+                                          color: Colors.white,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                  ],
+                                ),
                               ),
-                            ),
+                              const SizedBox(height: 10),
+                              workoutsByDay.isEmpty
+                                  ? Center(
+                                      child: Text(
+                                          "Không có bài tập trong tuần này"),
+                                    )
+                                  : ListView.builder(
+                                      shrinkWrap: true,
+                                      physics:
+                                          const NeverScrollableScrollPhysics(),
+                                      itemCount: workoutsByDay.keys.length,
+                                      itemBuilder: (context, index) {
+                                        final day =
+                                            workoutsByDay.keys.elementAt(index);
+                                        final dayWorkouts =
+                                            workoutsByDay[day] ?? [];
+                                        final completedCount = dayWorkouts
+                                            .where(
+                                                (w) => w.status == "COMPLETED")
+                                            .length;
+                                        final isExpanded =
+                                            expandedDays[day] ?? false;
+
+                                        return _buildDayCard(day, dayWorkouts,
+                                            completedCount, isExpanded);
+                                      },
+                                    ),
+                              // Thêm card kiểm tra tuần
+
+                              _buildWeeklyTestCard(weekIndex + 1),
+                            ],
                           ),
-                          const SizedBox(width: 10),
-                        ],
-                      ),
+                        );
+                      }).toList(),
                     ),
-                    const SizedBox(height: 10),
-                    workoutsByDay.isEmpty
-                        ? Center(
-                      child: Text(
-                          "Không có bài tập trong tuần này"),
-                    )
-                        : ListView.builder(
-                      shrinkWrap: true,
-                      physics:
-                      const NeverScrollableScrollPhysics(),
-                      itemCount: workoutsByDay.keys.length,
-                      itemBuilder: (context, index) {
-                        final day =
-                        workoutsByDay.keys.elementAt(index);
-                        final dayWorkouts =
-                            workoutsByDay[day] ?? [];
-                        final completedCount = dayWorkouts
-                            .where(
-                                (w) => w.status == "COMPLETED")
-                            .length;
-                        final isExpanded =
-                            expandedDays[day] ?? false;
-
-                        return _buildDayCard(day, dayWorkouts,
-                            completedCount, isExpanded);
-                      },
-                    ),
-                    // Thêm card kiểm tra tuần
-
-                    _buildWeeklyTestCard(weekIndex + 1),
-                  ],
-                ),
-              );
-            }).toList(),
-          ),
         );
       },
     );
@@ -567,7 +647,7 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
                   width: MediaQuery.of(context).size.width * 0.93,
                   height: MediaQuery.of(context).size.height * 0.15,
                   padding:
-                  const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: const [
@@ -758,31 +838,31 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
           ),
           isUpdating && workout.id != null
               ? const SizedBox(
-            width: 25,
-            height: 25,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          )
+                  width: 25,
+                  height: 25,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
               : InkWell(
-            onTap: isRestDay ? null : () => _toggleWorkoutStatus(workout),
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: displayStatus == "COMPLETED"
-                    ? Colors.green.withOpacity(0.1)
-                    : Colors.grey.withOpacity(0.1),
-              ),
-              child: Icon(
-                displayStatus == "COMPLETED"
-                    ? Icons.check_circle
-                    : Icons.radio_button_unchecked,
-                color: displayStatus == "COMPLETED"
-                    ? const Color.fromARGB(255, 14, 228, 50)
-                    : Colors.grey,
-                size: 25,
-              ),
-            ),
-          ),
+                  onTap: isRestDay ? null : () => _toggleWorkoutStatus(workout),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: displayStatus == "COMPLETED"
+                          ? Colors.green.withOpacity(0.1)
+                          : Colors.grey.withOpacity(0.1),
+                    ),
+                    child: Icon(
+                      displayStatus == "COMPLETED"
+                          ? Icons.check_circle
+                          : Icons.radio_button_unchecked,
+                      color: displayStatus == "COMPLETED"
+                          ? const Color.fromARGB(255, 14, 228, 50)
+                          : Colors.grey,
+                      size: 25,
+                    ),
+                  ),
+                ),
         ],
       ),
     );
@@ -839,7 +919,7 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
 
     try {
       final newStatus =
-      workout.status == "COMPLETED" ? "NOT_STARTED" : "COMPLETED";
+          workout.status == "COMPLETED" ? "NOT_STARTED" : "COMPLETED";
 
       // Thực hiện cập nhật trong DB
       await dbHelper.updateWorkoutStatus(workout.id!, newStatus);
@@ -947,7 +1027,7 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
               ),
               Container(
                 padding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(20),
@@ -995,7 +1075,7 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
                     isTestTime ? 'Đã đến giờ kiểm tra' : 'Đã đặt lịch kiểm tra',
                     style: GoogleFonts.urbanist(
                       color:
-                      isTestTime ? Colors.green : const Color(0xFFFF6F00),
+                          isTestTime ? Colors.green : const Color(0xFFFF6F00),
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                     ),
@@ -1022,9 +1102,9 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
                         Text(
                           _selectedTrainerId != null
                               ? trainerInfo.values.firstWhere(
-                                (t) => t['id'] == _selectedTrainerId,
-                            orElse: () => {'name': 'Unknown'},
-                          )['name']
+                                  (t) => t['id'] == _selectedTrainerId,
+                                  orElse: () => {'name': 'Unknown'},
+                                )['name']
                               : 'Unknown',
                           style: GoogleFonts.urbanist(
                             color: const Color(0xFFFF6F00),
@@ -1187,7 +1267,7 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
       ],
       'image': 'assets/img/coach.jpg',
       'description':
-      'Chuyên gia về cải thiện thể lực và sức bền, có kinh nghiệm làm việc với vận động viên chuyên nghiệp.',
+          'Chuyên gia về cải thiện thể lực và sức bền, có kinh nghiệm làm việc với vận động viên chuyên nghiệp.',
     },
     'trainer2': {
       'id': '104641193',
@@ -1200,7 +1280,7 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
       ],
       'image': 'assets/img/coachrun.jpg',
       'description':
-      'Chuyên gia về cải thiện tốc độ và kỹ thuật chạy, giúp học viên đạt được mục tiêu cá nhân.',
+          'Chuyên gia về cải thiện tốc độ và kỹ thuật chạy, giúp học viên đạt được mục tiêu cá nhân.',
     },
     'trainer3': {
       'id': '161411928',
@@ -1213,7 +1293,7 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
       ],
       'image': 'assets/img/coachpush.jpg',
       'description':
-      'Chuyên gia về phát triển sức mạnh và cơ bắp, có kinh nghiệm với nhiều môn thể thao khác nhau.',
+          'Chuyên gia về phát triển sức mạnh và cơ bắp, có kinh nghiệm với nhiều môn thể thao khác nhau.',
     },
   };
 
@@ -1353,7 +1433,7 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
                             ...trainer['certifications'].map<Widget>((cert) =>
                                 Padding(
                                   padding:
-                                  const EdgeInsets.symmetric(vertical: 5),
+                                      const EdgeInsets.symmetric(vertical: 5),
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
@@ -1377,7 +1457,7 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
                                 onPressed: () async {
                                   try {
                                     final token =
-                                    await LocalStorage.getValidToken();
+                                        await LocalStorage.getValidToken();
                                     if (token == null) {
                                       throw Exception("Token không tồn tại");
                                     }
@@ -1483,14 +1563,14 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: List.generate(
                     trainerInfo.length,
-                        (index) => Container(
+                    (index) => Container(
                       margin: const EdgeInsets.symmetric(horizontal: 4),
                       width: 8,
                       height: 8,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: pageController.hasClients &&
-                            pageController.page?.round() == index
+                                pageController.page?.round() == index
                             ? const Color(0xFFFF6B00)
                             : Colors.grey,
                       ),
@@ -1570,55 +1650,55 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
                         width: double.infinity,
                         child: !hasExistingCoach
                             ? ElevatedButton.icon(
-                          onPressed: () =>
-                              _showTrainerSelectionDialog(context),
-                          icon: const Icon(Icons.person),
-                          label: Text(
-                            _selectedTrainerId != null
-                                ? 'HLV: ${trainerInfo.values.firstWhere((t) => t['id'] == _selectedTrainerId)['name']}'
-                                : 'Chọn huấn luyện viên',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: _selectedTrainerId != null
-                                ? Colors.green
-                                : const Color(0xFFFF6B00),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 20,
-                              vertical: 12,
-                            ),
-                          ),
-                        )
+                                onPressed: () =>
+                                    _showTrainerSelectionDialog(context),
+                                icon: const Icon(Icons.person),
+                                label: Text(
+                                  _selectedTrainerId != null
+                                      ? 'HLV: ${trainerInfo.values.firstWhere((t) => t['id'] == _selectedTrainerId)['name']}'
+                                      : 'Chọn huấn luyện viên',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: _selectedTrainerId != null
+                                      ? Colors.green
+                                      : const Color(0xFFFF6B00),
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                    vertical: 12,
+                                  ),
+                                ),
+                              )
                             : Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 12,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.green.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(
-                                Icons.check_circle,
-                                color: Colors.green,
-                                size: 20,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Đã có huấn luyện viên',
-                                style: GoogleFonts.urbanist(
-                                  color: Colors.green,
-                                  fontWeight: FontWeight.w500,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 12,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.green.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(
+                                      Icons.check_circle,
+                                      color: Colors.green,
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Đã có huấn luyện viên',
+                                      style: GoogleFonts.urbanist(
+                                        color: Colors.green,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                            ],
-                          ),
-                        ),
                       ),
 
                       const SizedBox(height: 20),
@@ -1645,7 +1725,7 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
                             InkWell(
                               onTap: () async {
                                 final DateTime? pickedDate =
-                                await showDatePicker(
+                                    await showDatePicker(
                                   context: context,
                                   initialDate: now,
                                   firstDate: now,
@@ -1697,7 +1777,7 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
                                 ),
                                 child: Row(
                                   mainAxisAlignment:
-                                  MainAxisAlignment.spaceBetween,
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
                                       selectedTime != null
@@ -1738,14 +1818,14 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
                             InkWell(
                               onTap: () async {
                                 final TimeOfDay? pickedTime =
-                                await showTimePicker(
+                                    await showTimePicker(
                                   context: context,
                                   initialTime: selectedTime != null
                                       ? TimeOfDay(
-                                      hour: selectedTime!.hour,
-                                      minute: selectedTime!.minute)
+                                          hour: selectedTime!.hour,
+                                          minute: selectedTime!.minute)
                                       : TimeOfDay(
-                                      hour: (now.hour + 1) % 24, minute: 0),
+                                          hour: (now.hour + 1) % 24, minute: 0),
                                   builder: (context, child) {
                                     return Theme(
                                       data: Theme.of(context).copyWith(
@@ -1792,7 +1872,7 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
                                 ),
                                 child: Row(
                                   mainAxisAlignment:
-                                  MainAxisAlignment.spaceBetween,
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
                                       selectedTime != null
@@ -1816,95 +1896,95 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
                         width: double.infinity,
                         child: ElevatedButton(
                           onPressed: (_selectedTrainerId != null &&
-                              selectedTime != null &&
-                              isTimeValid())
+                                  selectedTime != null &&
+                                  isTimeValid())
                               ? () async {
-                            try {
-                              final token =
-                              await LocalStorage.getValidToken();
-                              if (token == null) {
-                                throw Exception("Token không tồn tại");
-                              }
+                                  try {
+                                    final token =
+                                        await LocalStorage.getValidToken();
+                                    if (token == null) {
+                                      throw Exception("Token không tồn tại");
+                                    }
 
-                              // Format date string cho API theo định dạng yyyy-MM-ddTHH:mm:00
-                              final dateStr = "${selectedTime!.year}-"
-                                  "${selectedTime!.month.toString().padLeft(2, '0')}-"
-                                  "${selectedTime!.day.toString().padLeft(2, '0')}T"
-                                  "${selectedTime!.hour.toString().padLeft(2, '0')}:"
-                                  "${selectedTime!.minute.toString().padLeft(2, '0')}:00";
+                                    // Format date string cho API theo định dạng yyyy-MM-ddTHH:mm:00
+                                    final dateStr = "${selectedTime!.year}-"
+                                        "${selectedTime!.month.toString().padLeft(2, '0')}-"
+                                        "${selectedTime!.day.toString().padLeft(2, '0')}T"
+                                        "${selectedTime!.hour.toString().padLeft(2, '0')}:"
+                                        "${selectedTime!.minute.toString().padLeft(2, '0')}:00";
 
-                              final dio = Dio();
-                              dio.options.headers["Authorization"] =
-                              "Bearer $token";
-                              dio.options.headers["Content-Type"] =
-                              "application/json";
+                                    final dio = Dio();
+                                    dio.options.headers["Authorization"] =
+                                        "Bearer $token";
+                                    dio.options.headers["Content-Type"] =
+                                        "application/json";
 
-                              // Gọi API với endpoint đúng format
-                              final response = await dio.post(
-                                  "http://54.251.220.228:8080/trainingSouls/notifications/notifyCoachLevelTest/$dateStr");
+                                    // Gọi API với endpoint đúng format
+                                    final response = await dio.post(
+                                        "http://54.251.220.228:8080/trainingSouls/notifications/notifyCoachLevelTest/$dateStr");
 
-                              if (response.statusCode == 200) {
-                                await _saveScheduledTime(selectedTime!);
-                                this.setState(() {
-                                  _scheduledTime = selectedTime;
-                                });
+                                    if (response.statusCode == 200) {
+                                      await _saveScheduledTime(selectedTime!);
+                                      this.setState(() {
+                                        _scheduledTime = selectedTime;
+                                      });
 
-                                // Thêm thông báo nhắc nhở trước 1 phút
-                                final notificationTime = selectedTime!
-                                    .subtract(Duration(minutes: 1));
-                                await NotificationService()
-                                    .scheduleNotification(
-                                  title: 'Chuẩn bị kiểm tra! ⏰',
-                                  body:
-                                  'Bạn có lịch kiểm tra với ${trainerInfo.values.firstWhere((t) => t['id'] == _selectedTrainerId)['name']} trong 1 phút nữa! 💪',
-                                  scheduledDate: notificationTime,
-                                );
-                                Navigator.pop(context);
-                                if (!context.mounted) return;
-                                ScaffoldMessenger.of(context)
-                                    .showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      'Đã đặt lịch kiểm tra lúc ${selectedTime!.hour.toString().padLeft(2, '0')}:${selectedTime!.minute.toString().padLeft(2, '0')} ngày ${selectedTime!.day}/${selectedTime!.month}/${selectedTime!.year} với ${trainerInfo.values.firstWhere((t) => t['id'] == _selectedTrainerId)['name']}',
-                                    ),
-                                    backgroundColor: Colors.green,
-                                  ),
-                                );
-                                Navigator.pushAndRemoveUntil(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                    const Trainhome(),
-                                  ),
-                                      (Route<dynamic> route) => false,
-                                );
-                              } else {
-                                throw Exception(
-                                    "Lỗi khi gửi thông báo: ${response.statusCode}");
-                              }
-                            } catch (e) {
-                              print("❌ Lỗi khi gửi thông báo: $e");
-                              if (e is DioException) {
-                                print(
-                                    "Response data: ${e.response?.data}");
-                                print(
-                                    "Response status: ${e.response?.statusCode}");
-                              }
-                              if (!context.mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                      "Có lỗi xảy ra khi đặt lịch: ${e.toString()}"),
-                                  backgroundColor: Colors.red,
-                                ),
-                              );
-                            }
-                          }
+                                      // Thêm thông báo nhắc nhở trước 1 phút
+                                      final notificationTime = selectedTime!
+                                          .subtract(Duration(minutes: 1));
+                                      await NotificationService()
+                                          .scheduleNotification(
+                                        title: 'Chuẩn bị kiểm tra! ⏰',
+                                        body:
+                                            'Bạn có lịch kiểm tra với ${trainerInfo.values.firstWhere((t) => t['id'] == _selectedTrainerId)['name']} trong 1 phút nữa! 💪',
+                                        scheduledDate: notificationTime,
+                                      );
+                                      Navigator.pop(context);
+                                      if (!context.mounted) return;
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            'Đã đặt lịch kiểm tra lúc ${selectedTime!.hour.toString().padLeft(2, '0')}:${selectedTime!.minute.toString().padLeft(2, '0')} ngày ${selectedTime!.day}/${selectedTime!.month}/${selectedTime!.year} với ${trainerInfo.values.firstWhere((t) => t['id'] == _selectedTrainerId)['name']}',
+                                          ),
+                                          backgroundColor: Colors.green,
+                                        ),
+                                      );
+                                      Navigator.pushAndRemoveUntil(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              const Trainhome(),
+                                        ),
+                                        (Route<dynamic> route) => false,
+                                      );
+                                    } else {
+                                      throw Exception(
+                                          "Lỗi khi gửi thông báo: ${response.statusCode}");
+                                    }
+                                  } catch (e) {
+                                    print("❌ Lỗi khi gửi thông báo: $e");
+                                    if (e is DioException) {
+                                      print(
+                                          "Response data: ${e.response?.data}");
+                                      print(
+                                          "Response status: ${e.response?.statusCode}");
+                                    }
+                                    if (!context.mounted) return;
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                            "Có lỗi xảy ra khi đặt lịch: ${e.toString()}"),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                  }
+                                }
                               : null,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: (_selectedTrainerId != null &&
-                                selectedTime != null &&
-                                isTimeValid())
+                                    selectedTime != null &&
+                                    isTimeValid())
                                 ? Colors.green
                                 : Colors.grey,
                             padding: const EdgeInsets.symmetric(
@@ -2054,7 +2134,7 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
                                 SizedBox(height: 16),
                                 Text(
                                   'Tính năng này yêu cầu tài khoản Premium để sử dụng. '
-                                      'Nâng cấp ngay để được huấn luyện viên kiểm tra và nhận phản hồi chuyên sâu.',
+                                  'Nâng cấp ngay để được huấn luyện viên kiểm tra và nhận phản hồi chuyên sâu.',
                                   style: GoogleFonts.urbanist(
                                     fontSize: 16,
                                     color: Colors.grey.shade700,
@@ -2103,9 +2183,9 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
                                       context: context,
                                       barrierLabel: 'Dismiss',
                                       barrierColor:
-                                      Colors.black.withOpacity(0.5),
+                                          Colors.black.withOpacity(0.5),
                                       transitionDuration:
-                                      const Duration(milliseconds: 300),
+                                          const Duration(milliseconds: 300),
                                       pageBuilder: (_, __, ___) {
                                         return AccountTypePopup(
                                           selectedOption: 'Basic',
