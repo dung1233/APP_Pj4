@@ -28,12 +28,12 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  void _showTestNotification() async {
-    await NotificationService().showNotification(
-      title: 'Test Notification 🎉',
-      body: 'This is a test notification from Training Souls! 💪',
-    );
-  }
+  // void _showTestNotification() async {
+  //   await NotificationService().showNotification(
+  //     title: 'Test Notification 🎉',
+  //     body: 'This is a test notification from Training Souls! 💪',
+  //   );
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -99,23 +99,23 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
             SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _showTestNotification,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                padding: EdgeInsets.symmetric(horizontal: 100, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                ),
-              ),
-              child: Text(
-                "Test Notification",
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.white,
-                ),
-              ),
-            ),
+            // ElevatedButton(
+            //   onPressed: _showTestNotification,
+            //   style: ElevatedButton.styleFrom(
+            //     backgroundColor: Colors.blue,
+            //     padding: EdgeInsets.symmetric(horizontal: 100, vertical: 12),
+            //     shape: RoundedRectangleBorder(
+            //       borderRadius: BorderRadius.circular(30),
+            //     ),
+            //   ),
+            //   child: Text(
+            //     "Test Notification",
+            //     style: TextStyle(
+            //       fontSize: 16,
+            //       color: Colors.white,
+            //     ),
+            //   ),
+            // ),
             Spacer(),
           ],
         ),

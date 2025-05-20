@@ -33,6 +33,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _showMessage("⚠️ Vui lòng nhập đầy đủ thông tin!");
       return;
     }
+    if (name.length < 6) {
+      _showMessage("⚠️ Họ và tên phải có ít nhất 6 ký tự!");
+      return;
+    }
     if (password != confirmPassword) {
       _showMessage("⚠️ Mật khẩu nhập lại không khớp!");
       return;
@@ -54,6 +58,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       // 🎉 Hiển thị thông báo thành công
       _showMessage("🎉 Đăng ký thành công!", isSuccess: true);
+      await showSuccessDialog();
 
       // ⏳ Chuyển về màn hình đăng nhập sau 2 giây
       Future.delayed(const Duration(seconds: 2), () {
@@ -75,6 +80,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
         content: Text(message),
         backgroundColor: isSuccess ? Colors.green : Colors.red,
       ),
+    );
+  }
+  Future<void> showSuccessDialog() async {
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("🎉 Đăng ký thành công!"),
+          content: const Text("Bạn hãy vào email để xác thực tài khoản."),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("OK"),
+            )
+          ],
+        );
+      },
     );
   }
 

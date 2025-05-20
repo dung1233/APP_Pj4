@@ -294,8 +294,18 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
     return completedDays;
   }
 
+  // Thay đổi cách quản lý loading state
+  int? _loadingDay;
+
   void _showNutritionAdvice(int day) async {
+    // Kiểm tra nếu ngày này đang loading thì không cho phép ấn tiếp
+    if (_loadingDay == day) return;
+
     try {
+      setState(() {
+        _loadingDay = day;
+      });
+
       // Lấy token
       final token = await LocalStorage.getValidToken();
       if (token == null) {
@@ -315,8 +325,11 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
       final formattedDate =
           "${workoutDate.year}-${workoutDate.month.toString().padLeft(2, '0')}-${workoutDate.day.toString().padLeft(2, '0')}";
 
-      // Gọi API
+      // Gọi API với timeout
       final dio = Dio();
+      dio.options.connectTimeout = const Duration(seconds: 5);
+      dio.options.receiveTimeout = const Duration(seconds: 5);
+
       final response = await dio.get(
         "http://54.251.220.228:8080/trainingSouls/meals/suggest?date=$formattedDate",
         options: Options(
@@ -331,6 +344,8 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
 
         // Parse kết quả thành các phần
         final meals = mealSuggestion.result.split('\n\n');
+
+        if (!mounted) return;
 
         showModalBottomSheet(
           context: context,
@@ -415,12 +430,19 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
       }
     } catch (e) {
       print("❌ Lỗi khi lấy tư vấn dinh dưỡng: $e");
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text("Có lỗi xảy ra: ${e.toString()}"),
           backgroundColor: Colors.red,
         ),
       );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _loadingDay = null;
+        });
+      }
     }
   }
 
@@ -734,15 +756,21 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
                         ),
                       ],
                     ),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.restaurant_menu,
-                          color: Color(0xFFFF6F00),
-                          size: 20,
-                        ),
-                      ],
-                    ),
+                    child: _loadingDay == day
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                  Color(0xFFFF6F00)),
+                            ),
+                          )
+                        : const Icon(
+                            Icons.restaurant_menu,
+                            color: Color(0xFFFF6F00),
+                            size: 20,
+                          ),
                   ),
                 ),
               ),

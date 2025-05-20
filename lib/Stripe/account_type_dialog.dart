@@ -320,15 +320,15 @@ class _AccountTypePopupState extends State<AccountTypePopup>
                                                 : Colors.orange,
                                           ),
                                         ),
-                                        Text(
-                                          " USD",
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            color: isSelected
-                                                ? Colors.white70
-                                                : Colors.grey[600],
-                                          ),
-                                        ),
+                                        // Text(
+                                        //   " USD",
+                                        //   style: TextStyle(
+                                        //     fontSize: 14,
+                                        //     color: isSelected
+                                        //         ? Colors.white70
+                                        //         : Colors.grey[600],
+                                        //   ),
+                                        // ),
                                       ],
                                     ),
                                   ],

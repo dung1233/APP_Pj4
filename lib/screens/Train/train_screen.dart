@@ -43,6 +43,7 @@ class _TrainScreenState extends State<TrainScreen> {
     printBasicWorkoutsInfo();
     _loadUserProfile(dbHelper);
   }
+
   Future<void> _loadUserProfile(DatabaseHelper dbHelper) async {
     try {
       // First ensure database tables exist
@@ -93,7 +94,7 @@ class _TrainScreenState extends State<TrainScreen> {
                   'bmi': userProfile['bmi'] ?? 0.0,
                   'bodyFatPercentage': userProfile['bodyFatPercentage'] ?? 0.0,
                   'muscleMassPercentage':
-                  userProfile['muscleMassPercentage'] ?? 0.0,
+                      userProfile['muscleMassPercentage'] ?? 0.0,
                   'level': userProfile['level'] ?? 'Beginner',
                   'strength': userProfile['strength'] ?? 0,
                   'deathPoints': userProfile['deathPoints'] ?? 0,
@@ -243,12 +244,17 @@ class _TrainScreenState extends State<TrainScreen> {
     }
 
     try {
-      await workoutProvider.syncWorkouts(authProvider.token!);
+      // Refresh cả workouts và user profile
+      await Future.wait([
+        workoutProvider.syncWorkouts(authProvider.token!),
+        _loadUserProfile(dbHelper), // Thêm refresh user profile
+      ]);
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(workoutProvider.workouts.isNotEmpty
-                ? 'Đã cập nhật danh sách bài tập!'
+                ? 'Đã cập nhật dữ liệu!'
                 : 'Không có dữ liệu mới.'),
           ),
         );
@@ -335,7 +341,9 @@ class _TrainScreenState extends State<TrainScreen> {
                         description: "Bài tập.",
                         child: BeginerScrenn(),
                       ),
-                      _buildSection("Chế Độ ${_userProfile['level']?.toString() ?? "??"}", BeginnerDataWidget()),
+                      _buildSection(
+                          "Chế Độ ${_capitalizeWords(_userProfile['level']?.toString() ?? "??")}",
+                          BeginnerDataWidget()),
                       // _buildSection("Medium Section", MediumDataWidget())
                     ],
                   ),
@@ -397,5 +405,32 @@ class _TrainScreenState extends State<TrainScreen> {
     await prefs.setBool('hasSeenTutorial', true);
     if (mounted) setState(() => _hasSeenTutorial = true);
     debugPrint('✅ Tutorial marked as seen');
+  }
+
+  // Thêm hàm helper để viết hoa chữ cái đầu của mỗi từ
+  String _capitalizeWords(String text) {
+    if (text.isEmpty) return text;
+
+    // Xử lý các trường hợp đặc biệt
+    final Map<String, String> specialCases = {
+      'cao cấp': 'Cao Cấp',
+      'trung cấp': 'Trung Cấp',
+      'người mới': 'Người Mới',
+      'beginner': 'Người Mới',
+      'intermediate': 'Trung Cấp',
+      'advanced': 'Cao Cấp'
+    };
+
+    // Kiểm tra nếu là trường hợp đặc biệt
+    final lowerText = text.toLowerCase();
+    if (specialCases.containsKey(lowerText)) {
+      return specialCases[lowerText]!;
+    }
+
+    // Nếu không phải trường hợp đặc biệt, viết hoa chữ cái đầu của mỗi từ
+    return text.split(' ').map((word) {
+      if (word.isEmpty) return word;
+      return word[0].toUpperCase() + word.substring(1).toLowerCase();
+    }).join(' ');
   }
 }
