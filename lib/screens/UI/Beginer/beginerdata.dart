@@ -342,7 +342,8 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
       if (response.statusCode == 200) {
         final mealSuggestion = MealSuggestion.fromJson(response.data);
 
-        // Parse kết quả thành các phần
+        // Parse kết quả thành các phần thành dữ liệu 3 bữa rồi truyền vào thì chỉ có 1 bữa được hiển thị
+        //Nên việc còn lại thực ra chỉ là tách hiển thị thôi
         final meals = mealSuggestion.result.split('\n\n');
 
         if (!mounted) return;
@@ -742,7 +743,7 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
                 top: 10,
                 right: 10,
                 child: GestureDetector(
-                  onTap: () => _showNutritionAdvice(day),
+                  onTap: () => _handleNutritionButtonClick(day),
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
@@ -2638,6 +2639,235 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
       }
     } catch (e) {
       print("❌ Lỗi khi kiểm tra huấn luyện viên: $e");
+    }
+  }
+
+  Future<void> _handleNutritionButtonClick(int day) async {
+    try {
+      final token = await LocalStorage.getValidToken();
+      if (token == null) {
+        throw Exception("Token không tồn tại");
+      }
+
+      final dio = Dio();
+      final client = UserService(dio);
+      final response = await client.getMyInfo("Bearer $token");
+
+      if (response.code == 0 && response.result != null) {
+        final accountType =
+            response.result?.accountType?.toLowerCase() ?? 'basic';
+
+        if (accountType != 'premium') {
+          // Hiển thị dialog thiết kế mới cho yêu cầu Premium
+          showGeneralDialog(
+            context: context,
+            barrierDismissible: true,
+            barrierLabel: 'Dismiss',
+            barrierColor: Colors.black.withOpacity(0.6),
+            transitionDuration: const Duration(milliseconds: 300),
+            pageBuilder: (_, __, ___) {
+              return Center(
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: Material(
+                      color: Colors.white,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Banner gradient header
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(vertical: 25),
+                            decoration: const BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [Color(0xFFFF6F00), Color(0xFFFF6F00)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                            ),
+                            child: Column(
+                              children: [
+                                const Icon(
+                                  Icons.workspace_premium,
+                                  color: Colors.white,
+                                  size: 48,
+                                ),
+                                const SizedBox(height: 10),
+                                Text(
+                                  'Tính năng Premium',
+                                  style: GoogleFonts.urbanist(
+                                    color: Colors.white,
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Content
+                          Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: Column(
+                              children: [
+                                Text(
+                                  'Tư vấn dinh dưỡng chuyên sâu',
+                                  style: GoogleFonts.urbanist(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Tính năng này yêu cầu tài khoản Premium để sử dụng. '
+                                  'Nâng cấp ngay để nhận tư vấn dinh dưỡng chi tiết và chuyên sâu.',
+                                  style: GoogleFonts.urbanist(
+                                    fontSize: 16,
+                                    color: Colors.grey.shade700,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 24),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: _buildFeatureItem(
+                                        Icons.restaurant_menu,
+                                        'Thực đơn chi tiết',
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: _buildFeatureItem(
+                                        Icons.timer,
+                                        'Lịch ăn uống',
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 16),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: _buildFeatureItem(
+                                        Icons.health_and_safety,
+                                        'Dinh dưỡng cân bằng',
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: _buildFeatureItem(
+                                        Icons.trending_up,
+                                        'Theo dõi tiến độ',
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 32),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                    showGeneralDialog(
+                                      context: context,
+                                      barrierLabel: 'Dismiss',
+                                      barrierColor:
+                                          Colors.black.withOpacity(0.5),
+                                      transitionDuration:
+                                          const Duration(milliseconds: 300),
+                                      pageBuilder: (_, __, ___) {
+                                        return AccountTypePopup(
+                                          selectedOption: 'Basic',
+                                          options: ['Basic', 'Premium'],
+                                          onSelected: (selectedType) {
+                                            print(
+                                                "🔶 Người dùng đã chọn gói: $selectedType");
+                                          },
+                                        );
+                                      },
+                                      transitionBuilder:
+                                          (_, animation, __, child) {
+                                        return Transform.scale(
+                                          scale: animation.value,
+                                          child: Opacity(
+                                            opacity: animation.value,
+                                            child: child,
+                                          ),
+                                        );
+                                      },
+                                    );
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFFFF6F00),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 15),
+                                    minimumSize:
+                                        const Size(double.infinity, 50),
+                                  ),
+                                  child: Text(
+                                    'Nâng cấp Premium',
+                                    style: GoogleFonts.urbanist(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                  },
+                                  child: Text(
+                                    'Để sau',
+                                    style: GoogleFonts.urbanist(
+                                      fontSize: 16,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+            transitionBuilder: (_, animation, __, child) {
+              return FadeTransition(
+                opacity: animation,
+                child: ScaleTransition(
+                  scale: CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeOutBack,
+                  ),
+                  child: child,
+                ),
+              );
+            },
+          );
+        } else {
+          // Nếu là tài khoản Premium, gọi hàm hiển thị tư vấn dinh dưỡng
+          _showNutritionAdvice(day);
+        }
+      }
+    } catch (e) {
+      print("❌ Lỗi khi kiểm tra loại tài khoản: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Có lỗi xảy ra: ${e.toString()}"),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 }
