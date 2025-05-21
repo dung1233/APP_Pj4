@@ -25,7 +25,8 @@ class WorkoutResult {
       distanceCompleted: (json['distanceCompleted'] ?? 0.0).toDouble(),
       durationCompleted: json['durationCompleted'] ?? 0,
       status: json['status'] ?? '',
-      createdAt: DateTime.parse(json['createdAt']),
+      createdAt:
+          DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
     );
   }
 }

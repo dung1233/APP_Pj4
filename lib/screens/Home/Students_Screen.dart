@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:training_souls/models/student_model.dart';
 import 'package:training_souls/screens/Home/rating_screen.dart';
 import 'package:training_souls/screens/video/videoCall.dart';
+import 'package:training_souls/screens/workout/workout_history_screen.dart';
 import 'package:training_souls/services/student_service.dart';
 
 class StudentsScreen extends StatefulWidget {
@@ -395,7 +396,7 @@ class _StudentsScreenState extends State<StudentsScreen>
                 Row(
                   children: [
                     Hero(
-                      tag: 'avatar_${student.id}',
+                      tag: 'student_card_avatar_${student.id}',
                       child: Container(
                         width: 70,
                         height: 70,
@@ -508,7 +509,7 @@ class _StudentsScreenState extends State<StudentsScreen>
                       ),
                       _buildActionButton(
                         icon: Icons.rate_review,
-                        label: 'Đánh giá',
+                        label: 'Lên Cấp',
                         color: const Color(0xFF10B981),
                         onTap: () {
                           HapticFeedback.lightImpact();
@@ -617,215 +618,274 @@ class _StudentsScreenState extends State<StudentsScreen>
   Color _getLevelColor(String level) {
     switch (level.toLowerCase()) {
       case 'beginner':
+      case 'sơ cấp':
         return const Color(0xFF10B981);
       case 'intermediate':
+      case 'trung cấp':
         return const Color(0xFFF59E0B);
       case 'advanced':
+      case 'cao cấp':
         return const Color(0xFFEF4444);
       default:
         return const Color(0xFF3B82F6);
     }
   }
 
-  void _showStudentDetails(BuildContext context, Student student) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.7,
-          minChildSize: 0.5,
-          maxChildSize: 0.95,
-          builder: (_, controller) {
-            return Container(
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-              ),
-              child: ListView(
-                controller: controller,
-                padding: const EdgeInsets.all(24),
-                children: [
-                  Center(
-                    child: Container(
-                      width: 50,
-                      height: 5,
-                      margin: const EdgeInsets.only(bottom: 30),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[300],
-                        borderRadius: BorderRadius.circular(2.5),
+  void _showStudentDetails(BuildContext context, Student student) async {
+    try {
+      final profile = await _studentService.getStudentProfile(student.id);
+
+      if (!mounted) return;
+
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (context) {
+          return DraggableScrollableSheet(
+            initialChildSize: 0.7,
+            minChildSize: 0.5,
+            maxChildSize: 0.95,
+            builder: (_, controller) {
+              return Container(
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+                ),
+                child: ListView(
+                  controller: controller,
+                  padding: const EdgeInsets.all(24),
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 50,
+                        height: 5,
+                        margin: const EdgeInsets.only(bottom: 30),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[300],
+                          borderRadius: BorderRadius.circular(2.5),
+                        ),
                       ),
                     ),
-                  ),
-                  Center(
-                    child: Hero(
-                      tag: 'avatar_${student.id}',
+                    Center(
+                      child: Hero(
+                        tag: 'student_detail_avatar_${student.id}',
+                        child: Container(
+                          width: 120,
+                          height: 120,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                _getLevelColor(student.level),
+                                _getLevelColor(student.level).withOpacity(0.7),
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: _getLevelColor(student.level)
+                                    .withOpacity(0.3),
+                                blurRadius: 20,
+                                offset: const Offset(0, 10),
+                              ),
+                            ],
+                          ),
+                          child: Center(
+                            child: Text(
+                              student.name[0],
+                              style: const TextStyle(
+                                fontSize: 48,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Center(
+                      child: Text(
+                        student.name,
+                        style: const TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1A1F36),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Center(
                       child: Container(
-                        width: 120,
-                        height: 120,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: [
-                              _getLevelColor(student.level),
-                              _getLevelColor(student.level).withOpacity(0.7),
+                              _getLevelColor(profile['level'] ?? 'Beginner'),
+                              _getLevelColor(profile['level'] ?? 'Beginner')
+                                  .withOpacity(0.8),
                             ],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: _getLevelColor(student.level)
-                                  .withOpacity(0.3),
-                              blurRadius: 20,
-                              offset: const Offset(0, 10),
-                            ),
-                          ],
+                          borderRadius: BorderRadius.circular(25),
                         ),
-                        child: Center(
-                          child: Text(
-                            student.name[0],
-                            style: const TextStyle(
-                              fontSize: 48,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
+                        child: Text(
+                          profile['level'] ?? 'Beginner',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 24),
-                  Center(
-                    child: Text(
-                      student.name,
-                      style: const TextStyle(
-                        fontSize: 28,
+                    const SizedBox(height: 30),
+                    _buildDetailCard(
+                      icon: Icons.email,
+                      iconColor: const Color(0xFF667EEA),
+                      label: 'Email',
+                      value: student.email,
+                    ),
+                    _buildDetailCard(
+                      icon: Icons.phone,
+                      iconColor: const Color(0xFF10B981),
+                      label: 'Số điện thoại',
+                      value: student.phone,
+                    ),
+                    _buildDetailCard(
+                      icon: Icons.person,
+                      iconColor: const Color(0xFFF59E0B),
+                      label: 'Giới tính',
+                      value: profile['gender'] ?? 'N/A',
+                    ),
+                    _buildDetailCard(
+                      icon: Icons.cake,
+                      iconColor: const Color(0xFFEC4899),
+                      label: 'Tuổi',
+                      value: '${profile['age'] ?? 'N/A'} tuổi',
+                    ),
+                    _buildDetailCard(
+                      icon: Icons.height,
+                      iconColor: const Color(0xFF8B5CF6),
+                      label: 'Chiều cao',
+                      value: '${profile['height'] ?? 'N/A'} cm',
+                    ),
+                    _buildDetailCard(
+                      icon: Icons.monitor_weight,
+                      iconColor: const Color(0xFF3B82F6),
+                      label: 'Cân nặng',
+                      value: '${profile['weight'] ?? 'N/A'} kg',
+                    ),
+                    _buildDetailCard(
+                      icon: Icons.fitness_center,
+                      iconColor: const Color(0xFF10B981),
+                      label: 'Mức độ hoạt động',
+                      value: profile['activityLevel'] ?? 'N/A',
+                    ),
+                    _buildDetailCard(
+                      icon: Icons.flag,
+                      iconColor: const Color(0xFFEF4444),
+                      label: 'Mục tiêu',
+                      value: profile['fitnessGoal'] ?? 'N/A',
+                    ),
+                    const SizedBox(height: 20),
+                    const Text(
+                      'Chỉ số',
+                      style: TextStyle(
+                        fontSize: 20,
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF1A1F36),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  Center(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            _getLevelColor(student.level),
-                            _getLevelColor(student.level).withOpacity(0.8),
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(25),
-                      ),
-                      child: Text(
-                        student.level,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 30),
-                  _buildDetailCard(
-                    icon: Icons.email,
-                    iconColor: const Color(0xFF667EEA),
-                    label: 'Email',
-                    value: student.email,
-                  ),
-                  _buildDetailCard(
-                    icon: Icons.phone,
-                    iconColor: const Color(0xFF10B981),
-                    label: 'Số điện thoại',
-                    value: student.phone,
-                  ),
-                  _buildDetailCard(
-                    icon: Icons.star,
-                    iconColor: const Color(0xFFF59E0B),
-                    label: 'Đánh giá',
-                    value: '${student.overallRating} / 5.0',
-                  ),
-                  const SizedBox(height: 30),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    VideoCallScreen(studentId: student.id),
-                              ),
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF667EEA),
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(15),
-                            ),
-                            elevation: 0,
-                          ),
-                          child: const Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.video_call, size: 20),
-                              SizedBox(width: 8),
-                              Text(
-                                'Gọi điện',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
+                    const SizedBox(height: 10),
+                    _buildStatsGrid(profile),
+                    const SizedBox(height: 30),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => WorkoutHistoryScreen(
+                                      studentId: student.id),
                                 ),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF667EEA),
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(15),
                               ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 15),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFE5E7EB),
-                            foregroundColor: const Color(0xFF1A1F36),
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(15),
+                              elevation: 0,
                             ),
-                            elevation: 0,
-                          ),
-                          child: const Text(
-                            'Đóng',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
+                            child: const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.video_call, size: 20),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Lịch Sử Tập luyện ',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
+                        const SizedBox(width: 15),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFE5E7EB),
+                              foregroundColor: const Color(0xFF1A1F36),
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(15),
+                              ),
+                              elevation: 0,
+                            ),
+                            child: const Text(
+                              'Đóng',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
+        },
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Lỗi khi tải thông tin học viên: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   Widget _buildDetailCard({
@@ -877,6 +937,80 @@ class _StudentsScreenState extends State<StudentsScreen>
                   ),
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatsGrid(Map<String, dynamic> profile) {
+    return GridView.count(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisCount: 2,
+      mainAxisSpacing: 15,
+      crossAxisSpacing: 15,
+      childAspectRatio: 1.5,
+      children: [
+        _buildProfileStatCard(
+          'Sức mạnh',
+          profile['strength']?.toString() ?? 'N/A',
+          const Color(0xFFEF4444),
+          Icons.fitness_center,
+        ),
+        _buildProfileStatCard(
+          'Sức bền',
+          profile['endurance']?.toString() ?? 'N/A',
+          const Color(0xFF10B981),
+          Icons.directions_run,
+        ),
+        _buildProfileStatCard(
+          'Sức khỏe',
+          profile['health']?.toString() ?? 'N/A',
+          const Color(0xFF3B82F6),
+          Icons.favorite,
+        ),
+        _buildProfileStatCard(
+          'Nhanh nhẹn',
+          profile['agility']?.toString() ?? 'N/A',
+          const Color(0xFFF59E0B),
+          Icons.speed,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProfileStatCard(
+      String title, String value, Color color, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            icon,
+            color: color,
+            size: 24,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              color: color,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Text(
+            title,
+            style: TextStyle(
+              color: color.withOpacity(0.8),
+              fontSize: 12,
             ),
           ),
         ],

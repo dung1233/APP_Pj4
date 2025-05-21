@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:training_souls/models/workout_result_model.dart';
-import 'package:training_souls/services/workout_service.dart';
+import 'package:training_souls/services/student_service.dart';
 
 class WorkoutHistoryScreen extends StatefulWidget {
   final String studentId;
@@ -15,7 +15,7 @@ class WorkoutHistoryScreen extends StatefulWidget {
 }
 
 class _WorkoutHistoryScreenState extends State<WorkoutHistoryScreen> {
-  final WorkoutService _workoutService = WorkoutService();
+  final StudentService _studentService = StudentService();
   List<WorkoutResult> _workoutHistory = [];
   bool _isLoading = true;
   String? _error;
@@ -28,7 +28,7 @@ class _WorkoutHistoryScreenState extends State<WorkoutHistoryScreen> {
 
   Future<void> _loadWorkoutHistory() async {
     try {
-      final history = await _workoutService.getWorkoutHistory(widget.studentId);
+      final history = await _studentService.getWorkoutHistory(widget.studentId);
       setState(() {
         _workoutHistory = history;
         _isLoading = false;

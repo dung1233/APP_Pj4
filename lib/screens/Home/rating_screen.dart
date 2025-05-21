@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:training_souls/models/student_model.dart';
+import 'package:training_souls/services/student_service.dart';
 
 class RatingScreen extends StatefulWidget {
   final Student student;
@@ -14,20 +15,68 @@ class RatingScreen extends StatefulWidget {
 }
 
 class _RatingScreenState extends State<RatingScreen> {
-  double _rating = 0;
-  final _commentController = TextEditingController();
+  final _studentService = StudentService();
+  bool _isLoading = false;
 
   @override
-  void dispose() {
-    _commentController.dispose();
-    super.dispose();
+  void initState() {
+    super.initState();
+    print('Student ID: ${widget.student.id}'); // Print student ID
+    print('Student Name: ${widget.student.name}'); // Print student name
+  }
+
+  Future<void> _confirmLevelUp() async {
+    if (widget.student.id == null || widget.student.id.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Không tìm thấy ID học viên'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final success = await _studentService.confirmLevelUp(widget.student.id);
+
+      if (success) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Xác nhận lên cấp thành công'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          Navigator.pop(context);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Đánh giá học viên'),
+        title: const Text('Xác nhận lên cấp'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -35,7 +84,7 @@ class _RatingScreenState extends State<RatingScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Đánh giá cho ${widget.student.name}',
+              'Xác nhận lên cấp cho ${widget.student.name}?',
               style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -43,66 +92,61 @@ class _RatingScreenState extends State<RatingScreen> {
             ),
             const SizedBox(height: 24),
             const Text(
-              'Điểm đánh giá:',
+              'Bạn có chắc chắn muốn xác nhận học viên này lên cấp không?',
               style: TextStyle(fontSize: 16),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 32),
             Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(5, (index) {
-                return IconButton(
-                  icon: Icon(
-                    index < _rating ? Icons.star : Icons.star_border,
-                    color: Colors.amber,
-                    size: 32,
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.grey[300],
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    child: const Text(
+                      'Hủy',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    ),
                   ),
-                  onPressed: () {
-                    setState(() {
-                      _rating = index + 1;
-                    });
-                  },
-                );
-              }),
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'Nhận xét:',
-              style: TextStyle(fontSize: 16),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _commentController,
-              maxLines: 5,
-              decoration: const InputDecoration(
-                hintText: 'Nhập nhận xét của bạn...',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _submitRating,
-                child: const Text('Gửi đánh giá'),
-              ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _confirmLevelUp,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF10B981),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    child: _isLoading
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text(
+                            'Xác nhận',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
       ),
     );
-  }
-
-  void _submitRating() {
-    if (_rating == 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Vui lòng chọn điểm đánh giá'),
-        ),
-      );
-      return;
-    }
-
-    // TODO: Implement rating submission logic
-    Navigator.pop(context);
   }
 }
