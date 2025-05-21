@@ -4,9 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:training_souls/screens/User/status.dart';
 import 'package:hive/hive.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:training_souls/data/DatabaseHelper.dart';
+import 'package:training_souls/offline/WorkoutSyncService.dart';
 
 import '../../APi/user_service.dart';
-import '../../data/DatabaseHelper.dart';
 import '../../data/local_storage.dart';
 import 'PurchasedItemsPage.dart';
 import '../Home/home.dart';
@@ -145,6 +147,38 @@ class _UserScreenState extends State<UserProfilePage>
     );
   }
 
+  Future<void> _logout() async {
+    try {
+      // Xóa dữ liệu từ WorkoutSyncService
+      final syncService = WorkoutSyncService();
+      await syncService.clearAllData();
+
+      // Xóa dữ liệu từ DatabaseHelper
+      await dbHelper.clearAllDataOnLogout();
+
+      // Xóa token và các dữ liệu khác từ SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+
+      if (mounted) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const HomePage()),
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi khi đăng xuất: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context); // BẮT BUỘC khi dùng keepAlive
@@ -245,45 +279,7 @@ class _UserScreenState extends State<UserProfilePage>
                     leading: const Icon(Icons.logout, color: Colors.red),
                     title: const Text("Đăng xuất",
                         style: TextStyle(color: Colors.red)),
-                    onTap: () async {
-                      try {
-                        // 1. Clear Hive storage
-                        final box = await Hive.openBox('userBox');
-                        await box.clear();
-
-                        // 2. Clear SharedPreferences
-                        final prefs = await SharedPreferences.getInstance();
-                        await prefs.clear();
-
-                        // 3. Clear database tables directly
-                        final db = await dbHelper.database;
-                        await db.delete('workouts');
-                        await db.delete('workout_results');
-                        await db.delete('user_info');
-                        await db.delete('user_profile');
-                        await db.delete('roles');
-                        await db.delete('permissions');
-
-                        if (mounted) {
-                          // Navigate to HomePage and remove all previous routes
-                          Navigator.of(context).pushAndRemoveUntil(
-                            MaterialPageRoute(
-                                builder: (context) => const HomePage()),
-                            (route) => false,
-                          );
-                        }
-                      } catch (e) {
-                        print("❌ Error during logout: $e");
-                        // Still try to navigate even if there's an error
-                        if (mounted) {
-                          Navigator.of(context).pushAndRemoveUntil(
-                            MaterialPageRoute(
-                                builder: (context) => const HomePage()),
-                            (route) => false,
-                          );
-                        }
-                      }
-                    },
+                    onTap: _logout,
                   ),
                 ],
               ),

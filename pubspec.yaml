@@ -91,7 +91,11 @@ dependencies:
   agora_rtc_engine: ^6.5.0
   #stripe
   flutter_stripe: ^9.5.0
+  #thong bao
   awesome_notifications: ^0.8.2
+  #offline mode
+  connectivity_plus: ^4.0.2
+
 
 
 flutter_launcher_icons:

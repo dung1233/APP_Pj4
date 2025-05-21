@@ -194,7 +194,20 @@ class _RestbState extends State<Restb> {
                         setState(() => _isSyncing = true);
                         try {
                           // Gọi hàm sync và refresh
-                          await _dbHelper.checkAndSyncWorkouts(widget.day);
+                          //offline mode
+                          await _dbHelper
+                              .checkAndSyncWorkoutsWithOfflineSupport(
+                                  widget.day);
+
+                          // Hiển thị thông báo dữ liệu đã được lưu offline
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                  'Dữ liệu đã được lưu và sẽ tự động đồng bộ khi có mạng.'),
+                              backgroundColor: Colors.blue,
+                            ),
+                          );
+
                           if (mounted) {
                             await Provider.of<WorkoutProvider>(context,
                                     listen: false)
