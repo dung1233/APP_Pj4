@@ -1,0 +1,15 @@
+{
+  "manageStudents": "Quản lý học viên",
+  "totalStudents": "Tổng số học viên",
+  "students": "{count} học viên",
+  "call": "Gọi điện",
+  "close": "Đóng",
+  "notifications": "Thông báo",
+  "noNotifications": "Chưa có thông báo nào",
+  "newNotifications": "Các thông báo mới sẽ xuất hiện ở đây",
+  "notificationDeleted": "Đã xóa thông báo",
+  "undo": "Hoàn tác",
+  "createNotification": "Tạo thông báo",
+  "markAllAsRead": "Đã đánh dấu tất cả là đã đọc",
+  "noUnreadNotifications": "Không có thông báo chưa đọc"
+} 

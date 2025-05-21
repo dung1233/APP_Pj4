@@ -7,11 +7,16 @@ import 'package:training_souls/screens/Home/profile_screen.dart';
 import 'package:training_souls/screens/Home/schedule_screen.dart';
 import 'package:training_souls/screens/login_screen.dart';
 import 'package:training_souls/theme/app_theme.dart';
+import 'package:firebase_core/firebase_core.dart';
 
 import 'models/student_model.dart';
 import 'models/notification_model.dart';
 
-void main() => runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  runApp(const MyApp());
+}
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});

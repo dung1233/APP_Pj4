@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
-
+import 'package:flutter/services.dart';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:training_souls/api/auth_service.dart';
+import 'package:training_souls/main.dart';
 import 'package:training_souls/models/login_request.dart';
 import 'package:training_souls/screens/Home/Home_screen.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -23,6 +26,7 @@ class _LoginScreenState extends State<LoginScreen>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
+  String? _fcmToken;
 
   @override
   void initState() {
@@ -51,6 +55,18 @@ class _LoginScreenState extends State<LoginScreen>
     _animationController.forward();
   }
 
+  Future<String?> _getFCMToken() async {
+    try {
+      print('Đang lấy FCM token...');
+      final token = await FirebaseMessaging.instance.getToken();
+      print('FCM Token: $token');
+      return token;
+    } catch (e) {
+      print('Lỗi lấy FCM token: $e');
+      return null;
+    }
+  }
+
   @override
   void dispose() {
     _emailController.dispose();
@@ -76,19 +92,37 @@ class _LoginScreenState extends State<LoginScreen>
       );
 
       if (response.success && response.token != null) {
+        print('Đăng nhập thành công, đang lấy FCM token...');
         // Lưu token vào SharedPreferences
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('token', response.token!);
 
+        // Lấy FCM token sau khi đăng nhập thành công
+        final fcmToken = await _getFCMToken();
+        print('FCM Token sau khi đăng nhập: $fcmToken');
+
         if (mounted) {
+          setState(() {
+            _fcmToken = fcmToken;
+          });
+
+          // Hiển thị dialog thông báo FCM token
+          if (_fcmToken != null) {
+            print('Hiển thị dialog FCM token: $_fcmToken');
+            _showFCMTokenDialog(context);
+          } else {
+            print('Không thể lấy FCM token');
+          }
+
           // Chuyển hướng đến HomeScreen và xóa stack navigation
           Navigator.pushAndRemoveUntil(
             context,
-            MaterialPageRoute(builder: (context) => const HomeScreen()),
+            MaterialPageRoute(builder: (context) => MainScreen()),
             (route) => false,
           );
         }
       } else {
+        print('Đăng nhập thất bại');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -98,6 +132,7 @@ class _LoginScreenState extends State<LoginScreen>
         }
       }
     } catch (e) {
+      print('Lỗi đăng nhập: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Có lỗi xảy ra: ${e.toString()}')),
@@ -110,8 +145,53 @@ class _LoginScreenState extends State<LoginScreen>
     }
   }
 
+  Future<void> _showFCMTokenDialog(BuildContext context) {
+    return showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('FCM Token'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Token Firebase Cloud Messaging của bạn:'),
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: SelectableText(
+                _fcmToken ?? 'Không thể lấy token',
+                style: const TextStyle(fontSize: 12),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: _fcmToken ?? ''));
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Đã sao chép token')),
+              );
+            },
+            child: const Text('Sao chép'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: const Text('Đóng'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Phần build widget giữ nguyên
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
