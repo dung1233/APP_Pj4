@@ -45,7 +45,7 @@ class PremiumRequiredPopup extends StatelessWidget {
                           ),
                           const SizedBox(height: 10),
                           Text(
-                            'Hết 1 tuần trải nghiệm Premium',
+                            'Trải nghiệm Premium',
                             style: GoogleFonts.urbanist(
                               color: Colors.white,
                               fontSize: 22,
@@ -79,8 +79,8 @@ class PremiumRequiredPopup extends StatelessWidget {
                               ),
                               Expanded(
                                 child: _buildFeatureItem(
-                                  Icons.timer,
-                                  'Lịch ăn uống',
+                                  Icons.video_call,
+                                  'Tư vấn trực tiếp',
                                 ),
                               ),
                             ],
