@@ -14,6 +14,7 @@ import 'package:training_souls/screens/trainhome.dart';
 import 'dart:async'; // Thêm import Timer
 import 'package:training_souls/services/notification_service.dart';
 import 'package:training_souls/models/meal_suggestion.dart';
+import 'package:training_souls/services/premium_trial_manager.dart';
 
 class BeginnerDataWidget extends StatefulWidget {
   const BeginnerDataWidget({super.key});
@@ -154,10 +155,21 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
       _ensureDataLoaded();
       _syncWorkoutStatusFromResults();
       _loadScheduledTime();
-      _loadSelectedCoachId(); // Thêm dòng này
+      _loadSelectedCoachId();
       _startTimer();
-      checkExistingCoach(); // Thêm dòng này để kiểm tra khi widget khởi tạo
+      checkExistingCoach();
+      _checkPremiumTrial(); // Thêm dòng này
     });
+  }
+
+  // Thêm hàm mới để kiểm tra thời gian dùng thử Premium
+  Future<void> _checkPremiumTrial() async {
+    try {
+      // Kiểm tra và hiển thị popup nếu hết thời gian dùng thử
+      await PremiumTrialManager.checkAndShowTrialExpiredPopup(context);
+    } catch (e) {
+      print("❌ Lỗi khi kiểm tra thời gian dùng thử: $e");
+    }
   }
 
   @override
@@ -2870,4 +2882,5 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
       );
     }
   }
+
 }
