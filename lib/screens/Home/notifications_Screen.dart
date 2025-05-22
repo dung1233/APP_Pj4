@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:training_souls/models/notification_model.dart';
 import 'package:training_souls/screens/Home/send_notification_screen.dart';
+import 'package:dio/dio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -10,32 +12,51 @@ class NotificationsScreen extends StatefulWidget {
 }
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
-  final List<NotificationModel> notifications = [
-    NotificationModel(
-      id: '1',
-      title: 'Lịch học mới',
-      message: 'Bạn có lịch học với Nguyễn Văn A vào 14:00 hôm nay',
-      timestamp: DateTime.now().subtract(const Duration(hours: 1)),
-      type: 'schedule',
-      isRead: false,
-    ),
-    NotificationModel(
-      id: '2',
-      title: 'Học viên đặt lịch',
-      message: 'Trần Thị B đã đặt lịch học vào Thứ 3, 10:00',
-      timestamp: DateTime.now().subtract(const Duration(hours: 2)),
-      type: 'booking',
-      isRead: true,
-    ),
-    NotificationModel(
-      id: '3',
-      title: 'Nhắc nhở đánh giá',
-      message: 'Đừng quên đánh giá buổi học với Lê Văn C',
-      timestamp: DateTime.now().subtract(const Duration(hours: 3)),
-      type: 'reminder',
-      isRead: true,
-    ),
-  ];
+  List<NotificationModel> notifications = [];
+  bool isLoading = true;
+  final Dio _dio = Dio();
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchNotifications();
+  }
+
+  Future<void> _fetchNotifications() async {
+    try {
+      setState(() => isLoading = true);
+
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+
+      if (token == null) {
+        throw Exception('Không tìm thấy token đăng nhập');
+      }
+
+      _dio.options.headers['Authorization'] = 'Bearer $token';
+      final response = await _dio.get(
+          'http://54.251.220.228:8080/trainingSouls/notifications/getNotifications');
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data;
+        setState(() {
+          notifications =
+              data.map((json) => NotificationModel.fromJson(json)).toList();
+          isLoading = false;
+        });
+      } else {
+        throw Exception('Lỗi khi lấy thông báo: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Lỗi khi lấy thông báo: $e');
+      setState(() => isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Không thể tải thông báo: ${e.toString()}')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -62,12 +83,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             children: [
               IconButton(
                 icon: const Icon(
-                  Icons.mark_email_read_outlined,
+                  Icons.refresh,
                   color: Colors.black87,
                 ),
-                onPressed: _markAllAsRead,
+                onPressed: _fetchNotifications,
               ),
-              if (notifications.any((n) => !n.isRead))
+              if (notifications.any((n) => !n.read))
                 Positioned(
                   right: 10,
                   top: 10,
@@ -84,16 +105,22 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           ),
         ],
       ),
-      body: notifications.isEmpty
-          ? _buildEmptyState()
-          : ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-              itemCount: notifications.length,
-              itemBuilder: (context, index) {
-                final notification = notifications[index];
-                return _buildNotificationCard(notification, index);
-              },
-            ),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : notifications.isEmpty
+              ? _buildEmptyState()
+              : RefreshIndicator(
+                  onRefresh: _fetchNotifications,
+                  child: ListView.builder(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 20),
+                    itemCount: notifications.length,
+                    itemBuilder: (context, index) {
+                      final notification = notifications[index];
+                      return _buildNotificationCard(notification, index);
+                    },
+                  ),
+                ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           Navigator.push(
@@ -147,7 +174,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   Widget _buildNotificationCard(NotificationModel notification, int index) {
     return Dismissible(
-      key: Key(notification.id),
+      key: Key(notification.id.toString()),
       background: Container(
         margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
@@ -186,11 +213,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           setState(() {
             notifications[index] = NotificationModel(
               id: notification.id,
+              receiverId: notification.receiverId,
               title: notification.title,
-              message: notification.message,
-              timestamp: notification.timestamp,
-              type: notification.type,
-              isRead: true,
+              content: notification.content,
+              createdAt: notification.createdAt,
+              read: true,
             );
           });
         },
@@ -213,9 +240,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 width: 4,
                 height: 80,
                 decoration: BoxDecoration(
-                  color: notification.isRead
+                  color: notification.read
                       ? Colors.transparent
-                      : _getNotificationColor(notification.type),
+                      : Theme.of(context).colorScheme.primary,
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(16),
                     bottomLeft: Radius.circular(16),
@@ -231,13 +258,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         width: 48,
                         height: 48,
                         decoration: BoxDecoration(
-                          color: _getNotificationColor(notification.type)
+                          color: Theme.of(context)
+                              .colorScheme
+                              .primary
                               .withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
-                          _getNotificationIcon(notification.type),
-                          color: _getNotificationColor(notification.type),
+                          Icons.notifications_outlined,
+                          color: Theme.of(context).colorScheme.primary,
                           size: 24,
                         ),
                       ),
@@ -254,20 +283,20 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                     notification.title,
                                     style: TextStyle(
                                       fontSize: 16,
-                                      fontWeight: notification.isRead
+                                      fontWeight: notification.read
                                           ? FontWeight.w500
                                           : FontWeight.bold,
                                       color: Colors.black87,
                                     ),
                                   ),
                                 ),
-                                if (!notification.isRead)
+                                if (!notification.read)
                                   Container(
                                     width: 8,
                                     height: 8,
                                     decoration: BoxDecoration(
-                                      color: _getNotificationColor(
-                                          notification.type),
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
                                       shape: BoxShape.circle,
                                     ),
                                   ),
@@ -275,7 +304,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              notification.message,
+                              notification.content,
                               style: TextStyle(
                                 fontSize: 14,
                                 color: Colors.grey[600],
@@ -293,7 +322,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  _formatTime(notification.timestamp),
+                                  _formatTime(notification.createdAt),
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: Colors.grey[400],
@@ -315,32 +344,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
-  Color _getNotificationColor(String type) {
-    switch (type) {
-      case 'schedule':
-        return const Color(0xFF2196F3);
-      case 'booking':
-        return const Color(0xFF4CAF50);
-      case 'reminder':
-        return const Color(0xFFFF9800);
-      default:
-        return Colors.grey;
-    }
-  }
-
-  IconData _getNotificationIcon(String type) {
-    switch (type) {
-      case 'schedule':
-        return Icons.calendar_today_rounded;
-      case 'booking':
-        return Icons.event_available_rounded;
-      case 'reminder':
-        return Icons.alarm_rounded;
-      default:
-        return Icons.notification_important_rounded;
-    }
-  }
-
   String _formatTime(DateTime timestamp) {
     final now = DateTime.now();
     final difference = now.difference(timestamp);
@@ -355,17 +358,17 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   void _markAllAsRead() {
-    if (notifications.any((n) => !n.isRead)) {
+    if (notifications.any((n) => !n.read)) {
       setState(() {
         for (int i = 0; i < notifications.length; i++) {
           final notification = notifications[i];
           notifications[i] = NotificationModel(
             id: notification.id,
+            receiverId: notification.receiverId,
             title: notification.title,
-            message: notification.message,
-            timestamp: notification.timestamp,
-            type: notification.type,
-            isRead: true,
+            content: notification.content,
+            createdAt: notification.createdAt,
+            read: true,
           );
         }
       });
