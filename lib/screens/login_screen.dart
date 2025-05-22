@@ -75,6 +75,41 @@ class _LoginScreenState extends State<LoginScreen>
     super.dispose();
   }
 
+  Future<void> _saveFCMTokenToServer(String fcmToken) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+
+      if (token == null) {
+        print('Không tìm thấy token đăng nhập');
+        return;
+      }
+
+      final dio = Dio();
+      dio.options.headers['Authorization'] = 'Bearer $token';
+
+      // Đảm bảo token được encode đúng cách
+      final encodedToken = Uri.encodeComponent(fcmToken);
+      final url =
+          'http://54.251.220.228:8080/trainingSouls/notifications/saveFcmToken?fcmToken=$encodedToken';
+
+      print('Đang gửi FCM token: $fcmToken');
+      final response = await dio.post(url);
+
+      if (response.statusCode == 200) {
+        print('Đã lưu FCM token thành công');
+      } else {
+        print('Lỗi khi lưu FCM token: ${response.statusCode}');
+        print('Response data: ${response.data}');
+      }
+    } catch (e) {
+      print('Lỗi khi gửi FCM token lên server: $e');
+      if (e is DioException) {
+        print('Response data: ${e.response?.data}');
+      }
+    }
+  }
+
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -101,13 +136,17 @@ class _LoginScreenState extends State<LoginScreen>
         final fcmToken = await _getFCMToken();
         print('FCM Token sau khi đăng nhập: $fcmToken');
 
+        // Test notification setup
+        await _testNotificationSetup();
+
         if (mounted) {
           setState(() {
             _fcmToken = fcmToken;
           });
 
-          // Hiển thị dialog thông báo FCM token
+          // Lưu FCM token lên server
           if (_fcmToken != null) {
+            await _saveFCMTokenToServer(_fcmToken!);
             print('Hiển thị dialog FCM token: $_fcmToken');
             _showFCMTokenDialog(context);
           } else {
@@ -143,6 +182,22 @@ class _LoginScreenState extends State<LoginScreen>
         setState(() => _isLoading = false);
       }
     }
+  }
+
+  Future<void> _testNotificationSetup() async {
+    final messaging = FirebaseMessaging.instance;
+
+    // Kiểm tra permission
+    NotificationSettings settings = await messaging.getNotificationSettings();
+    print('Permission status: ${settings.authorizationStatus}');
+
+    // Kiểm tra token
+    String? token = await messaging.getToken();
+    print('Current FCM Token: $token');
+
+    // Test với việc subscribe topic
+    await messaging.subscribeToTopic('test_topic');
+    print('Subscribed to test topic');
   }
 
   Future<void> _showFCMTokenDialog(BuildContext context) {

@@ -65,21 +65,7 @@ class HomeScreen extends StatelessWidget {
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.calendar_today,
-                                size: 16,
-                                color: Colors.white,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Hôm nay bạn có 3 buổi học',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
+                            children: [],
                           ),
                         ),
                       ],
@@ -97,27 +83,7 @@ class HomeScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Stats Cards
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildStatCard(
-                          'Học viên',
-                          '25',
-                          Icons.people,
-                          Colors.purple[400]!,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildStatCard(
-                          'Buổi học hôm nay',
-                          '3',
-                          Icons.today,
-                          Colors.orange[400]!,
-                        ),
-                      ),
-                    ],
-                  ),
+
                   const SizedBox(height: 24),
 
                   // Quick Actions
@@ -203,32 +169,6 @@ class HomeScreen extends StatelessWidget {
                   const SizedBox(height: 24),
 
                   // Today's Schedule
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Lịch học hôm nay',
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const ScheduleScreen(),
-                            ),
-                          );
-                        },
-                        child: const Text('Xem tất cả'),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  _buildTodaySchedule(),
                 ],
               ),
             ),
