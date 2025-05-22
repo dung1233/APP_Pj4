@@ -7,6 +7,7 @@ import 'package:training_souls/screens/Information/data.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:training_souls/screens/Login/sign_up.dart';
+import 'package:training_souls/screens/Login/forgot_password.dart';
 import 'package:training_souls/screens/trainhome.dart';
 import 'package:flutter/material.dart';
 
@@ -128,7 +129,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
             const SizedBox(height: 20),
             TextButton(
-              onPressed: () {},
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const ForgotPasswordScreen()),
+                );
+              },
               child: Text('Quên mật khẩu?',
                   style: GoogleFonts.urbanist(
                       color: Colors.grey[600],

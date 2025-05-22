@@ -16,15 +16,55 @@ class ExploreScreen extends StatefulWidget {
 
 class _ExploreScreenState extends State<ExploreScreen> {
   final ApiService _apiService = ApiService(Dio());
-
-  // Sử dụng caching để lưu dữ liệu bài viết
   late Future<List<Post>> _postsFuture;
+  bool _isLoading = false;
+  List<Post> _cachedPosts = [];
 
   @override
   void initState() {
     super.initState();
-    // Tải dữ liệu bài viết một lần khi màn hình được khởi tạo
-    _postsFuture = _apiService.getAllPosts();
+    _loadPosts();
+  }
+
+  Future<void> _loadPosts() async {
+    setState(() => _isLoading = true);
+    try {
+      // Thử lấy dữ liệu từ API trước
+      final posts = await _apiService.getAllPosts();
+      if (posts.isNotEmpty) {
+        // Nếu có dữ liệu từ API, cập nhật cache và state
+        _cachedPosts = posts;
+        setState(() {
+          _postsFuture = Future.value(posts);
+        });
+      } else {
+        // Nếu không có dữ liệu từ API, thử lấy từ cache
+        if (_cachedPosts.isNotEmpty) {
+          setState(() {
+            _postsFuture = Future.value(_cachedPosts);
+          });
+        } else {
+          // Nếu không có dữ liệu ở cả hai nơi, hiển thị thông báo
+          setState(() {
+            _postsFuture = Future.value([]);
+          });
+        }
+      }
+    } catch (e) {
+      print("❌ Lỗi khi tải bài viết: $e");
+      // Nếu có lỗi khi tải từ API, thử lấy từ cache
+      if (_cachedPosts.isNotEmpty) {
+        setState(() {
+          _postsFuture = Future.value(_cachedPosts);
+        });
+      } else {
+        setState(() {
+          _postsFuture = Future.value([]);
+        });
+      }
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -166,36 +206,59 @@ class _ExploreScreenState extends State<ExploreScreen> {
       child: FutureBuilder<List<Post>>(
         future: _postsFuture,
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+          if (_isLoading) {
             return const Center(child: CircularProgressIndicator());
           }
 
           if (snapshot.hasError) {
+            print("❌ Lỗi khi tải bài viết: ${snapshot.error}");
+            // Nếu có lỗi và có dữ liệu cache, hiển thị dữ liệu cache
+            if (_cachedPosts.isNotEmpty) {
+              return _buildPostList(_cachedPosts);
+            }
             return Center(
-                child: Text('Không thể tải bài viết: ${snapshot.error}'));
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, color: Colors.red, size: 40),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Không thể tải bài viết\nVui lòng kiểm tra kết nối mạng',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            );
           }
 
           final posts = snapshot.data ?? [];
 
           if (posts.isEmpty) {
-            return const Center(child: Text('Không có bài viết'));
+            return const Center(
+              child: Text('Không có bài viết'),
+            );
           }
 
-          return ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: posts.length,
-            itemBuilder: (context, index) {
-              final post = posts[index];
-              return BlogCard(
-                imagePath: _getSafeImageUrl(post),
-                title: post.title,
-                subtitle: _getSafeContent(post),
-                videoUrls: post.videoUrl,
-              );
-            },
-          );
+          return _buildPostList(posts);
         },
       ),
+    );
+  }
+
+  Widget _buildPostList(List<Post> posts) {
+    return ListView.builder(
+      scrollDirection: Axis.horizontal,
+      itemCount: posts.length,
+      itemBuilder: (context, index) {
+        final post = posts[index];
+        return BlogCard(
+          imagePath: _getSafeImageUrl(post),
+          title: post.title,
+          subtitle: _getSafeContent(post),
+          videoUrls: post.videoUrl,
+        );
+      },
     );
   }
 

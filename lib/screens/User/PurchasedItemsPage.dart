@@ -375,7 +375,7 @@ class _PurchasedItemsPageState extends State<PurchasedItemsPage> {
   }
 
   String _formatDate(String? dateStr) {
-    if (dateStr == null) return 'N/A';
+    if (dateStr == null) return 'Vĩnh Viễn';
     try {
       final date = DateTime.parse(dateStr);
       return DateFormat('dd/MM/yyyy').format(date);
