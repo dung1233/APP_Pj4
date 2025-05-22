@@ -29,7 +29,7 @@ class DatabaseHelper {
     String path = join(await getDatabasesPath(), 'workout_database.db');
     return await openDatabase(
       path,
-      version: 9, // Tăng version lên 9 từ 8
+      version: 9, // Giữ nguyên version 9
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -168,7 +168,8 @@ class DatabaseHelper {
         email TEXT,
         accountType TEXT,
         points INTEGER,
-        level INTEGER
+        level INTEGER,
+        totalScore REAL
       )
     ''');
 
@@ -207,6 +208,8 @@ class DatabaseHelper {
 
   Future<void> checkAndCreateTables() async {
     final db = await database;
+
+    // Kiểm tra bảng workout_results
     var tables = await db.rawQuery(
         "SELECT name FROM sqlite_master WHERE type='table' AND name='workout_results'");
     if (tables.isEmpty) {
@@ -226,6 +229,7 @@ class DatabaseHelper {
         print("[DEBUG] ✅ Đã tạo bảng workout_results");
       }
     }
+
     // Kiểm tra bảng user_profile
     tables = await db.rawQuery(
         "SELECT name FROM sqlite_master WHERE type='table' AND name='user_profile'");

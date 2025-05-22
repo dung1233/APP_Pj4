@@ -511,33 +511,33 @@ class CoachCard extends StatelessWidget {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => VideoCallScreen(),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.video_call, color: Colors.white),
-                        label: const Text('Bắt đầu học'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFFF6B00),
-                          foregroundColor: Colors.white,
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
-                        child: const Text('Đóng'),
-                      ),
-                    ],
-                  ),
+                  // Row(
+                  //   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  //   children: [
+                  //     ElevatedButton.icon(
+                  //       onPressed: () {
+                  //         Navigator.push(
+                  //           context,
+                  //           MaterialPageRoute(
+                  //             builder: (context) => VideoCallScreen(),
+                  //           ),
+                  //         );
+                  //       },
+                  //       icon: const Icon(Icons.video_call, color: Colors.white),
+                  //       label: const Text('Bắt đầu học'),
+                  //       style: ElevatedButton.styleFrom(
+                  //         backgroundColor: const Color(0xFFFF6B00),
+                  //         foregroundColor: Colors.white,
+                  //       ),
+                  //     ),
+                  //     TextButton(
+                  //       onPressed: () {
+                  //         Navigator.pop(context);
+                  //       },
+                  //       child: const Text('Đóng'),
+                  //     ),
+                  //   ],
+                  // ),
                 ],
               ),
             ),
@@ -751,18 +751,18 @@ class StrongCard extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: 12),
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.green,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: const Icon(
-                              Icons.video_call,
-                              color: Colors.white,
-                              size: 20,
-                            ),
-                          ),
+                          // Container(
+                          //   padding: const EdgeInsets.all(8),
+                          //   decoration: BoxDecoration(
+                          //     color: Colors.green,
+                          //     borderRadius: BorderRadius.circular(20),
+                          //   ),
+                          //   child: const Icon(
+                          //     Icons.video_call,
+                          //     color: Colors.white,
+                          //     size: 20,
+                          //   ),
+                          // ),
                         ],
                       ),
                     ),
@@ -833,31 +833,31 @@ class StrongCard extends StatelessWidget {
                 style: TextStyle(color: Colors.grey),
               ),
               const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => VideoCallScreen()));
-                    },
-                    icon: const Icon(Icons.video_call, color: Colors.white),
-                    label: const Text('Bắt đầu'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xFFFF6B00),
-                      foregroundColor: Colors.white,
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    child: const Text('Hủy'),
-                  ),
-                ],
-              ),
+              // Row(
+              //   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              //   children: [
+              //     ElevatedButton.icon(
+              //       onPressed: () {
+              //         Navigator.push(
+              //             context,
+              //             MaterialPageRoute(
+              //                 builder: (context) => VideoCallScreen()));
+              //       },
+              //       icon: const Icon(Icons.video_call, color: Colors.white),
+              //       label: const Text('Bắt đầu'),
+              //       style: ElevatedButton.styleFrom(
+              //         backgroundColor: Color(0xFFFF6B00),
+              //         foregroundColor: Colors.white,
+              //       ),
+              //     ),
+              //     TextButton(
+              //       onPressed: () {
+              //         Navigator.pop(context);
+              //       },
+              //       child: const Text('Hủy'),
+              //     ),
+              //   ],
+              // ),
             ],
           ),
         );
