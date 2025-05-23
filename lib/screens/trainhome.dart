@@ -46,10 +46,20 @@ class _TrainhomeState extends State<Trainhome> {
   void _onTabChanged(int index) {
     setState(() {
       selectedIndex = index;
-      // Trigger focus on the shop screen when it's selected
-      if (index == 3) {
-        // 3 is the index of ShopScreen
-        // Give time for the screen to build before requesting focus
+      // Trigger focus and reload for specific screens when selected
+      if (index == 1) {
+        // ExploreScreen
+        Future.microtask(() {
+          if (_screens[1] is ExploreScreen) {
+            FocusScope.of(context).requestFocus();
+            // Force rebuild of ExploreScreen
+            setState(() {
+              _screens[1] = ExploreScreen(key: UniqueKey());
+            });
+          }
+        });
+      } else if (index == 3) {
+        // ShopScreen
         Future.microtask(() {
           if (_screens[3] is ShopScreen) {
             FocusScope.of(context).requestFocus();

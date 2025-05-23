@@ -6,7 +6,7 @@ import 'package:training_souls/screens/trainhome.dart';
 
 const appId = "511a6fc43f90406faf72630968742fc6";
 const token =
-    "007eJxTYIi71j+JdcqzzVPnLnTnM87Ti3m95yMvS87torszhWsvcykoMJgaGiaapSWbGKdZGpgYmKUlppkbmRkbWJpZmJsYpSWbtcjrZzQEMjK4b2FkZGSAQBCfhSElNTefgQEAAFsdQQ==";
+    "007eJxTYPAWtQ174HFiF5veu0Ub/FJ/ODzc+7h9WW6uc2PUyvTPJdkKDKaGholmackmxmmWBiYGZmmJaeZGZsYGlmYW5iZGaclmVvkGGQ2BjAz5Mz2YGRkgEMRnYUhJzc1nYAAAVlYe4w==";
 const channel = "demo";
 
 class VideoCallScreen extends StatefulWidget {

@@ -19,11 +19,34 @@ class _ExploreScreenState extends State<ExploreScreen> {
   late Future<List<Post>> _postsFuture;
   bool _isLoading = false;
   List<Post> _cachedPosts = [];
+  late FocusNode _focusNode;
 
   @override
   void initState() {
     super.initState();
+    _focusNode = FocusNode();
+    _postsFuture = Future.value([]); // Initialize with empty list
     _loadPosts();
+
+    // Add listener for when screen gains focus
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _focusNode.addListener(() {
+        if (_focusNode.hasFocus) {
+          print("🔄 Explore screen gained focus - refreshing posts...");
+          _loadPosts();
+        }
+      });
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Refresh posts when screen becomes visible
+    if (ModalRoute.of(context)?.isCurrent ?? false) {
+      print("🔄 Explore screen became visible - refreshing posts...");
+      _loadPosts();
+    }
   }
 
   Future<void> _loadPosts() async {
@@ -69,88 +92,72 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        automaticallyImplyLeading: false,
-        title: const Padding(
-          padding: EdgeInsets.all(8.0),
-          child: Text(
-            'Khám Phá',
-            style: TextStyle(fontWeight: FontWeight.bold),
+    return Focus(
+      focusNode: _focusNode,
+      child: Scaffold(
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          automaticallyImplyLeading: false,
+          title: const Padding(
+            padding: EdgeInsets.all(8.0),
+            child: Text(
+              'Khám Phá',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+        ),
+        body: RefreshIndicator(
+          onRefresh: _loadPosts,
+          child: ListView(
+            // Sử dụng cacheExtent để tăng hiệu suất cuộn
+            cacheExtent: 500,
+            children: [
+              _buildSleepSection(context),
+              const Padding(
+                padding: EdgeInsets.all(15.0),
+                child: Text(
+                  'Videos Nổi Bật',
+                  style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold),
+                ),
+              ),
+              _buildHotNewSection(context),
+              const SizedBox(height: 15),
+              const Padding(
+                padding: EdgeInsets.all(15.0),
+                child: Text(
+                  'Xây dựng Sức Mạnh',
+                  style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold),
+                ),
+              ),
+              _buildStrongSection(context),
+              const Padding(
+                padding: EdgeInsets.all(15.0),
+                child: Text(
+                  'Huấn Luyện Viên Hướng Dẫn',
+                  style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold),
+                ),
+              ),
+              _buildCoachSection(context),
+            ],
           ),
         ),
       ),
-      body: ListView(
-        // Sử dụng cacheExtent để tăng hiệu suất cuộn
-        cacheExtent: 500,
-        children: [
-          _buildSleepSection(context),
-          const Padding(
-            padding: EdgeInsets.all(15.0),
-            child: Text(
-              'Videos Nổi Bật',
-              style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold),
-            ),
-          ),
-          _buildHotNewSection(context),
-          const SizedBox(height: 15),
-          const Padding(
-            padding: EdgeInsets.all(15.0),
-            child: Text(
-              'Xây dựng Sức Mạnh',
-              style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold),
-            ),
-          ),
-          _buildStrongSection(context),
-          const Padding(
-            padding: EdgeInsets.all(15.0),
-            child: Text(
-              'Huấn Luyện Viên Hướng Dẫn',
-              style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold),
-            ),
-          ),
-          _buildCoachSection(context),
-          // const Padding(
-          //   padding: EdgeInsets.all(15.0),
-          //   child: Text(
-          //     'Khởi Động & Warm Up',
-          //     style: TextStyle(
-          //         color: Colors.black,
-          //         fontSize: 20,
-          //         fontWeight: FontWeight.bold),
-          //   ),
-          // ),
-          // SizedBox(
-          //   height: 200,
-          //   child: ListView(
-          //     scrollDirection: Axis.horizontal,
-          //     children: const [
-          //       WarmupCard(
-          //         imagePath: 'assets/img/warmup.jpg',
-          //         title: 'Làm nóng cơ thể',
-          //         subtitle: 'warmup',
-          //       ),
-          //       WarmupCard(
-          //         imagePath: 'assets/img/warmupa.jpg',
-          //         title: 'Kéo giãn cơ',
-          //         subtitle: 'warmup',
-          //       ),
-          //     ],
-          //   ),
-          // )
-        ],
-      ),
     );
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
   }
 
   Widget _buildCoachSection(BuildContext context) {
@@ -574,33 +581,6 @@ class CoachCard extends StatelessWidget {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 20),
-                  // Row(
-                  //   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  //   children: [
-                  //     ElevatedButton.icon(
-                  //       onPressed: () {
-                  //         Navigator.push(
-                  //           context,
-                  //           MaterialPageRoute(
-                  //             builder: (context) => VideoCallScreen(),
-                  //           ),
-                  //         );
-                  //       },
-                  //       icon: const Icon(Icons.video_call, color: Colors.white),
-                  //       label: const Text('Bắt đầu học'),
-                  //       style: ElevatedButton.styleFrom(
-                  //         backgroundColor: const Color(0xFFFF6B00),
-                  //         foregroundColor: Colors.white,
-                  //       ),
-                  //     ),
-                  //     TextButton(
-                  //       onPressed: () {
-                  //         Navigator.pop(context);
-                  //       },
-                  //       child: const Text('Đóng'),
-                  //     ),
-                  //   ],
-                  // ),
                 ],
               ),
             ),
@@ -814,18 +794,6 @@ class StrongCard extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: 12),
-                          // Container(
-                          //   padding: const EdgeInsets.all(8),
-                          //   decoration: BoxDecoration(
-                          //     color: Colors.green,
-                          //     borderRadius: BorderRadius.circular(20),
-                          //   ),
-                          //   child: const Icon(
-                          //     Icons.video_call,
-                          //     color: Colors.white,
-                          //     size: 20,
-                          //   ),
-                          // ),
                         ],
                       ),
                     ),
@@ -896,31 +864,6 @@ class StrongCard extends StatelessWidget {
                 style: TextStyle(color: Colors.grey),
               ),
               const SizedBox(height: 16),
-              // Row(
-              //   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              //   children: [
-              //     ElevatedButton.icon(
-              //       onPressed: () {
-              //         Navigator.push(
-              //             context,
-              //             MaterialPageRoute(
-              //                 builder: (context) => VideoCallScreen()));
-              //       },
-              //       icon: const Icon(Icons.video_call, color: Colors.white),
-              //       label: const Text('Bắt đầu'),
-              //       style: ElevatedButton.styleFrom(
-              //         backgroundColor: Color(0xFFFF6B00),
-              //         foregroundColor: Colors.white,
-              //       ),
-              //     ),
-              //     TextButton(
-              //       onPressed: () {
-              //         Navigator.pop(context);
-              //       },
-              //       child: const Text('Hủy'),
-              //     ),
-              //   ],
-              // ),
             ],
           ),
         );
