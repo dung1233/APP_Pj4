@@ -938,13 +938,12 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
 
   // Hàm trả về màu dựa trên số lượng bài tập đã hoàn thành
   Color _getCompletionColor(int completedCount, int totalCount) {
-    if (completedCount == 0) {
-      return Colors.red.withOpacity(0.8); // Chưa hoàn thành bài nào thì màu đỏ
-    } else if (completedCount >= 4) {
-      return Colors.green
-          .withOpacity(0.8); // Hoàn thành từ 4 bài trở lên thì màu xanh
+    if (completedCount >= totalCount) {
+      return Colors.green.withOpacity(0.8); // Hoàn thành tất cả bài tập
+    } else if (completedCount == 0) {
+      return Colors.red.withOpacity(0.8); // Chưa hoàn thành bài nào
     } else {
-      return Colors.orange.withOpacity(0.8); // Hoàn thành 1-3 bài thì màu vàng
+      return Colors.orange.withOpacity(0.8); // Hoàn thành một số bài tập
     }
   }
 

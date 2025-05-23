@@ -79,7 +79,7 @@ class _SitUpDetectorPageState extends State<SitUpDetectorPage> {
       // Tạo đối tượng kết quả bài tập theo định dạng API của bạn
       final workoutResult = {
         "exerciseName": "Gập bụng", // Changed from "Hít đất" to "Gập bụng"
-        "setsCompleted": _currentSet,
+        "setsCompleted": _totalSets,
         "repsCompleted": _counter,
         "distanceCompleted": 0.0,
         "durationCompleted": 0

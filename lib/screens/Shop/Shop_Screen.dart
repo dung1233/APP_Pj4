@@ -21,7 +21,7 @@ class ShopScreen extends StatefulWidget {
 class _ShopScreenState extends State<ShopScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  final List<String> categories = ["Tất cả", "Quần Áo", "Trang Sức"];
+  final List<String> categories = ["Tất cả", "Quần Áo", "Phụ Kiện"];
   final Dio _dio = Dio();
   late ApiService _apiService;
   final DatabaseHelper dbHelper = DatabaseHelper();
@@ -89,21 +89,18 @@ class _ShopScreenState extends State<ShopScreen>
   }
 
   List<Item> _getItemsByCategory(String category) {
-    // Lọc bỏ các sản phẩm Premium
-    final nonPremiumItems = _items
-        .where((item) => !item.name.toLowerCase().contains("premium"))
-        .toList();
+    // Lọc bỏ các sản phẩm có itemType là SUBSCRIPTION
+    final nonSubscriptionItems =
+        _items.where((item) => item.itemType != "SUBSCRIPTION").toList();
 
-    if (category == "Tất cả") return nonPremiumItems;
+    if (category == "Tất cả") return nonSubscriptionItems;
 
-    return nonPremiumItems.where((item) {
+    return nonSubscriptionItems.where((item) {
       switch (category) {
         case "Quần Áo":
-          return item.name.toLowerCase().contains("shirt") ||
-              item.name.toLowerCase().contains("shoe");
-        case "Trang Sức":
-          return item.name.toLowerCase().contains("avatar") ||
-              item.name.toLowerCase().contains("cart");
+          return item.itemType == "OTHER_TYPE";
+        case "Phụ Kiện":
+          return item.itemType == "AVATAR";
         default:
           return false;
       }
@@ -701,10 +698,10 @@ class _ShopScreenState extends State<ShopScreen>
                     ),
                   ),
                   const SizedBox(width: 4), // khoảng cách giữa icon và text
-                  const Icon(Icons.monetization_on, color: Colors.amber, size: 18), // có thể chỉnh size
+                  const Icon(Icons.monetization_on,
+                      color: Colors.amber, size: 18), // có thể chỉnh size
                 ],
               ),
-
               const SizedBox(height: 4),
               if (item.description.isNotEmpty) ...[
                 const SizedBox(height: 4),
@@ -723,19 +720,33 @@ class _ShopScreenState extends State<ShopScreen>
   }
 
   String _getImageForItem(Item item) {
-    // Xác định loại sản phẩm và trả về hình ảnh tương ứng
     final name = item.name.toLowerCase();
 
-    if (name.contains("shoe")) {
-      return "assets/img/shoe.jpg"; // Giày
-    } else if (name.contains("shirt")) {
-      return "assets/img/shirt.jpg"; // Áo
-    } else if (name.contains("avatar")) {
-      return "assets/img/avatar.jpg"; // Avatar
-    } else if (name.contains("cart")) {
-      return "assets/img/cart.jpg"; // Giỏ hàng
+    // Use item ID to determine which image to show
+    // This ensures each item always shows the same image
+    final imageIndex =
+        item.id % 4; // This will give us 0,1,2,3 consistently for each item
+
+    if (name.contains("áo")) {
+      return imageIndex % 2 == 0 ? "assets/img/sh.jpg" : "assets/img/sh1.jpg";
+    } else if (name.contains("quần")) {
+      return "assets/img/warmup.jpg";
+    } else if (name.contains("nike")) {
+      // For Nike items, use the imageIndex to select from 4 different images
+      switch (imageIndex) {
+        case 0:
+          return "assets/img/shoe.jpg";
+        case 1:
+          return "assets/img/shoe1.jpg";
+        case 2:
+          return "assets/img/shoe2.jpg";
+        case 3:
+          return "assets/img/runhard.jpg";
+        default:
+          return "assets/img/shoe.jpg";
+      }
     } else {
-      return "assets/img/default.jpg"; // Ảnh mặc định cho các sản phẩm khác
+      return "assets/img/default.jpg"; // Default image for other items
     }
   }
 

@@ -133,7 +133,7 @@ class _SquatDetectorViewState extends State<SquatDetectorView> {
       // Tạo đối tượng kết quả bài tập
       final workoutResult = {
         "exerciseName": "Squat",
-        "setsCompleted": _currentSet,
+        "setsCompleted": _totalSets,
         "repsCompleted": _extractRepCount(),
         "distanceCompleted": 0.0,
         "durationCompleted": 0

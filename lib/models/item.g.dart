@@ -14,7 +14,7 @@ Item _$ItemFromJson(Map<String, dynamic> json) => Item(
       description: json['description'] as String,
       price: (json['price'] as num).toDouble(),
       durationInDays: (json['durationInDays'] as num).toInt(),
-      itemType: json['itemType'] as String,
+      itemType: json['itemType'] as String?,
     );
 
 Map<String, dynamic> _$ItemToJson(Item instance) => <String, dynamic>{

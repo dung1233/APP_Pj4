@@ -151,7 +151,7 @@ class _IconsUserState extends State<IconsUser>
                     text: TextSpan(
                       children: [
                         const TextSpan(
-                          text: 'Chào Mừng Trở Lại, ',
+                          text: 'Chào Mừng, ',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,

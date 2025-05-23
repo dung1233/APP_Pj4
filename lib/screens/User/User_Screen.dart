@@ -267,19 +267,9 @@ class _UserScreenState extends State<UserProfilePage>
                     },
                   ),
                   ListTile(
-                    leading: const Icon(Icons.language),
-                    title: const Text("Ngôn ngữ"),
-                    onTap: () {},
-                  ),
-                  ListTile(
                     leading: const Icon(Icons.shopping_bag),
                     title: const Text("Sản Phẩm Đã Mua"),
                     onTap: navigateToPurchasedItemsPage,
-                  ),
-                  ListTile(
-                    leading: const Icon(Icons.dark_mode),
-                    title: const Text("Chế độ tối"),
-                    trailing: Switch(value: false, onChanged: (val) {}),
                   ),
                   const Divider(),
                   ListTile(

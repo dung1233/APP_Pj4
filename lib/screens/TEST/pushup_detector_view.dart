@@ -112,7 +112,7 @@ class _PushUpDetectorViewState extends State<PushUpDetectorView> {
       // Tạo đối tượng kết quả bài tập theo định dạng API của bạn
       final workoutResult = {
         "exerciseName": "Hít đất",
-        "setsCompleted": _currentSet,
+        "setsCompleted": _totalSets,
         "repsCompleted": _extractRepCount(),
         "distanceCompleted": 0.0,
         "durationCompleted": 0
