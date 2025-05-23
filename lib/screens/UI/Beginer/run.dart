@@ -195,7 +195,7 @@ class _RunningTrackerState extends State<RunningTracker> {
 
   void _startTimer() {
     _timer?.cancel();
-    _secondsElapsed = 0;
+    // _secondsElapsed = 0;
     _timer = Timer.periodic(Duration(seconds: 1), (timer) {
       setState(() {
         _secondsElapsed++;

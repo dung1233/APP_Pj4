@@ -1,12 +1,16 @@
 import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:dio/dio.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
 import '../data/DatabaseHelper.dart';
+
+// Global key để có thể hiển thị dialog từ bất kỳ đâu
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 class WorkoutSyncService {
   static final WorkoutSyncService _instance = WorkoutSyncService._internal();
@@ -241,6 +245,34 @@ class WorkoutSyncService {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         debugPrint("[SYNC] ✅ Gửi API thành công");
+
+        // Hiển thị thông báo thành công
+        if (navigatorKey.currentContext != null) {
+          showDialog(
+            context: navigatorKey.currentContext!,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                title: Row(
+                  children: [
+                    Icon(Icons.check_circle, color: Colors.green[600]),
+                    SizedBox(width: 8),
+                    Text('Thành công'),
+                  ],
+                ),
+                content: Text('Dữ liệu đã được đồng bộ thành công!'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: Text('OK'),
+                  ),
+                ],
+              );
+            },
+          );
+        }
 
         return true;
       } else {

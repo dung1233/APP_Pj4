@@ -15,7 +15,7 @@ import 'dart:async'; // Thêm import Timer
 import 'package:training_souls/services/notification_service.dart';
 import 'package:training_souls/models/meal_suggestion.dart';
 import 'package:training_souls/services/premium_trial_manager.dart';
-import '../../../offline/SyncStatusWidget.dart';
+
 
 class BeginnerDataWidget extends StatefulWidget {
   const BeginnerDataWidget({super.key});

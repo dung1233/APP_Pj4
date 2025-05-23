@@ -29,6 +29,7 @@ class _PushUpDetectorViewState extends State<PushUpDetectorView> {
 
   // Thêm các biến quản lý dữ liệu từ database
   int _totalRequiredReps = 0;
+  int _orginalReps = 0;
   int _totalSets = 0;
   int _currentSet = 1;
   bool _canProcess = true;
@@ -113,7 +114,7 @@ class _PushUpDetectorViewState extends State<PushUpDetectorView> {
       final workoutResult = {
         "exerciseName": "Hít đất",
         "setsCompleted": _totalSets,
-        "repsCompleted": _extractRepCount(),
+        "repsCompleted": _orginalReps,
         "distanceCompleted": 0.0,
         "durationCompleted": 0
       };
@@ -183,6 +184,8 @@ class _PushUpDetectorViewState extends State<PushUpDetectorView> {
     setState(() {
       _totalRequiredReps = pushupWorkouts.fold(
           0, (sum, w) => sum + (w.sets ?? 0) * (w.reps ?? 0));
+      _orginalReps =  pushupWorkouts.fold(
+          0, (sum, w) => sum +  (w.reps ?? 0));
       _totalSets = pushupWorkouts.fold(0, (sum, w) => sum + (w.sets ?? 0));
       _isLoading = false;
     });
