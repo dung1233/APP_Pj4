@@ -1073,13 +1073,7 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
                   color: Colors.white.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: Text(
-                  "30 phút",
-                  style: GoogleFonts.urbanist(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+
               ),
             ],
           ),
@@ -1097,7 +1091,7 @@ class _BeginnerDataWidgetState extends State<BeginnerDataWidget> {
             runSpacing: 10,
             children: [
               _buildTestFeature(Icons.fitness_center, "5 bài tập"),
-              _buildTestFeature(Icons.timer, "30 phút"),
+              // _buildTestFeature(Icons.timer, "30 phút"),
               _buildTestFeature(Icons.emoji_events, "Chứng nhận"),
             ],
           ),

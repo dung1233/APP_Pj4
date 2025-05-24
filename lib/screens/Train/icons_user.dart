@@ -153,7 +153,7 @@ class _IconsUserState extends State<IconsUser>
                         const TextSpan(
                           text: 'Chào Mừng, ',
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: 12,
                             fontWeight: FontWeight.bold,
                             color: Colors.black,
                           ),
@@ -161,7 +161,7 @@ class _IconsUserState extends State<IconsUser>
                         TextSpan(
                           text: userName ?? 'aa',
                           style: const TextStyle(
-                            fontSize: 16,
+                            fontSize: 12,
                             fontWeight: FontWeight.bold,
                             color: Colors.black,
                           ),
