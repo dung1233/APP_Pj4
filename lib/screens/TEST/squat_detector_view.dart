@@ -28,6 +28,7 @@ class _SquatDetectorViewState extends State<SquatDetectorView> {
 
   int _totalRequiredReps = 0;
   int _totalSets = 0;
+  int _orginalReps = 0;
   int _currentSet = 1;
   bool _canProcess = true;
   bool _isBusy = false;
@@ -82,6 +83,8 @@ class _SquatDetectorViewState extends State<SquatDetectorView> {
     setState(() {
       _totalRequiredReps = squatWorkouts.fold(
           0, (sum, w) => sum + (w.sets ?? 0) * (w.reps ?? 0));
+      _orginalReps =  squatWorkouts.fold(
+          0, (sum, w) => sum + (w.reps ?? 0));
       _totalSets = squatWorkouts.fold(0, (sum, w) => sum + (w.sets ?? 0));
       _isLoading = false;
     });
@@ -133,8 +136,8 @@ class _SquatDetectorViewState extends State<SquatDetectorView> {
       // Tạo đối tượng kết quả bài tập
       final workoutResult = {
         "exerciseName": "Squat",
-        "setsCompleted": _currentSet,
-        "repsCompleted": _extractRepCount(),
+        "setsCompleted": _totalSets,
+        "repsCompleted": _orginalReps,
         "distanceCompleted": 0.0,
         "durationCompleted": 0
       };

@@ -594,7 +594,7 @@ class WorkoutDateGroup extends StatelessWidget {
               icon = Icons.directions_run;
               final rawDistance = (workout['distanceCompleted'] ?? 0.0);
               final rawDuration = (workout['durationCompleted'] ?? 0.0);
-              value = "$rawDistance m - $rawDuration p";
+              value = "${rawDistance.toStringAsFixed(2)} km - $rawDuration p";
             } else {
               icon = Icons.fitness_center;
               value =

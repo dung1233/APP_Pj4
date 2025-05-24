@@ -15,6 +15,8 @@ import 'package:training_souls/hive_service.dart';
 import 'package:training_souls/screens/home/home.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 
+import 'offline/WorkoutSyncService.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -48,6 +50,9 @@ void main() async {
   // ✅ Khởi tạo SQLite nếu cần (không cần chờ vì SQLite tự động mở khi gọi database)
 
   final dio = Dio(); // Khởi tạo Dio để dùng trong API
+  // Khởi tạo service sync
+  final syncService = WorkoutSyncService();
+  await syncService.init();
 
   runApp(
     MultiProvider(
@@ -72,6 +77,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey,
       debugShowCheckedModeBanner: false,
       title: 'Flutter App',
       home: HomePage(), // Trang Home chính

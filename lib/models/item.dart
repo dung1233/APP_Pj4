@@ -22,7 +22,7 @@ class Item {
   final int durationInDays;
 
   @JsonKey(name: 'itemType')
-  final String itemType;
+  final String? itemType;
 
   Item({
     required this.id,
@@ -32,7 +32,7 @@ class Item {
     required this.description,
     required this.price,
     required this.durationInDays,
-    required this.itemType,
+    this.itemType,
   });
 
   // Tạo factory constructor để chuyển đổi từ JSON sang Dart object

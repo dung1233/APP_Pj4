@@ -63,14 +63,9 @@ class _RankScreenState extends State<RankScreen> {
       setState(() {
         _isLoading = false;
       });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Không thể tải dữ liệu: ${e.toString()}')),
-        );
-      }
+      print("❌ Lỗi khi tải dữ liệu: $e");
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -125,9 +120,7 @@ class RankDataSource extends DataGridSource {
                     columnName: 'power',
                     value: rank.totalScore.toStringAsFixed(2)),
                 DataGridCell<String>(
-                    columnName: 'deathpoint',
-                    value:
-                        '${rank.deathpoints}'),
+                    columnName: 'deathpoint', value: '${rank.deathpoints}'),
               ],
             ))
         .toList();

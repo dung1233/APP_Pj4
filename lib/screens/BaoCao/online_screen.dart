@@ -192,31 +192,31 @@ class _OnlineScreenState extends State<OnlineScreen> {
               ),
             ],
             const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton.icon(
-                  icon: const Icon(Icons.edit, size: 16),
-                  label: const Text('Sửa'),
-                  onPressed: () {
-                    // TODO: Thêm code để sửa workout
-                    if (kDebugMode) {
-                      print('Sửa bài tập: ${workout.exerciseName}');
-                    }
-                  },
-                ),
-                TextButton.icon(
-                  icon: const Icon(Icons.delete, size: 16, color: Colors.red),
-                  label: const Text('Xóa', style: TextStyle(color: Colors.red)),
-                  onPressed: () {
-                    // TODO: Thêm code để xóa workout
-                    if (kDebugMode) {
-                      print('Xóa bài tập: ${workout.exerciseName}');
-                    }
-                  },
-                ),
-              ],
-            ),
+            // Row(
+            //   mainAxisAlignment: MainAxisAlignment.end,
+            //   children: [
+            //     TextButton.icon(
+            //       icon: const Icon(Icons.edit, size: 16),
+            //       label: const Text('Sửa'),
+            //       onPressed: () {
+            //         // TODO: Thêm code để sửa workout
+            //         if (kDebugMode) {
+            //           print('Sửa bài tập: ${workout.exerciseName}');
+            //         }
+            //       },
+            //     ),
+            //     TextButton.icon(
+            //       icon: const Icon(Icons.delete, size: 16, color: Colors.red),
+            //       label: const Text('Xóa', style: TextStyle(color: Colors.red)),
+            //       onPressed: () {
+            //         // TODO: Thêm code để xóa workout
+            //         if (kDebugMode) {
+            //           print('Xóa bài tập: ${workout.exerciseName}');
+            //         }
+            //       },
+            //     ),
+            //   ],
+            // ),
           ],
         ),
       ),

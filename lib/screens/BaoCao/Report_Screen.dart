@@ -132,7 +132,7 @@ class _ReportScreenState extends State<ReportScreen> {
   Widget _buildTime() {
     return const Center(
       child: Text(
-        'Time ',
+        'Tính năng đang phát triển ',
         style: TextStyle(fontSize: 20),
       ),
     );

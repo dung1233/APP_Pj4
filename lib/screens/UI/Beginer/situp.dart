@@ -35,6 +35,7 @@ class _SitUpDetectorPageState extends State<SitUpDetectorPage> {
       PoseDetector(options: PoseDetectorOptions());
   int _totalRequiredReps = 0;
   int _totalSets = 0;
+  int _orginalReps = 0;
   int _currentSet = 1;
   bool _isLoading = true;
   bool _isDetecting = false;
@@ -60,14 +61,16 @@ class _SitUpDetectorPageState extends State<SitUpDetectorPage> {
     final dbHelper = DatabaseHelper();
     final allWorkouts = await dbHelper.getWorkouts(); // Dùng phương thức có sẵn
 
-    final pushupWorkouts = allWorkouts
+    final situpWorkouts = allWorkouts
         .where((w) => w.day == widget.day && w.exerciseName == "Gập bụng")
         .toList();
 
     setState(() {
-      _totalRequiredReps = pushupWorkouts.fold(
+      _totalRequiredReps = situpWorkouts.fold(
           0, (sum, w) => sum + (w.sets ?? 0) * (w.reps ?? 0));
-      _totalSets = pushupWorkouts.fold(0, (sum, w) => sum + (w.sets ?? 0));
+      _orginalReps = situpWorkouts.fold(
+          0, (sum, w) => sum +  (w.reps ?? 0));
+      _totalSets = situpWorkouts.fold(0, (sum, w) => sum + (w.sets ?? 0));
       _isLoading = false;
     });
   }
@@ -79,8 +82,8 @@ class _SitUpDetectorPageState extends State<SitUpDetectorPage> {
       // Tạo đối tượng kết quả bài tập theo định dạng API của bạn
       final workoutResult = {
         "exerciseName": "Gập bụng", // Changed from "Hít đất" to "Gập bụng"
-        "setsCompleted": _currentSet,
-        "repsCompleted": _counter,
+        "setsCompleted": _totalSets,
+        "repsCompleted": _orginalReps,
         "distanceCompleted": 0.0,
         "durationCompleted": 0
       };

@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:training_souls/api/user_service.dart';
 import 'package:training_souls/data/local_storage.dart';
+import 'package:training_souls/data/DatabaseHelper.dart';
 
 import '../../Stripe/UpgradeAccountPage.dart';
 import '../../Stripe/account_type_dialog.dart';
@@ -18,6 +19,7 @@ class _IconsUserState extends State<IconsUser>
   String? userName;
   bool isLoading = true;
   Map<String, dynamic> _userInfo = {};
+  final dbHelper = DatabaseHelper();
 
   @override
   void initState() {
@@ -26,47 +28,64 @@ class _IconsUserState extends State<IconsUser>
   }
 
   Future<void> fetchUserInfo() async {
-    final token = await LocalStorage.getValidToken();
-
-    if (token == null) {
-      print("❌ Không có token hợp lệ");
-      setState(() {
-        isLoading = false;
-      });
-      return;
-    }
-
-    final dio = Dio();
-    final client = UserService(dio);
+    setState(() {
+      isLoading = true;
+    });
 
     try {
-      final response = await client.getMyInfo("Bearer $token");
-      print("📌 API Response: ${response.toJson()}");
+      // Thử lấy từ API trước
+      final token = await LocalStorage.getValidToken();
+      if (token != null) {
+        final dio = Dio();
+        final client = UserService(dio);
 
-      if (response.code == 0) {
-        final user = response.result;
-        print("📌 User data: ${user.toJson()}");
+        try {
+          final response = await client.getMyInfo("Bearer $token");
+          print("📌 API Response: ${response.toJson()}");
 
-        setState(() {
-          userName = user.name;
-          _userInfo = {
-            'userID': user.userID,
-            'name': user.name,
-            'email': user.email,
-            'accountType': user.accountType,
-            'points': user.points,
-            'level': user.level
-          };
-          isLoading = false;
-        });
-      } else {
-        print("❌ API trả về mã lỗi: ${response.code}");
-        setState(() {
-          isLoading = false;
-        });
+          if (response.code == 0) {
+            final user = response.result;
+            print("📌 User data: ${user.toJson()}");
+
+            // Cập nhật local database
+            await dbHelper.insertUserInfo({
+              'userID': user.userID,
+              'name': user.name,
+              'email': user.email,
+              'accountType': user.accountType,
+              'points': user.points,
+              'level': user.level,
+              'totalScore': user.totalScore
+            });
+
+            setState(() {
+              userName = user.name;
+              _userInfo = {
+                'userID': user.userID,
+                'name': user.name,
+                'email': user.email,
+                'accountType': user.accountType,
+                'points': user.points,
+                'level': user.level
+              };
+              isLoading = false;
+            });
+            return; // Thoát khỏi hàm nếu lấy API thành công
+          }
+        } catch (e) {
+          print("❌ Lỗi khi gọi API: $e");
+          // Tiếp tục với local database nếu API thất bại
+        }
       }
+
+      // Nếu không lấy được từ API, thử lấy từ local database
+      final localName = await dbHelper.getUserName();
+      setState(() {
+        userName = localName;
+        isLoading = false;
+      });
     } catch (e) {
-      print("❌ Lỗi khi gọi API: $e");
+      print("❌ Lỗi khi lấy thông tin người dùng: $e");
       setState(() {
         isLoading = false;
       });
@@ -129,27 +148,27 @@ class _IconsUserState extends State<IconsUser>
             isLoading
                 ? const CircularProgressIndicator()
                 : RichText(
-              text: TextSpan(
-                children: [
-                  const TextSpan(
-                    text: 'Chào Mừng Trở Lại, ',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
+                    text: TextSpan(
+                      children: [
+                        const TextSpan(
+                          text: 'Chào Mừng, ',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
+                        ),
+                        TextSpan(
+                          text: userName ?? 'aa',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  TextSpan(
-                    text: userName ?? 'aa',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
-                  ),
-                ],
-              ),
-            ),
             GestureDetector(
               onTap: () {
                 showGeneralDialog(
@@ -179,7 +198,7 @@ class _IconsUserState extends State<IconsUser>
               },
               child: Container(
                 padding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
                   gradient: getAccountGradient(accountTypeRaw),

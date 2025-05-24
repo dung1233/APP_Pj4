@@ -10,6 +10,8 @@ import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:training_souls/providers/workout_provider.dart';
 
+import '../offline/WorkoutSyncService.dart';
+
 class DatabaseHelper {
   static final DatabaseHelper _instance = DatabaseHelper._internal();
   factory DatabaseHelper() => _instance;
@@ -27,7 +29,7 @@ class DatabaseHelper {
     String path = join(await getDatabasesPath(), 'workout_database.db');
     return await openDatabase(
       path,
-      version: 9, // Tăng version lên 9 từ 8
+      version: 9, // Giữ nguyên version 9
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -166,7 +168,8 @@ class DatabaseHelper {
         email TEXT,
         accountType TEXT,
         points INTEGER,
-        level INTEGER
+        level INTEGER,
+        totalScore REAL
       )
     ''');
 
@@ -205,6 +208,8 @@ class DatabaseHelper {
 
   Future<void> checkAndCreateTables() async {
     final db = await database;
+
+    // Kiểm tra bảng workout_results
     var tables = await db.rawQuery(
         "SELECT name FROM sqlite_master WHERE type='table' AND name='workout_results'");
     if (tables.isEmpty) {
@@ -224,6 +229,7 @@ class DatabaseHelper {
         print("[DEBUG] ✅ Đã tạo bảng workout_results");
       }
     }
+
     // Kiểm tra bảng user_profile
     tables = await db.rawQuery(
         "SELECT name FROM sqlite_master WHERE type='table' AND name='user_profile'");
@@ -452,9 +458,11 @@ class DatabaseHelper {
   }
 
   //mã đẩy lên dữ liệu lên
-  Future<void> checkAndSyncWorkouts(int dayNumber) async {
+  // Phương thức mới thay cho checkAndSyncWorkouts
+  Future<void> checkAndSyncWorkoutsWithOfflineSupport(int dayNumber) async {
     try {
       final db = await database;
+      final syncService = WorkoutSyncService();
 
       // Lấy tổng số bài tập cần thiết cho ngày này
       final List<Map<String, dynamic>> requiredExercises = await db.query(
@@ -494,20 +502,36 @@ class DatabaseHelper {
                 })
             .toList();
 
-        final Map<String, dynamic> apiData = {
-          "dayNumber": dayNumber,
-          "results": formattedResults
-        };
+        // Kiểm tra kết nối mạng
+        bool isConnected = await syncService.isConnected();
 
-        // Gửi lên API
-        await sendToApi(apiData);
+        if (isConnected) {
+          try {
+            // Thử gửi trực tiếp lên API
+            await sendToApi(
+                {"dayNumber": dayNumber, "results": formattedResults});
 
-        // Sau khi gửi thành công, xóa dữ liệu local
-        await db.delete('workout_results',
-            where: 'day_number = ?', whereArgs: [dayNumber]);
+            // Nếu thành công, xóa dữ liệu local
+            await db.delete('workout_results',
+                where: 'day_number = ?', whereArgs: [dayNumber]);
 
-        if (kDebugMode) {
-          print("[DEBUG] ✅ Đã đồng bộ và xóa dữ liệu local");
+            if (kDebugMode) {
+              print("[DEBUG] ✅ Đã đồng bộ và xóa dữ liệu local");
+            }
+          } catch (e) {
+            // Nếu gửi API thất bại, thêm vào hàng đợi đồng bộ
+            await syncService.addToSyncQueue(dayNumber, formattedResults);
+            if (kDebugMode) {
+              print("[DEBUG] ⚠️ Lưu vào hàng đợi đồng bộ: $e");
+            }
+          }
+        } else {
+          // Không có kết nối mạng, thêm vào hàng đợi đồng bộ
+          await syncService.addToSyncQueue(dayNumber, formattedResults);
+          if (kDebugMode) {
+            print(
+                "[DEBUG] 📶 Không có kết nối mạng, đã thêm vào hàng đợi đồng bộ");
+          }
         }
       } else {
         if (kDebugMode) {
@@ -524,14 +548,28 @@ class DatabaseHelper {
     try {
       final box = await Hive.openBox('userBox');
       final token = box.get('token');
+
+      if (token == null) {
+        throw Exception("Token không tồn tại");
+      }
+
       final Dio dio = Dio();
+      dio.options.validateStatus = (status) {
+        return status! < 500; // Chỉ throw lỗi cho status >= 500
+      };
+
       final response = await dio.post(
         'http://54.251.220.228:8080/trainingSouls/workout/workout-results',
         data: data,
-        options: Options(headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token', // 👈 Thêm token ở đây
-        }),
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+          validateStatus: (status) {
+            return status! < 500;
+          },
+        ),
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
@@ -865,5 +903,51 @@ class DatabaseHelper {
       whereArgs: [day, exerciseName],
     );
     return results.isNotEmpty;
+  }
+
+  // Phương thức để kiểm tra và hiển thị thông báo về trạng thái đồng bộ
+  Future<int> getPendingSyncWorkoutsCount() async {
+    final syncService = WorkoutSyncService();
+    return await syncService.getPendingSyncCount();
+  }
+
+  // Phương thức để thử đồng bộ lại dữ liệu đang pending
+  Future<bool> syncPendingWorkouts() async {
+    final syncService = WorkoutSyncService();
+    return await syncService.syncPendingData();
+  }
+
+  // Xóa toàn bộ dữ liệu khi đăng xuất
+  Future<void> clearAllDataOnLogout() async {
+    try {
+      // Xóa dữ liệu từ database
+      final db = await database;
+      await db.transaction((txn) async {
+        // Xóa dữ liệu từ tất cả các bảng
+        await txn.delete('workouts');
+        await txn.delete('workout_results');
+        await txn.delete('user_info');
+        await txn.delete('user_profile');
+        await txn.delete('roles');
+        await txn.delete('permissions');
+      });
+
+      // Đóng kết nối database
+      await db.close();
+      _database = null;
+
+      // Chỉ xóa dữ liệu từ userBox (không đóng box)
+      final userBox = await Hive.openBox('userBox');
+      await userBox.clear();
+
+      if (kDebugMode) {
+        print("[DB] ✅ Đã xóa toàn bộ dữ liệu khi đăng xuất");
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print("[DB] ❌ Lỗi khi xóa dữ liệu khi đăng xuất: $e");
+      }
+      rethrow;
+    }
   }
 }

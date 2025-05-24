@@ -16,101 +16,148 @@ class ExploreScreen extends StatefulWidget {
 
 class _ExploreScreenState extends State<ExploreScreen> {
   final ApiService _apiService = ApiService(Dio());
-
-  // Sử dụng caching để lưu dữ liệu bài viết
   late Future<List<Post>> _postsFuture;
+  bool _isLoading = false;
+  List<Post> _cachedPosts = [];
+  late FocusNode _focusNode;
 
   @override
   void initState() {
     super.initState();
-    // Tải dữ liệu bài viết một lần khi màn hình được khởi tạo
-    _postsFuture = _apiService.getAllPosts();
+    _focusNode = FocusNode();
+    _postsFuture = Future.value([]); // Initialize with empty list
+    _loadPosts();
+
+    // Add listener for when screen gains focus
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _focusNode.addListener(() {
+        if (_focusNode.hasFocus) {
+          print("🔄 Explore screen gained focus - refreshing posts...");
+          _loadPosts();
+        }
+      });
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Refresh posts when screen becomes visible
+    if (ModalRoute.of(context)?.isCurrent ?? false) {
+      print("🔄 Explore screen became visible - refreshing posts...");
+      _loadPosts();
+    }
+  }
+
+  Future<void> _loadPosts() async {
+    setState(() => _isLoading = true);
+    try {
+      // Thử lấy dữ liệu từ API trước
+      final posts = await _apiService.getAllPosts();
+      if (posts.isNotEmpty) {
+        // Nếu có dữ liệu từ API, cập nhật cache và state
+        _cachedPosts = posts;
+        setState(() {
+          _postsFuture = Future.value(posts);
+        });
+      } else {
+        // Nếu không có dữ liệu từ API, thử lấy từ cache
+        if (_cachedPosts.isNotEmpty) {
+          setState(() {
+            _postsFuture = Future.value(_cachedPosts);
+          });
+        } else {
+          // Nếu không có dữ liệu ở cả hai nơi, hiển thị thông báo
+          setState(() {
+            _postsFuture = Future.value([]);
+          });
+        }
+      }
+    } catch (e) {
+      print("❌ Lỗi khi tải bài viết: $e");
+      // Nếu có lỗi khi tải từ API, thử lấy từ cache
+      if (_cachedPosts.isNotEmpty) {
+        setState(() {
+          _postsFuture = Future.value(_cachedPosts);
+        });
+      } else {
+        setState(() {
+          _postsFuture = Future.value([]);
+        });
+      }
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        automaticallyImplyLeading: false,
-        title: const Padding(
-          padding: EdgeInsets.all(8.0),
-          child: Text(
-            'Khám Phá',
-            style: TextStyle(fontWeight: FontWeight.bold),
+    return Focus(
+      focusNode: _focusNode,
+      child: Scaffold(
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          automaticallyImplyLeading: false,
+          title: const Padding(
+            padding: EdgeInsets.all(8.0),
+            child: Text(
+              'Khám Phá',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+        ),
+        body: RefreshIndicator(
+          onRefresh: _loadPosts,
+          child: ListView(
+            // Sử dụng cacheExtent để tăng hiệu suất cuộn
+            cacheExtent: 500,
+            children: [
+              _buildSleepSection(context),
+              const Padding(
+                padding: EdgeInsets.all(15.0),
+                child: Text(
+                  'Videos Nổi Bật',
+                  style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold),
+                ),
+              ),
+              _buildHotNewSection(context),
+              const SizedBox(height: 15),
+              const Padding(
+                padding: EdgeInsets.all(15.0),
+                child: Text(
+                  'Xây dựng Sức Mạnh',
+                  style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold),
+                ),
+              ),
+              _buildStrongSection(context),
+              const Padding(
+                padding: EdgeInsets.all(15.0),
+                child: Text(
+                  'Huấn Luyện Viên Hướng Dẫn',
+                  style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold),
+                ),
+              ),
+              _buildCoachSection(context),
+            ],
           ),
         ),
       ),
-      body: ListView(
-        // Sử dụng cacheExtent để tăng hiệu suất cuộn
-        cacheExtent: 500,
-        children: [
-          _buildSleepSection(context),
-          const Padding(
-            padding: EdgeInsets.all(15.0),
-            child: Text(
-              'Videos Nổi Bật',
-              style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold),
-            ),
-          ),
-          _buildHotNewSection(context),
-          const SizedBox(height: 15),
-          const Padding(
-            padding: EdgeInsets.all(15.0),
-            child: Text(
-              'Xây dựng Sức Mạnh',
-              style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold),
-            ),
-          ),
-          _buildStrongSection(context),
-          const Padding(
-            padding: EdgeInsets.all(15.0),
-            child: Text(
-              'Huấn Luyện Viên Hướng Dẫn',
-              style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold),
-            ),
-          ),
-          _buildCoachSection(context),
-          // const Padding(
-          //   padding: EdgeInsets.all(15.0),
-          //   child: Text(
-          //     'Khởi Động & Warm Up',
-          //     style: TextStyle(
-          //         color: Colors.black,
-          //         fontSize: 20,
-          //         fontWeight: FontWeight.bold),
-          //   ),
-          // ),
-          // SizedBox(
-          //   height: 200,
-          //   child: ListView(
-          //     scrollDirection: Axis.horizontal,
-          //     children: const [
-          //       WarmupCard(
-          //         imagePath: 'assets/img/warmup.jpg',
-          //         title: 'Làm nóng cơ thể',
-          //         subtitle: 'warmup',
-          //       ),
-          //       WarmupCard(
-          //         imagePath: 'assets/img/warmupa.jpg',
-          //         title: 'Kéo giãn cơ',
-          //         subtitle: 'warmup',
-          //       ),
-          //     ],
-          //   ),
-          // )
-        ],
-      ),
     );
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
   }
 
   Widget _buildCoachSection(BuildContext context) {
@@ -166,36 +213,59 @@ class _ExploreScreenState extends State<ExploreScreen> {
       child: FutureBuilder<List<Post>>(
         future: _postsFuture,
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+          if (_isLoading) {
             return const Center(child: CircularProgressIndicator());
           }
 
           if (snapshot.hasError) {
+            print("❌ Lỗi khi tải bài viết: ${snapshot.error}");
+            // Nếu có lỗi và có dữ liệu cache, hiển thị dữ liệu cache
+            if (_cachedPosts.isNotEmpty) {
+              return _buildPostList(_cachedPosts);
+            }
             return Center(
-                child: Text('Không thể tải bài viết: ${snapshot.error}'));
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, color: Colors.red, size: 40),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Không thể tải bài viết\nVui lòng kiểm tra kết nối mạng',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            );
           }
 
           final posts = snapshot.data ?? [];
 
           if (posts.isEmpty) {
-            return const Center(child: Text('Không có bài viết'));
+            return const Center(
+              child: Text('Không có bài viết'),
+            );
           }
 
-          return ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: posts.length,
-            itemBuilder: (context, index) {
-              final post = posts[index];
-              return BlogCard(
-                imagePath: _getSafeImageUrl(post),
-                title: post.title,
-                subtitle: _getSafeContent(post),
-                videoUrls: post.videoUrl,
-              );
-            },
-          );
+          return _buildPostList(posts);
         },
       ),
+    );
+  }
+
+  Widget _buildPostList(List<Post> posts) {
+    return ListView.builder(
+      scrollDirection: Axis.horizontal,
+      itemCount: posts.length,
+      itemBuilder: (context, index) {
+        final post = posts[index];
+        return BlogCard(
+          imagePath: _getSafeImageUrl(post),
+          title: post.title,
+          subtitle: _getSafeContent(post),
+          videoUrls: post.videoUrl,
+        );
+      },
     );
   }
 
@@ -511,33 +581,6 @@ class CoachCard extends StatelessWidget {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => VideoCallScreen(),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.video_call, color: Colors.white),
-                        label: const Text('Bắt đầu học'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFFF6B00),
-                          foregroundColor: Colors.white,
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
-                        child: const Text('Đóng'),
-                      ),
-                    ],
-                  ),
                 ],
               ),
             ),
@@ -751,18 +794,6 @@ class StrongCard extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: 12),
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.green,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: const Icon(
-                              Icons.video_call,
-                              color: Colors.white,
-                              size: 20,
-                            ),
-                          ),
                         ],
                       ),
                     ),
@@ -833,31 +864,6 @@ class StrongCard extends StatelessWidget {
                 style: TextStyle(color: Colors.grey),
               ),
               const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => VideoCallScreen()));
-                    },
-                    icon: const Icon(Icons.video_call, color: Colors.white),
-                    label: const Text('Bắt đầu'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xFFFF6B00),
-                      foregroundColor: Colors.white,
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    child: const Text('Hủy'),
-                  ),
-                ],
-              ),
             ],
           ),
         );
