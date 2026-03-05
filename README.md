@@ -1,35 +1,48 @@
 
----
 
-# 🛡️ Training Souls - AI-Powered Fitness Revolution
+# 👟 Training Souls - Coach Edition
 
-> 
-> **Real-time human pose estimation meets seamless remote coaching.** > A cutting-edge mobile application designed to bridge the gap between AI technology and professional fitness training.
-> 
-> 
+> **The professional management terminal for personal trainers within the Training Souls ecosystem.**
+
+This repository contains the **Coach/Trainer version** of the Training Souls ecosystem. It is designed to work seamlessly with the [User App](https://github.com/dung1233/APP_Pj4/tree/dev-1) to create a unified fitness coaching experience.
 
 ---
 
-## 🚀 Key Features
+## 🔗 Ecosystem Connection
+
+This app acts as the "Command Center" for trainers to interact directly with their trainees:
 
 * 
-**🧠 Real-time AI Pose Detection**: Integrated **TFLite (TensorFlow Lite)** to track body movements for exercises like push-ups and squats, providing instant feedback and rep counting.
-
-
-* 
-**📹 Live Video Coaching**: High-quality, low-latency video calling features powered by **Agora SDK**, enabling direct interaction between users and trainers.
+**Two-Way Synchronization**: Real-time data exchange between Coach and User profiles.
 
 
 * 
-**📊 Comprehensive Progress Tracking**: Users can monitor their workout schedules, nutrition suggestions, and fitness milestones.
+**Integrated Coaching**: Allows trainers to monitor trainee progress and provide personalized feedback.
 
 
 * 
-**💾 Hybrid Data Sync**: Robust offline support using **SQLite & Hive**, ensuring data consistency even with unstable internet.
+**Live Session Management**: Tools for trainers to initiate and manage high-quality coaching calls.
+
+
+
+---
+
+## 🚀 Key Features for Trainers
+
+* 
+**📹 Professional Video Consultation**: Powered by **Agora SDK**, enabling trainers to conduct 1-on-1 virtual training sessions with trainees.
 
 
 * 
-**🔔 Smart Notifications**: Real-time push notifications to keep users engaged with their training goals.
+**📋 Trainee Management**: View and manage workout schedules, nutrition plans, and progress reports for multiple users.
+
+
+* 
+**📡 Real-time Communication**: Instant notifications and data sync to stay updated with trainee activities.
+
+
+* 
+**💼 Profile & Expertise Branding**: Tools for trainers to showcase their skills and manage their coaching services.
 
 
 
@@ -38,85 +51,45 @@
 ## 🛠️ Tech Stack
 
 * 
-**Frontend**: Flutter & Dart.
+**Framework**: Flutter & Dart (Cross-platform).
 
 
 * 
-**State Management**: Advanced usage of **Riverpod** and **Provider**.
+**State Management**: **Provider & Riverpod** for handling complex trainer-trainee data flows.
 
 
 * 
-**AI/ML**: TensorFlow Lite (TFLite).
+**Networking**: **Dio** for high-performance API calls to the .NET Core backend.
 
 
 * 
-**Infrastructure**: RESTful APIs via **Dio**, **Agora SDK** for Media, and **Lottie** for smooth UI animations.
-
-
-* 
-**Database**: SQLite & Hive.
+**Local Storage**: **Hive & SQLite** for quick access to trainee data offline.
 
 
 
 ---
 
-## 🏗️ Architecture & Role
+## 👨‍💻 Role & Responsibility
 
-**Role: Lead Mobile Developer** 
+**Lead Developer**
 
-* Designed the **UI/UX** and implemented the entire frontend for both Users and Trainers.
-
-
-* Architected the **ERD (Entity Relationship Diagram)** and defined complex system use cases.
+* Architected the communication protocol between the User App and Coach App.
 
 
-* Engineered the **AI Pose Detection** logic and data synchronization workflows.
+* Implemented the **Agora Video Call** module for professional remote training.
 
 
-* Managed secure communication with **ASP.NET Core** backend using JWT authentication.
+* Designed the Trainer-specific UI/UX for efficient management workflows.
 
 
-
----
-
-## ⚙️ Installation & Setup
-
-1. **Clone the project**:
-```bash
-git clone [https://github.com/dung1233/APP_Pj4.git](https://github.com/dung1233/APP_Pj4/tree/dev-1)
-
-```
-
-
-2. **Install dependencies**:
-```bash
-flutter pub get
-
-```
-
-
-3. **Run the application**:
-```bash
-flutter run
-
-```
+* Ensured secure data synchronization via **RESTful APIs**.
 
 
 
 ---
 
-## 👨‍💻 Author
-
-**Nguyen Tien Dung** Fullstack Developer | Automotive Software Enthusiast 
-
-* **LinkedIn**: [Dung Nguyen Tien](https://www.google.com/search?q=https://www.linkedin.com/in/dung-nguyen-tien-5268643b2/)
-* 
-**Email**: nguyentiendung081020@gmail.com 
 
 
+Việc dẫn link qua lại như vậy chứng minh bạn có khả năng quản lý một dự án lớn, đa nền tảng — thứ mà các công ty làm về **Automotive** (vốn có rất nhiều module kết nối với nhau) cực kỳ đánh giá cao.
 
----
-
-**Mẹo cho Dũng:** Sau khi dán xong, nếu bạn có ảnh chụp màn hình điện thoại đang chạy App, hãy kéo thả ảnh đó vào phần "Key Features" để HR thấy được giao diện thực tế nhé!
-
-Bạn có muốn mình làm tiếp một bản tương tự cho dự án **Personal Finance API (.NET Core)** không? Dự án đó cũng rất quan trọng để khoe trình độ Backend của bạn đấy.
+Bạn có muốn mình viết tiếp phần README cho dự án **Backend (.NET Core)** không? Đó chính là "xương sống" kết nối 2 cái App này lại với nhau đấy!
