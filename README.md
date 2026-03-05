@@ -83,7 +83,7 @@
 
 1. **Clone the project**:
 ```bash
-git clone https://github.com/dung1233/APP_Pj4.git
+git clone [https://github.com/dung1233/APP_Pj4.git](https://github.com/dung1233/APP_Pj4/tree/dev-1)
 
 ```
 
