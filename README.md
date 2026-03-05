@@ -84,12 +84,5 @@ This app acts as the "Command Center" for trainers to interact directly with the
 
 * Ensured secure data synchronization via **RESTful APIs**.
 
-
-
----
-
-
-
-Việc dẫn link qua lại như vậy chứng minh bạn có khả năng quản lý một dự án lớn, đa nền tảng — thứ mà các công ty làm về **Automotive** (vốn có rất nhiều module kết nối với nhau) cực kỳ đánh giá cao.
-
-Bạn có muốn mình viết tiếp phần README cho dự án **Backend (.NET Core)** không? Đó chính là "xương sống" kết nối 2 cái App này lại với nhau đấy!
+Check out the Coach version of this app here (User):
+https://github.com/dung1233/APP_Pj4/blob/dev-1
